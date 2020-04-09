@@ -34,6 +34,8 @@ function main() {
     */
     <<< REPLACE >>>
 
+    var DEBUG = false;
+
     //crete the dropdown to filter stocks.
     var dropdown = function(){
         var holdingsSelectorWrap = document.createElement("span");
@@ -49,7 +51,7 @@ function main() {
         selectBox.add(option);
         selectBox.addEventListener("change", function() {
             var selectedCat = this.value;
-            console.log("Tag selected: " + selectedCat);
+            if (DEBUG) console.log("Tag selected: " + selectedCat);
             var selectedStocks = holdings[selectedCat];
 
             //START work on Holdings AREA
@@ -97,7 +99,7 @@ function main() {
                     matchFound = selectedStocks.includes(watchlistStock);
 
                     if (matchFound) {
-                        console.log('match W: '+watchlistStock);
+                        if (DEBUG) console.log('match W: '+watchlistStock);
                     } else {
                         jQ(outsideSpan).hide();
                     }
@@ -106,17 +108,21 @@ function main() {
             //END work on watchlist AREA
 
             //START work on order AREA
+
             var allPendingOrderRows = jQ("#app > div.container.wrapper > div.container-right > div.page-content.orders > div > section.pending-orders-wrap.table-wrapper > div > div > table > tbody > tr");
             var allExecutedOrderRows = jQ("#app > div.container.wrapper > div.container-right > div.page-content.orders > div > section.completed-orders-wrap.table-wrapper > div > div > table > tbody > tr");
             allPendingOrderRows.show();
             allExecutedOrderRows.show();
+
+            if (DEBUG) console.log("pending orders: " + allPendingOrderRows.length);
+
             if (selectedCat === "All") {
                 //don't do anything
             } else {
                 allPendingOrderRows.each(function(rowIndex){
                     var workingRow = this;
                     var stockInRow = jQ(workingRow).find("span.tradingsymbol > span").html();
-                    console.log("found : " + stockInRow);
+                    if (DEBUG) console.log("found : " + stockInRow);
                     if (stockInRow.includes("-BE")) {
                         stockInRow = stockInRow.split("-BE")[0];
                     }
@@ -133,7 +139,7 @@ function main() {
                 allExecutedOrderRows.each(function(rowIndex){
                     var workingRow = this;
                     var stockInRow = jQ(workingRow).find("span.tradingsymbol > span").html();
-                    console.log("found : " + stockInRow);
+                    if (DEBUG) console.log("found : " + stockInRow);
                     if (stockInRow.includes("-BE")) {
                         stockInRow = stockInRow.split("-BE")[0];
                     }
