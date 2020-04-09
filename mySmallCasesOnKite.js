@@ -43,8 +43,8 @@ function main() {
         holdingsSelectorWrap.classList.add("randomClassToHelpHide");
 
         var selectBox = document.createElement("SELECT");
+        selectBox.id = "tagSelector";
         selectBox.classList.add("holdings-selector");
-
 
         var option = document.createElement("option");
         option.text = "All";
@@ -55,12 +55,12 @@ function main() {
             var selectedStocks = holdings[selectedCat];
 
             //START work on Holdings AREA
-            var allHoldingrows = jQ("#app > div.container.wrapper > div.container-right > div > div > section > div > div > table > tbody > tr");
+            var allHoldingrows = jQ("div.holdings > section > div > div > table > tbody > tr");
             allHoldingrows.show();
             if (selectedCat === "All") {
                 //don't do anything
             } else {
-                //logic to hide the rows not in our list
+                //logic to hide the rows in Holdings table not in our list
                 allHoldingrows.each(function(rowIndex) {
                     var dataUidInTR = this.getAttribute("data-uid");
                     if (dataUidInTR.includes("-BE")) {
@@ -84,7 +84,7 @@ function main() {
             //END work on Holdings AREA
 
             //START work on watchlist AREA
-            var allWatchlistRows = jQ("#app > div.container.wrapper > div.container-left > div > div.instruments > div > div.vddl-draggable.instrument");
+            var allWatchlistRows = jQ("div.instruments > div > div.vddl-draggable.instrument");
             allWatchlistRows.show();
             if (selectedCat === "All") {
                 //don't do anything
@@ -108,9 +108,9 @@ function main() {
             //END work on watchlist AREA
 
             //START work on order AREA
+            var allPendingOrderRows = jQ("div.pending-orders > div > table > tbody > tr");
 
-            var allPendingOrderRows = jQ("#app > div.container.wrapper > div.container-right > div.page-content.orders > div > section.pending-orders-wrap.table-wrapper > div > div > table > tbody > tr");
-            var allExecutedOrderRows = jQ("#app > div.container.wrapper > div.container-right > div.page-content.orders > div > section.completed-orders-wrap.table-wrapper > div > div > table > tbody > tr");
+            var allExecutedOrderRows = jQ("div.completed-orders > div > table > tbody > tr");
             allPendingOrderRows.show();
             allExecutedOrderRows.show();
 
@@ -122,7 +122,7 @@ function main() {
                 allPendingOrderRows.each(function(rowIndex){
                     var workingRow = this;
                     var stockInRow = jQ(workingRow).find("span.tradingsymbol > span").html();
-                    if (DEBUG) console.log("found : " + stockInRow);
+                    if (DEBUG) console.log("found pending order: " + stockInRow);
                     if (stockInRow.includes("-BE")) {
                         stockInRow = stockInRow.split("-BE")[0];
                     }
@@ -139,7 +139,7 @@ function main() {
                 allExecutedOrderRows.each(function(rowIndex){
                     var workingRow = this;
                     var stockInRow = jQ(workingRow).find("span.tradingsymbol > span").html();
-                    if (DEBUG) console.log("found : " + stockInRow);
+                    //if (DEBUG) console.log("found executed order: " + stockInRow);
                     if (stockInRow.includes("-BE")) {
                         stockInRow = stockInRow.split("-BE")[0];
                     }
@@ -155,9 +155,10 @@ function main() {
 
             }
             //END work on order AREA
+
+            return this;
         });
 
-        //var cats = Object.keys(myObject);
         for(var key in holdings){
             option = document.createElement("option");
             option.text = key;
@@ -192,12 +193,16 @@ function main() {
                     }
 
                     if (holdings[categoryName].includes(displayedStockName)) {
-                        jQ(this).append("<span class='text-label blue randomClassToHelpHide' style='vertical-align:sub'>"+categoryName+"</span>");
-                        break;
+                        jQ(this).append("<span class='randomClassToHelpHide'>&nbsp;</span><span class='text-label blue randomClassToHelpHide' style='vertical-align:sub'>"+categoryName+"</span>");
                     }
                 };
 
             });
+
+            //jQ("#tagSelector").val("All").change();
+            var sortBySelect = document.querySelector("#tagSelector");
+            sortBySelect.value = "All";
+            sortBySelect.dispatchEvent(new Event("change"));
         }
     });
 }
