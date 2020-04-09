@@ -18,7 +18,7 @@ TODO
 For now installation of script is intentionally kept manual.
 * Install [Tempermonkey](https://www.tampermonkey.net/) for your browser. [Chrome extension link](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
 * ![Create a new script](https://dl.dropbox.com/s/k13sxt4wl6kfb4w/createNewScript.gif?dl=0)
-* Copy and paste content of the script file from ...
+* Copy and paste content of the script from [this file](https://raw.githubusercontent.com/amit0rana/betterKite/master/mySmallCasesOnKite.js)
 * Create your categories, replace it in the script and save it.
 * Format of the list
 ```
@@ -29,3 +29,7 @@ var holdings = {
 };
 ```
 * Search for <<< REPLACE >>> and replace it with your list.
+![Saving Script](https://dl.dropbox.com/s/zpaoybu6nllta0l/pasteAndSaveScript.gif?dl=0)
+* After saving, go to your kite screen and refresh. After refreshing you should see a red (1) badge next to Tempermonkey icon as shown in the image.
+* Go to holdings section and click on 'Holdings(xx)' text.
+![Using Script](https://dl.dropbox.com/s/hscxgz67a5s4ptk/usageScript.gif?dl=0)
