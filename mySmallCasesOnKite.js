@@ -43,6 +43,7 @@ function main() {
         selectBox.add(option);
         selectBox.addEventListener("change", function() {
             var selectedCat = this.value;
+            console.log("Tag selected: " + selectedCat);
             var selectedStocks = holdings[selectedCat];
 
             //START work on Holdings AREA
@@ -97,6 +98,51 @@ function main() {
                 });
             }
             //END work on watchlist AREA
+
+            //START work on order AREA
+            var allPendingOrderRows = jQ("#app > div.container.wrapper > div.container-right > div.page-content.orders > div > section.pending-orders-wrap.table-wrapper > div > div > table > tbody > tr");
+            var allExecutedOrderRows = jQ("#app > div.container.wrapper > div.container-right > div.page-content.orders > div > section.completed-orders-wrap.table-wrapper > div > div > table > tbody > tr");
+            allPendingOrderRows.show();
+            allExecutedOrderRows.show();
+            if (selectedCat === "All") {
+                //don't do anything
+            } else {
+                allPendingOrderRows.each(function(rowIndex){
+                    var workingRow = this;
+                    var stockInRow = jQ(workingRow).find("span.tradingsymbol > span").html();
+                    console.log("found : " + stockInRow);
+                    if (stockInRow.includes("-BE")) {
+                        stockInRow = stockInRow.split("-BE")[0];
+                    }
+                    var matchFound = false;
+                    matchFound = selectedStocks.includes(stockInRow);
+
+                    if (matchFound) {
+                        //do nothing
+                    } else {
+                        jQ(workingRow).hide();
+                    }
+                });
+
+                allExecutedOrderRows.each(function(rowIndex){
+                    var workingRow = this;
+                    var stockInRow = jQ(workingRow).find("span.tradingsymbol > span").html();
+                    console.log("found : " + stockInRow);
+                    if (stockInRow.includes("-BE")) {
+                        stockInRow = stockInRow.split("-BE")[0];
+                    }
+                    var matchFound = false;
+                    matchFound = selectedStocks.includes(stockInRow);
+
+                    if (matchFound) {
+                        //do nothing
+                    } else {
+                        jQ(workingRow).hide();
+                    }
+                });
+
+            }
+            //END work on order AREA
         });
 
         //var cats = Object.keys(myObject);
@@ -107,48 +153,32 @@ function main() {
         };
 
         return selectBox;
-       }();
-    var myScriptLoaded = false;
+    }();
 
-
-    //jQ(document).ready(function(){
     jQ(document).on('click', "h3.page-title.small > span", function () {
         // jQuery methods go here...
-        //jQ(".nice-name").hide();
-        if (!myScriptLoaded) {
-            jQ("span.holdings-selector-wrap").after(dropdown);
+        if (jQ(".randomClassToHelpHide").length) {
+            jQ(".randomClassToHelpHide").remove();
+        } else {
+            jQ("h3.page-title.small")[0].before(dropdown);
 
-            //jQ("#app > div.container.wrapper > div.container-right > div > div > section > div > div > table > tbody > tr").each(function(rowIndex) {
-            //label indicating category of stock
+            //add label indicating category of stock
             jQ("td.instrument.right-border > span").each(function(rowIndex){
 
-                    var rowValue = this.innerHTML;
+                var displayedStockName = this.innerHTML;
 
-                    var cat = function() {
-                        for(var key in holdings){
-                            if (rowValue.includes("-BE")) {
-                                rowValue = rowValue.split("-BE")[0];
-                            }
-                            if (holdings[key].includes(rowValue)) {
-                                return key;
-                            }
-                        };
-                        return "";
-                    }();
-                    jQ(this).append("\r\n<b class='randomClassToHelpHide' style='vertical-align:sub;font-size:x-small;color:red'> ("+cat+") </b>");
-                });
+                for(var categoryName in holdings){
+                    if (displayedStockName.includes("-BE")) {
+                        displayedStockName = displayedStockName.split("-BE")[0];
+                    }
 
-            //});
-
-
-            jQ(".randomClassToHelpHide").dblclick(function(){
-                // jQuery methods go here...
-                //jQ(".nice-name").hide();
-                jQ(".randomClassToHelpHide").remove();
-                myScriptLoaded = false;
+                    if (holdings[categoryName].includes(displayedStockName)) {
+                        jQ(this).append("<b class='randomClassToHelpHide' style='vertical-align:sub;font-size:x-small;color:red'> ("+categoryName+") </b>");
+                        break;
+                    }
+                };
 
             });
-            myScriptLoaded = true;
         }
     });
 }
