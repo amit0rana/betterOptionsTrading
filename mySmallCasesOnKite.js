@@ -173,7 +173,7 @@ function main() {
                     }
 
                     if (holdings[categoryName].includes(displayedStockName)) {
-                        jQ(this).append("<b class='randomClassToHelpHide' style='vertical-align:sub;font-size:x-small;color:red'> ("+categoryName+") </b>");
+                        jQ(this).append("<span class='text-label blue randomClassToHelpHide' style='vertical-align:sub'>"+categoryName+"</span>");
                         break;
                     }
                 };
