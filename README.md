@@ -32,4 +32,4 @@ var holdings = {
 ![Saving Script](https://dl.dropbox.com/s/zpaoybu6nllta0l/pasteAndSaveScript.gif?dl=0)
 * After saving, go to your kite screen and refresh. After refreshing you should see a red (1) badge next to Tempermonkey icon as shown in the image.
 * Go to holdings section and click on 'Holdings(xx)' text.
-![Using Script](https://dl.dropbox.com/s/hscxgz67a5s4ptk/usageScript.gif?dl=0)
+![Using Script](https://dl.dropbox.com/s/blxec4q9nop1jmo/usageScript.gif?dl=0)
