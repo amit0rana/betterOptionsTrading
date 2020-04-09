@@ -36,8 +36,14 @@ function main() {
 
     //crete the dropdown to filter stocks.
     var dropdown = function(){
+        var holdingsSelectorWrap = document.createElement("span");
+        holdingsSelectorWrap.classList.add("holdings-selector-wrap");
+        holdingsSelectorWrap.classList.add("randomClassToHelpHide");
+
         var selectBox = document.createElement("SELECT");
-        selectBox.classList.add("randomClassToHelpHide");
+        selectBox.classList.add("holdings-selector");
+
+
         var option = document.createElement("option");
         option.text = "All";
         selectBox.add(option);
@@ -152,7 +158,14 @@ function main() {
             selectBox.add(option);
         };
 
-        return selectBox;
+        holdingsSelectorWrap.append(selectBox);
+
+        var iChav = document.createElement("i");
+        iChav.classList.add("icon");
+        iChav.classList.add("icon-chevron-down");
+        holdingsSelectorWrap.append(iChav);
+
+        return holdingsSelectorWrap;
     }();
 
     jQ(document).on('click', "h3.page-title.small > span", function () {
