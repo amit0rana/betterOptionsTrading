@@ -18,8 +18,13 @@ function addJQuery(callback) {
     document.body.appendChild(script);
   }, false);
   document.body.appendChild(script);
-}
 
+    var style = document.createElement("style");
+    style.textContent = `
+.randomClassToHelpHide {outline: 1px dotted green;}
+`;
+    //only for debuggin- document.body.appendChild(style);
+}
 
 // the guts of this userscript
 function main() {
@@ -48,9 +53,11 @@ function main() {
 
         var option = document.createElement("option");
         option.text = "All";
+        option.value= "All";
         selectBox.add(option);
         selectBox.addEventListener("change", function() {
             var selectedCat = this.value;
+
             if (DEBUG) console.log("Tag selected: " + selectedCat);
             var selectedStocks = holdings[selectedCat];
 
@@ -58,9 +65,13 @@ function main() {
             var allHoldingrows = jQ("div.holdings > section > div > div > table > tbody > tr");
             allHoldingrows.show();
             if (selectedCat === "All") {
+                jQ("#stocksInTagCount").text("");
                 //don't do anything
             } else {
                 //logic to hide the rows in Holdings table not in our list
+                var countStocks = 0;
+                allHoldingrows.addClass("allHiddenRows");
+
                 allHoldingrows.each(function(rowIndex) {
                     var dataUidInTR = this.getAttribute("data-uid");
                     if (dataUidInTR.includes("-BE")) {
@@ -76,10 +87,12 @@ function main() {
 
                     if (matchFound) {
                         //dont do anything, let the row be shown.
+                        countStocks++;
                     } else {
                         jQ(this).hide();
                     }
                 });
+                jQ("#stocksInTagCount").text("("+countStocks+") ");
             }
             //END work on Holdings AREA
 
@@ -89,6 +102,8 @@ function main() {
             if (selectedCat === "All") {
                 //don't do anything
             } else {
+                allWatchlistRows.addClass("allHiddenRows");
+
                 allWatchlistRows.each(function(rowIndex){
                     var outsideSpan = this;
                     var watchlistStock = jQ(outsideSpan).find("span.nice-name").html();
@@ -119,6 +134,8 @@ function main() {
             if (selectedCat === "All") {
                 //don't do anything
             } else {
+                var countStocks = 0;
+                allPendingOrderRows.addClass("allHiddenRows");
                 allPendingOrderRows.each(function(rowIndex){
                     var workingRow = this;
                     var stockInRow = jQ(workingRow).find("span.tradingsymbol > span").html();
@@ -131,11 +148,14 @@ function main() {
 
                     if (matchFound) {
                         //do nothing
+                        countStocks++;
                     } else {
                         jQ(workingRow).hide();
                     }
                 });
+                jQ("#stocksInTagCount").text("("+countStocks+") ");
 
+                allExecutedOrderRows.addClass("allHiddenRows");
                 allExecutedOrderRows.each(function(rowIndex){
                     var workingRow = this;
                     var stockInRow = jQ(workingRow).find("span.tradingsymbol > span").html();
@@ -162,6 +182,7 @@ function main() {
         for(var key in holdings){
             option = document.createElement("option");
             option.text = key;
+            option.value = key;
             selectBox.add(option);
         };
 
@@ -179,8 +200,15 @@ function main() {
         // jQuery methods go here...
         if (jQ(".randomClassToHelpHide").length) {
             jQ(".randomClassToHelpHide").remove();
+            jQ(".allHiddenRows").show();
         } else {
             jQ("h3.page-title.small")[0].before(dropdown);
+
+            var spanForCount = document.createElement("span");
+            spanForCount.classList.add("randomClassToHelpHide");
+            spanForCount.style.fontSize = "large";
+            spanForCount.id ='stocksInTagCount';
+            jQ("h3.page-title.small")[0].before(spanForCount);
 
             //add label indicating category of stock
             jQ("td.instrument.right-border > span").each(function(rowIndex){
@@ -193,7 +221,7 @@ function main() {
                     }
 
                     if (holdings[categoryName].includes(displayedStockName)) {
-                        jQ(this).append("<span class='randomClassToHelpHide'>&nbsp;</span><span class='text-label blue randomClassToHelpHide' style='vertical-align:sub'>"+categoryName+"</span>");
+                        jQ(this).append("<span class='randomClassToHelpHide'>&nbsp;</span><span class='text-label blue randomClassToHelpHide'>"+categoryName+"</span>");
                     }
                 };
 
@@ -205,6 +233,8 @@ function main() {
             sortBySelect.dispatchEvent(new Event("change"));
         }
     });
+
+
 }
 
 // load jQuery and execute the main function
