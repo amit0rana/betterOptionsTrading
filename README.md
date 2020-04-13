@@ -11,8 +11,7 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 TODO
 * Save tags/categories
 * Instructions for [Violentmonkey](https://openuserjs.org/about/Violentmonkey-for-Chrome)
-* Order screen bug.
-* Bug with showing count
+* Bug. selection doesn't reflect when we go to holdings/order screen for for the first time if the tags were already selected once before.
 
 # Installation
 

@@ -44,14 +44,9 @@ function main() {
 
     //crete the dropdown to filter stocks.
     var dropdown = function(){
-        //var holdingsSelectorWrap = document.createElement("span");
-        //holdingsSelectorWrap.classList.add("holdings-selector-wrap");
-        //holdingsSelectorWrap.classList.add("randomClassToHelpHide");
-
         var selectBox = document.createElement("SELECT");
         selectBox.id = "tagSelector";
         selectBox.classList.add("randomClassToHelpHide");
-        //selectBox.classList.add("holdings-selector");
 
         var option = document.createElement("option");
         option.text = "All";
@@ -94,7 +89,11 @@ function main() {
                         jQ(this).hide();
                     }
                 });
-                jQ("#stocksInTagCount").text("("+countHoldingsStocks+") ");
+
+                var currentUrl = window.location.pathname;
+                if (currentUrl.includes('holdings')) {
+                    jQ("#stocksInTagCount").text("("+countHoldingsStocks+") ");
+                }
             }
 
             //check if tags are present
@@ -180,7 +179,10 @@ function main() {
                         jQ(workingRow).hide();
                     }
                 });
-                jQ("#stocksInTagCount").text("("+countPendingOrdersStocks+") ");
+                currentUrl = window.location.pathname;
+                if (currentUrl.includes('orders')) {
+                    jQ("#stocksInTagCount").text("("+countPendingOrdersStocks+") ");
+                }
 
                 allExecutedOrderRows.addClass("allHiddenRows");
                 allExecutedOrderRows.each(function(rowIndex){
@@ -212,14 +214,6 @@ function main() {
             option.value = key;
             selectBox.add(option);
         };
-
-        //holdingsSelectorWrap.append(selectBox);
-
-        //var iChav = document.createElement("i");
-        //iChav.classList.add("icon");
-        //iChav.classList.add("icon-chevron-down");
-        //holdingsSelectorWrap.append(iChav);
-
         return selectBox;
     }();
 
@@ -236,12 +230,7 @@ function main() {
             spanForCount.classList.add("randomClassToHelpHide");
             spanForCount.style.fontSize = "large";
             spanForCount.id ='stocksInTagCount';
-            //jQ("h3.page-title.small")[0].before(spanForCount);
             jQ(dropdown).after(spanForCount);
-
-            //var sortBySelect = document.querySelector("#tagSelector");
-            //sortBySelect.value = "All";
-            //sortBySelect.dispatchEvent(new Event("change"));
 
             simulateSelectBoxEvent();
         }
