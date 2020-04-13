@@ -2,19 +2,21 @@
 
 Very simple "userscript" which adds following features to kite.zerodha.com ui
 
-* Group your holdings in 'categories'
-* Only view stocks in a particular category
+* Group your holdings in 'categories' or 'tags'
 * See a small tag next to your stock name indicating which category does the stock belong to.
-* When a specific category is selected, only stocks in that category is shown in watchlist or orders or holdings screen
+* When a specific category is selected, only stocks in that category is shown in 'watchlist' or 'orders' or 'holdings' screen
 * One stock can have multiple tags.
+* When you click on a stock in watchlist, if same stock is present in 'holdings', screen will be scrolled bringing the stock in the middle and it will be highlighted for few seconds.
 
 TODO
 * Save tags/categories
 * Instructions for [Violentmonkey](https://openuserjs.org/about/Violentmonkey-for-Chrome)
 * Order screen bug.
-* Change count in the list
+* Bug with showing count
 
 # Installation
+
+(Note: Screenshots below are old)
 
 For now installation of script is intentionally kept manual.
 * Install [Tempermonkey](https://www.tampermonkey.net/) for your browser. [Chrome extension link](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
