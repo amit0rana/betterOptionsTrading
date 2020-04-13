@@ -9,9 +9,9 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 * When you click on a stock in watchlist, if same stock is present in 'holdings', screen will be scrolled bringing the stock in the middle and it will be highlighted for few seconds.
 
 TODO
-* Save tags/categories
+* Save tags/categories instead of using array
 * Instructions for [Violentmonkey](https://openuserjs.org/about/Violentmonkey-for-Chrome)
-* Bug. selection doesn't reflect when we go to holdings/order screen for for the first time if the tags were already selected once before.
+* Bug. selection doesn't reflect on order screen in one situation.
 
 # Installation
 
