@@ -28,6 +28,7 @@ function addJQuery(callback) {
 
 // the guts of this userscript
 function main() {
+
   // Note, jQ replaces $ to avoid conflicts.
 
     /* replace the below text with your array eg
@@ -69,7 +70,7 @@ function main() {
                 //don't do anything
             } else {
                 //logic to hide the rows in Holdings table not in our list
-                var countStocks = 0;
+                var countHoldingsStocks = 0;
                 allHoldingrows.addClass("allHiddenRows");
 
                 allHoldingrows.each(function(rowIndex) {
@@ -87,12 +88,12 @@ function main() {
 
                     if (matchFound) {
                         //dont do anything, let the row be shown.
-                        countStocks++;
+                        countHoldingsStocks++;
                     } else {
                         jQ(this).hide();
                     }
                 });
-                jQ("#stocksInTagCount").text("("+countStocks+") ");
+                jQ("#stocksInTagCount").text("("+countHoldingsStocks+") ");
             }
             //END work on Holdings AREA
 
@@ -105,8 +106,8 @@ function main() {
                 allWatchlistRows.addClass("allHiddenRows");
 
                 allWatchlistRows.each(function(rowIndex){
-                    var outsideSpan = this;
-                    var watchlistStock = jQ(outsideSpan).find("span.nice-name").html();
+                    var watchlistRowDiv = this;
+                    var watchlistStock = jQ(watchlistRowDiv).find("span.nice-name").html();
                     if (watchlistStock.includes("-BE")) {
                         watchlistStock = watchlistStock.split("-BE")[0];
                     }
@@ -116,7 +117,7 @@ function main() {
                     if (matchFound) {
                         if (DEBUG) console.log('match W: '+watchlistStock);
                     } else {
-                        jQ(outsideSpan).hide();
+                        jQ(watchlistRowDiv).hide();
                     }
                 });
             }
@@ -134,7 +135,7 @@ function main() {
             if (selectedCat === "All") {
                 //don't do anything
             } else {
-                var countStocks = 0;
+                var countPendingOrdersStocks = 0;
                 allPendingOrderRows.addClass("allHiddenRows");
                 allPendingOrderRows.each(function(rowIndex){
                     var workingRow = this;
@@ -148,12 +149,12 @@ function main() {
 
                     if (matchFound) {
                         //do nothing
-                        countStocks++;
+                        countPendingOrdersStocks++;
                     } else {
                         jQ(workingRow).hide();
                     }
                 });
-                jQ("#stocksInTagCount").text("("+countStocks+") ");
+                jQ("#stocksInTagCount").text("("+countPendingOrdersStocks+") ");
 
                 allExecutedOrderRows.addClass("allHiddenRows");
                 allExecutedOrderRows.each(function(rowIndex){
@@ -234,6 +235,34 @@ function main() {
         }
     });
 
+    jQ(document).on('click', "div.instruments > div > div.vddl-draggable.instrument", function () {
+        var watchlistStock = jQ(this).find("span.nice-name").html();
+        if (DEBUG) console.log("clicked on : " + watchlistStock);
+
+        var holdingTRs = jQ("div.holdings > section > div > div > table > tbody > tr");
+
+        jQ.expr[':'].regex = function(elem, index, match) {
+            var matchParams = match[3].split(','),
+                validLabels = /^(data|css):/,
+                attr = {
+                    method: matchParams[0].match(validLabels) ?
+                    matchParams[0].split(':')[0] : 'attr',
+                    property: matchParams.shift().replace(validLabels,'')
+                },
+                regexFlags = 'ig',
+                regex = new RegExp(matchParams.join('').replace(/^\s+|\s+$/g,''), regexFlags);
+            return regex.test(jQ(elem)[attr.method](attr.property));
+        }
+
+        var holdingStockTR = jQ("tr:regex(data-uid, "+watchlistStock+".*)");
+        //var holdingStockTR = jQ(holdingTRs).find("[data-uid='"+ watchlistStock +"NSE0']");
+        if (DEBUG) console.log("found holding row : " + holdingStockTR);
+        var w = jQ(window);
+        w.scrollTop( holdingStockTR.offset().top - (w.height()/2) );
+
+        jQ(holdingStockTR).css("background-color", 'lightGray');
+        setTimeout(function(){ jQ(holdingStockTR).css("background-color", 'white'); }, 3000);
+    });
 
 }
 
