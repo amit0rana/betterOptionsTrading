@@ -4,9 +4,12 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 
 * Group your holdings in 'categories' or 'tags'
 * See a small tag next to your stock name indicating which category does the stock belong to.
+![tags](https://dl.dropbox.com/s/ygk9id8c21b3mi8/HoldingsWithTags.png?dl=0)
 * When a specific category is selected, only stocks in that category is shown in 'watchlist' or 'orders' or 'holdings' screen
+![header](https://dl.dropbox.com/s/zvefkb2pis0ygq4/headerWithTagSelector.png?dl=0)
 * One stock can have multiple tags.
 * When you click on a stock in watchlist, if same stock is present in 'holdings', screen will be scrolled bringing the stock in the middle and it will be highlighted for few seconds.
+
 
 # How to use
 * Once installation is done, go to 'holdings' page and click on 'Holdings (..)' text.
@@ -41,3 +44,5 @@ var holdings = {
 * After saving, go to your kite screen and refresh. After refreshing you should see a red (1) badge next to Tempermonkey icon as shown in the image.
 * Go to holdings section and click on 'Holdings(xx)' text.
 ![Using Script](https://dl.dropbox.com/s/blxec4q9nop1jmo/usageScript.gif?dl=0)
+locatin of dropdown has changed. refer to image below:
+![header](https://dl.dropbox.com/s/zvefkb2pis0ygq4/headerWithTagSelector.png?dl=0)
