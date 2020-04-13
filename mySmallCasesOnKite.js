@@ -2,7 +2,7 @@
 // @name         mySmallCasesOnKite
 // @namespace    http://mySmallCasesOnKite.net/
 // @version      0.1
-// @description  try to take over the world!
+// @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
 // @grant        none
@@ -36,7 +36,7 @@ function main() {
 
   // Note, jQ replaces $ to avoid conflicts.
 
-    /* replace the below text with your array eg
+    /* replace <<< REPLACE >>> below with your array (example below)
     var holdings = {
       "Dividend" : ["SJVN","VEDL"],
       "Wealth Creators" : ["WHIRLPOOL","ICICIBANK",],
@@ -102,7 +102,6 @@ function main() {
                 allHoldingrows.show();
                 if (selectedCat === "All") {
                     jQ("#stocksInTagCount").text("");
-                    //don't do anything
                 } else {
                     //logic to hide the rows in Holdings table not in our list
                     var countHoldingsStocks = 0;
