@@ -8,6 +8,11 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 * One stock can have multiple tags.
 * When you click on a stock in watchlist, if same stock is present in 'holdings', screen will be scrolled bringing the stock in the middle and it will be highlighted for few seconds.
 
+# How to use
+* Once installation is done, go to 'holdings' page and click on 'Holdings (..)' text.
+* Once you click you will see a dropdown (select box) next to kite logo on the header row. Between the logo and 'Dashboard' link.
+* you can now filter 'orders' screen and 'holdings' screen based on your selection. Watchlist will also be filtered. Also when you click on watchlist row, if same stock is present in your holdings list, it will be highlighted and brought to focus.
+
 TODO
 * Save tags/categories instead of using array
 * Instructions for [Violentmonkey](https://openuserjs.org/about/Violentmonkey-for-Chrome)
@@ -19,6 +24,7 @@ TODO
 
 For now installation of script is intentionally kept manual.
 * Install [Tempermonkey](https://www.tampermonkey.net/) for your browser. [Chrome extension link](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
+* Follow steps as show in the image to create a new script.
 * ![Create a new script](https://dl.dropbox.com/s/k13sxt4wl6kfb4w/createNewScript.gif?dl=0)
 * Copy and paste content of the script from [this file](https://raw.githubusercontent.com/amit0rana/betterKite/master/mySmallCasesOnKite.js)
 * Create your categories, replace it in the script and save it.
