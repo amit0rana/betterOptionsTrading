@@ -44,13 +44,14 @@ function main() {
 
     //crete the dropdown to filter stocks.
     var dropdown = function(){
-        var holdingsSelectorWrap = document.createElement("span");
-        holdingsSelectorWrap.classList.add("holdings-selector-wrap");
-        holdingsSelectorWrap.classList.add("randomClassToHelpHide");
+        //var holdingsSelectorWrap = document.createElement("span");
+        //holdingsSelectorWrap.classList.add("holdings-selector-wrap");
+        //holdingsSelectorWrap.classList.add("randomClassToHelpHide");
 
         var selectBox = document.createElement("SELECT");
         selectBox.id = "tagSelector";
-        selectBox.classList.add("holdings-selector");
+        selectBox.classList.add("randomClassToHelpHide");
+        //selectBox.classList.add("holdings-selector");
 
         var option = document.createElement("option");
         option.text = "All";
@@ -95,6 +96,31 @@ function main() {
                 });
                 jQ("#stocksInTagCount").text("("+countHoldingsStocks+") ");
             }
+
+            //check if tags are present
+            var tagNameSpans = jQ("span[randomAtt='tagName']");
+            if (DEBUG) console.log('no of tags found: ' + tagNameSpans.length);
+            if (tagNameSpans.length < 1) {
+
+                if (DEBUG) console.log('tags not found');
+
+                //add label indicating category of stock
+                jQ("td.instrument.right-border > span").each(function(rowIndex){
+
+                    var displayedStockName = this.innerHTML;
+
+                    for(var categoryName in holdings){
+                        if (displayedStockName.includes("-BE")) {
+                            displayedStockName = displayedStockName.split("-BE")[0];
+                        }
+
+                        if (holdings[categoryName].includes(displayedStockName)) {
+                            jQ(this).append("<span randomAtt='tagName' class='randomClassToHelpHide'>&nbsp;</span><span class='text-label blue randomClassToHelpHide'>"+categoryName+"</span>");
+                        }
+                    };
+
+                });
+            } else {if (DEBUG) console.log('tags found');}
             //END work on Holdings AREA
 
             //START work on watchlist AREA
@@ -187,14 +213,14 @@ function main() {
             selectBox.add(option);
         };
 
-        holdingsSelectorWrap.append(selectBox);
+        //holdingsSelectorWrap.append(selectBox);
 
-        var iChav = document.createElement("i");
-        iChav.classList.add("icon");
-        iChav.classList.add("icon-chevron-down");
-        holdingsSelectorWrap.append(iChav);
+        //var iChav = document.createElement("i");
+        //iChav.classList.add("icon");
+        //iChav.classList.add("icon-chevron-down");
+        //holdingsSelectorWrap.append(iChav);
 
-        return holdingsSelectorWrap;
+        return selectBox;
     }();
 
     jQ(document).on('click', "h3.page-title.small > span", function () {
@@ -203,38 +229,45 @@ function main() {
             jQ(".randomClassToHelpHide").remove();
             jQ(".allHiddenRows").show();
         } else {
-            jQ("h3.page-title.small")[0].before(dropdown);
+            //jQ("h3.page-title.small")[0].before(dropdown);
+            jQ("a.logo")[0].after(dropdown);
 
             var spanForCount = document.createElement("span");
             spanForCount.classList.add("randomClassToHelpHide");
             spanForCount.style.fontSize = "large";
             spanForCount.id ='stocksInTagCount';
-            jQ("h3.page-title.small")[0].before(spanForCount);
+            //jQ("h3.page-title.small")[0].before(spanForCount);
+            jQ(dropdown).after(spanForCount);
 
-            //add label indicating category of stock
-            jQ("td.instrument.right-border > span").each(function(rowIndex){
+            //var sortBySelect = document.querySelector("#tagSelector");
+            //sortBySelect.value = "All";
+            //sortBySelect.dispatchEvent(new Event("change"));
 
-                var displayedStockName = this.innerHTML;
-
-                for(var categoryName in holdings){
-                    if (displayedStockName.includes("-BE")) {
-                        displayedStockName = displayedStockName.split("-BE")[0];
-                    }
-
-                    if (holdings[categoryName].includes(displayedStockName)) {
-                        jQ(this).append("<span class='randomClassToHelpHide'>&nbsp;</span><span class='text-label blue randomClassToHelpHide'>"+categoryName+"</span>");
-                    }
-                };
-
-            });
-
-            //jQ("#tagSelector").val("All").change();
-            var sortBySelect = document.querySelector("#tagSelector");
-            sortBySelect.value = "All";
-            sortBySelect.dispatchEvent(new Event("change"));
+            simulateSelectBoxEvent();
         }
     });
 
+    //dspatch tagSelector change event.
+    var simulateSelectBoxEvent = function() {
+        if (DEBUG) console.log('simulating tagSelector change ');
+        var sortBySelect = document.querySelector("#tagSelector");
+        if (sortBySelect) {
+            sortBySelect.dispatchEvent(new Event("change"));
+        }
+    };
+
+    //fire hide/show logic again if history/url changes.
+    var pushState = history.pushState;
+    history.pushState = function () {
+        pushState.apply(history, arguments);
+        if (DEBUG) console.log('history');
+        simulateSelectBoxEvent();
+    };
+
+    //on click of watchlist tab (1-5)
+    jQ(document).on('click', "ul.marketwatch-selector.list-flat > li",simulateSelectBoxEvent);
+
+    //logic to scroll relevant stock in holding and highlight it
     jQ(document).on('click', "div.instruments > div > div.vddl-draggable.instrument", function () {
         var watchlistStock = jQ(this).find("span.nice-name").html();
         if (DEBUG) console.log("clicked on : " + watchlistStock);
@@ -259,7 +292,6 @@ function main() {
         if (DEBUG) console.log("found holding row : " + holdingStockTR);
         var w = jQ(window);
         w.scrollTop( holdingStockTR.offset().top - (w.height()/2) );
-
         jQ(holdingStockTR).css("background-color", 'lightGray');
         setTimeout(function(){ jQ(holdingStockTR).css("background-color", 'white'); }, 3000);
     });
