@@ -102,6 +102,7 @@ function main() {
                 allHoldingrows.show();
                 if (selectedCat === "All") {
                     jQ("#stocksInTagCount").text("");
+                    //don't do anything
                 } else {
                     //logic to hide the rows in Holdings table not in our list
                     var countHoldingsStocks = 0;
@@ -289,8 +290,12 @@ function main() {
                     setTimeout(function(){ simulateSelectBoxEvent(); }, 1000);
                 }
             } else if (currentUrl.includes('orders')) {
-                debug('initiating change event for orders. So far cant find whether orders are there or not');
-                tagSelector.dispatchEvent(new Event("change"));
+                debug('this is just a work aroud. First order dom for order is accessible after few sec');
+                if (jQ(allDOMPaths.domPathPendingOrdersTR).length < 1 && jQ(allDOMPaths.domPathExecutedOrdersTR).length < 1) {
+                    setTimeout(function(){tagSelector.dispatchEvent(new Event("change")); }, 2000);
+                } else {
+                    tagSelector.dispatchEvent(new Event("change"));
+                }
             }
         }
     };
