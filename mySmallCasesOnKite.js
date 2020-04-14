@@ -336,7 +336,7 @@ function main() {
         var w = jQ(window);
         w.scrollTop( holdingStockTR.offset().top - (w.height()/2) );
         jQ(holdingStockTR).css("background-color", 'lightGray');
-        setTimeout(function(){ jQ(holdingStockTR).css("background-color", 'white'); }, 3000);
+        setTimeout(function(){ jQ(holdingStockTR).css("background-color", 'white'); }, 4000);
     });
 
 }
