@@ -5,10 +5,30 @@
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
-// @require     https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
-// @require     https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js
 // @grant        none
 // ==/UserScript==
+
+// a function that loads jQuery and calls a callback function when jQuery has finished loading
+function addJQuery(callback) {
+  var script = document.createElement("script");
+  script.setAttribute("src", "//ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js");
+  script.addEventListener('load', function() {
+    var script = document.createElement("script");
+    script.textContent = "window.jQ=jQuery.noConflict(true);(" + callback.toString() + ")();";
+    document.body.appendChild(script);
+  }, false);
+  document.body.appendChild(script);
+
+    var style = document.createElement("style");
+    style.textContent = `
+randomClassToHelpHide {outline: 1px dotted green;}
+tagSelectorStyle {
+margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;
+border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);
+}
+`;
+    //only for debuggin- document.body.appendChild(style);
+}
 
 // the guts of this userscript
 function main() {
@@ -20,7 +40,7 @@ function main() {
       "Sell On profit" : ["LUMAXIND","RADICO"]
     };
   */
-    <<< REPLACE >>>
+  <<< REPLACE >>>
 
     var D_LEVEL_INFO = 2;
     var D_LEVEL_DEBUG = 1;
@@ -74,11 +94,11 @@ function main() {
             if (currentUrl.includes('holdings')) {
 
                 //START work on Holdings AREA
-                var allHoldingrows = $(allDOMPaths.rowsFromHoldingsTable);
+                var allHoldingrows = jQ(allDOMPaths.rowsFromHoldingsTable);
                 info('found holdings row: ' + allHoldingrows.lenth);
                 allHoldingrows.show();
                 if (selectedCat === "All") {
-                    $("#stocksInTagCount").text("");
+                    jQ("#stocksInTagCount").text("");
                     //don't do anything
                 } else {
                     //logic to hide the rows in Holdings table not in our list
@@ -102,21 +122,21 @@ function main() {
                             //dont do anything, let the row be shown.
                             countHoldingsStocks++;
                         } else {
-                            $(this).hide();
+                            jQ(this).hide();
                         }
                     });
 
-                    $("#stocksInTagCount").text("("+countHoldingsStocks+") ");
+                    jQ("#stocksInTagCount").text("("+countHoldingsStocks+") ");
 
                 }
 
                 //check if tags are present
-                var tagNameSpans = $("span[random-att='tagName']");
+                var tagNameSpans = jQ("span[random-att='tagName']");
                 info('no of tags found: ' + tagNameSpans.length);
                 if (tagNameSpans.length < 1) {
 
                     //add label indicating category of stock
-                    $("td.instrument.right-border > span").each(function(rowIndex){
+                    jQ("td.instrument.right-border > span").each(function(rowIndex){
 
                         var displayedStockName = this.innerHTML;
 
@@ -126,7 +146,7 @@ function main() {
                             }
 
                             if (holdings[categoryName].includes(displayedStockName)) {
-                                $(this).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span class='text-label blue randomClassToHelpHide'>"+categoryName+"</span>");
+                                jQ(this).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span class='text-label blue randomClassToHelpHide'>"+categoryName+"</span>");
                             }
                         };
 
@@ -135,9 +155,9 @@ function main() {
                 //END work on Holdings AREA
             } else if (currentUrl.includes('orders')) {
                 //START work on order AREA
-                var allPendingOrderRows = $(allDOMPaths.domPathPendingOrdersTR);
+                var allPendingOrderRows = jQ(allDOMPaths.domPathPendingOrdersTR);
 
-                var allExecutedOrderRows = $(allDOMPaths.domPathExecutedOrdersTR);
+                var allExecutedOrderRows = jQ(allDOMPaths.domPathExecutedOrdersTR);
                 allPendingOrderRows.show();
                 allExecutedOrderRows.show();
 
@@ -150,7 +170,7 @@ function main() {
                     allPendingOrderRows.addClass("allHiddenRows");
                     allPendingOrderRows.each(function(rowIndex){
                         var workingRow = this;
-                        var stockInRow = $(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
+                        var stockInRow = jQ(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
                         debug("found pending order: " + stockInRow);
                         if (stockInRow.includes("-BE")) {
                             stockInRow = stockInRow.split("-BE")[0];
@@ -162,16 +182,16 @@ function main() {
                             //do nothing
                             countPendingOrdersStocks++;
                         } else {
-                            $(workingRow).hide();
+                            jQ(workingRow).hide();
                         }
                     });
 
-                    $("#stocksInTagCount").text("("+countPendingOrdersStocks+") ");
+                    jQ("#stocksInTagCount").text("("+countPendingOrdersStocks+") ");
 
                     allExecutedOrderRows.addClass("allHiddenRows");
                     allExecutedOrderRows.each(function(rowIndex){
                         var workingRow = this;
-                        var stockInRow = $(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
+                        var stockInRow = jQ(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
                         debug("found executed order: " + stockInRow);
                         if (stockInRow.includes("-BE")) {
                             stockInRow = stockInRow.split("-BE")[0];
@@ -182,7 +202,7 @@ function main() {
                         if (matchFound) {
                             //do nothing
                         } else {
-                            $(workingRow).hide();
+                            jQ(workingRow).hide();
                         }
                     });
 
@@ -191,7 +211,7 @@ function main() {
             }
 
             //START work on watchlist AREA
-            var allWatchlistRows = $(allDOMPaths.domPathWatchlistRow);
+            var allWatchlistRows = jQ(allDOMPaths.domPathWatchlistRow);
             allWatchlistRows.show();
             if (selectedCat === "All") {
                 //don't do anything
@@ -200,7 +220,7 @@ function main() {
 
                 allWatchlistRows.each(function(rowIndex){
                     var watchlistRowDiv = this;
-                    var watchlistStock = $(watchlistRowDiv).find(allDOMPaths.domPathStockNameInWatchlistRow).html();
+                    var watchlistStock = jQ(watchlistRowDiv).find(allDOMPaths.domPathStockNameInWatchlistRow).html();
                     if (watchlistStock.includes("-BE")) {
                         watchlistStock = watchlistStock.split("-BE")[0];
                     }
@@ -210,7 +230,7 @@ function main() {
                     if (matchFound) {
                         //do nothing
                     } else {
-                        $(watchlistRowDiv).hide();
+                        jQ(watchlistRowDiv).hide();
                     }
                 });
             }
@@ -228,14 +248,14 @@ function main() {
         return selectBox;
     }();
 
-    $(document).on('click', allDOMPaths.domPathMainInitiatorLabel, function () {
-        // $uery methods go here...
-        if ($(".randomClassToHelpHide").length) {
-            $(".randomClassToHelpHide").remove();
-            $(".allHiddenRows").show();
+    jQ(document).on('click', allDOMPaths.domPathMainInitiatorLabel, function () {
+        // jQuery methods go here...
+        if (jQ(".randomClassToHelpHide").length) {
+            jQ(".randomClassToHelpHide").remove();
+            jQ(".allHiddenRows").show();
         } else {
-            //$("h3.page-title.small")[0].before(dropdown);
-            $("a.logo")[0].after(dropdown);
+            //jQ("h3.page-title.small")[0].before(dropdown);
+            jQ("a.logo")[0].after(dropdown);
 
             var spanForCount = document.createElement("span");
             spanForCount.classList.add("randomClassToHelpHide");
@@ -243,7 +263,7 @@ function main() {
             spanForCount.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
 
             spanForCount.id ='stocksInTagCount';
-            $(dropdown).after(spanForCount);
+            jQ(dropdown).after(spanForCount);
 
             simulateSelectBoxEvent();
         }
@@ -258,7 +278,7 @@ function main() {
             var currentUrl = window.location.pathname;
             debug("simulateSelectBoxEvent: currentURL " + currentUrl);
             if (currentUrl.includes('holdings')) {
-                var allHoldingrows = $(allDOMPaths.rowsFromHoldingsTable);
+                var allHoldingrows = jQ(allDOMPaths.rowsFromHoldingsTable);
                 if (allHoldingrows.length > 0) {
                     debug('initiating change event found holdings');
                     tagSelector.dispatchEvent(new Event("change"));
@@ -268,7 +288,7 @@ function main() {
                 }
             } else if (currentUrl.includes('orders')) {
                 debug('this is just a work aroud. First order dom for order is accessible after few sec');
-                if ($(allDOMPaths.domPathPendingOrdersTR).length < 1 && $(allDOMPaths.domPathExecutedOrdersTR).length < 1) {
+                if (jQ(allDOMPaths.domPathPendingOrdersTR).length < 1 && jQ(allDOMPaths.domPathExecutedOrdersTR).length < 1) {
                     setTimeout(function(){tagSelector.dispatchEvent(new Event("change")); }, 2000);
                 } else {
                     tagSelector.dispatchEvent(new Event("change"));
@@ -285,16 +305,16 @@ function main() {
     };
 
     //on click of watchlist tab (1-5)
-    $(document).on('click', allDOMPaths.domPathTabToChangeWatchlist,simulateSelectBoxEvent);
+    jQ(document).on('click', allDOMPaths.domPathTabToChangeWatchlist,simulateSelectBoxEvent);
 
     //logic to scroll relevant stock in holding and highlight it
-    $(document).on('click', allDOMPaths.domPathWatchlistRow, function () {
-        var watchlistStock = $(this).find("span.nice-name").html();
+    jQ(document).on('click', allDOMPaths.domPathWatchlistRow, function () {
+        var watchlistStock = jQ(this).find("span.nice-name").html();
         debug("clicked on : " + watchlistStock);
 
-        var holdingTRs = $(allDOMPaths.rowsFromHoldingsTable);
+        var holdingTRs = jQ(allDOMPaths.rowsFromHoldingsTable);
 
-        $.expr[':'].regex = function(elem, index, match) {
+        jQ.expr[':'].regex = function(elem, index, match) {
             var matchParams = match[3].split(','),
                 validLabels = /^(data|css):/,
                 attr = {
@@ -303,19 +323,21 @@ function main() {
                     property: matchParams.shift().replace(validLabels,'')
                 },
                 regexFlags = 'ig',
-                regex = new RegExp(matchParams.join('').replace(/^\s+|\s+$/g,''), regexFlags);
-            return regex.test($(elem)[attr.method](attr.property));
+                regex = new RegExp(matchParams.join('').replace(/^\s+|\s+jQ/g,''), regexFlags);
+            return regex.test(jQ(elem)[attr.method](attr.property));
         }
 
-        var holdingStockTR = $("tr:regex("+allDOMPaths.attrNameForInstrumentTR+", "+watchlistStock+".*)");
-        //var holdingStockTR = $(holdingTRs).find("[data-uid='"+ watchlistStock +"NSE0']");
-        debug("found holding row for scrolling : " + holdingStockTR);
-        var w = $(window);
-        w.scrollTop( holdingStockTR.offset().top - (w.height()/2) );
-        $(holdingStockTR).css("background-color", 'lightGray');
-        setTimeout(function(){ $(holdingStockTR).css("background-color", 'white'); }, 4000);
+        var holdingStockTR = jQ("tr:regex("+allDOMPaths.attrNameForInstrumentTR+", ^"+watchlistStock+".*)");
+
+        if (holdingStockTR.length > 0) {
+            debug("found holding row for scrolling : " + holdingStockTR);
+            var w = jQ(window);
+            w.scrollTop( holdingStockTR.offset().top - (w.height()/2) );
+            jQ(holdingStockTR).css("background-color", 'lightGray');
+            setTimeout(function(){ jQ(holdingStockTR).css("background-color", 'white'); }, 4000);
+        }
     });
 
 }
 
-main();
+addJQuery(main);
