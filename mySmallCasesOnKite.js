@@ -327,6 +327,10 @@ function main() {
             return regex.test(jQ(elem)[attr.method](attr.property));
         }
 
+        //tigadam for stocks with & in name
+        if (watchlistStock.indexOf('&') >= 0) {
+            watchlistStock = watchlistStock.slice(0,watchlistStock.indexOf('&amp;'))+'&'+watchlistStock.slice(watchlistStock.indexOf('&amp;')+5,watchlistStock.length);
+        }
         var holdingStockTR = jQ("tr:regex("+allDOMPaths.attrNameForInstrumentTR+", ^"+watchlistStock+".*)");
 
         if (holdingStockTR.length > 0) {
