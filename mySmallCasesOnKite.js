@@ -37,15 +37,17 @@ function main() {
     var holdings = {
       "Dividend" : ["SJVN","VEDL"],
       "Wealth Creators" : ["WHIRLPOOL","ICICIBANK",],
-      "Sell On profit" : ["LUMAXIND","RADICO"]
+      "Sell On profit" : ["LUMAXIND","RADICO","M&amp;M"]
     };
+
+    //Note: if script name as & then write it as &amp;
   */
   <<< REPLACE >>>
 
     var D_LEVEL_INFO = 2;
     var D_LEVEL_DEBUG = 1;
 
-    var D_LEVEL = D_LEVEL_INFO;
+    var D_LEVEL = D_LEVEL_DEBUG;
 
     var allDOMPaths = {
         rowsFromHoldingsTable : "div.holdings > section > div > div > table > tbody > tr",
@@ -105,6 +107,7 @@ function main() {
                     var countHoldingsStocks = 0;
                     allHoldingrows.addClass("allHiddenRows");
 
+                    var pnl = 0;
                     allHoldingrows.each(function(rowIndex) {
                         var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
                         if (dataUidInTR.includes("-BE")) {
@@ -121,12 +124,14 @@ function main() {
                         if (matchFound) {
                             //dont do anything, let the row be shown.
                             countHoldingsStocks++;
+                            pnl += parseFloat(jQ(jQ(this).find("td")[5]).text().replace(",",""));
+                            console.log(pnl);
                         } else {
                             jQ(this).hide();
                         }
                     });
 
-                    jQ("#stocksInTagCount").text("("+countHoldingsStocks+") ");
+                    jQ("#stocksInTagCount").text("("+countHoldingsStocks+") " + pnl.toFixed(2).toLocaleString());
 
                 }
 
@@ -145,6 +150,7 @@ function main() {
                                 displayedStockName = displayedStockName.split("-BE")[0];
                             }
 
+                            debug("stock name trying to tag: " + displayedStockName);
                             if (holdings[categoryName].includes(displayedStockName)) {
                                 jQ(this).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span class='text-label blue randomClassToHelpHide'>"+categoryName+"</span>");
                             }
