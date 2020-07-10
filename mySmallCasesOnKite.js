@@ -42,7 +42,7 @@ function main() {
 
     //Note: if script name as & then write it as &amp;
   */
-  <<< REPLACE HOLDINGS>>>
+   <<< REPLACE HOLDINGS>>>
 
     /* replace <<< REPLACE POSITIONS>>> below with your array (example below)
      var positions = {
@@ -50,7 +50,7 @@ function main() {
       "Bata": ["12431106"]
      };
    */
-  <<< REPLACE POSITIONS>>>
+    <<< REPLACE POSITIONS>>>
 
     /* If you want to tag your reference trades separately, provide traide Ids in the array.
     Example below.
@@ -326,8 +326,12 @@ function main() {
                             countHoldingsStocks++;
                             pnl += parseFloat(jQ(jQ(this).find("td")[6]).text().replace(",",""));
 
-                            if (referenceTrades.includes(p)) {
-                                jQ(this).find("span.exchange.text-xxsmall.dim").append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span class='text-label blue randomClassToHelpHide'>RF</span>");
+                            var tagNameSpans = jQ(this).find("span[random-att='tagName']");
+
+                            if (tagNameSpans.length < 1) {
+                                if (referenceTrades.includes(p)) {
+                                    jQ(this).find("span.exchange.text-xxsmall.dim").append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span class='text-label blue randomClassToHelpHide'>RF</span>");
+                                }
                             }
 
                         } else {
