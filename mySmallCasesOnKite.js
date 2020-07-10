@@ -44,7 +44,7 @@ function main() {
   */
    <<< REPLACE HOLDINGS>>>
 
-   /* replace <<< REPLACE POSITIONS>>> below with your array (example below)
+    /* replace <<< REPLACE POSITIONS>>> below with your array (example below)
      var positions = {
       "BajajFinance" : ["12304386","12311298","12313858","12314370"],
       "Bata": ["12431106"]
@@ -355,7 +355,14 @@ function main() {
 
     jQ(document).on('click',allDOMPaths.PathForPositions, function() {
         var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
-        console.log(dataUidInTR.split(".")[1]);
+
+        var text = dataUidInTR.split(".")[1];
+        console.log(text);
+        navigator.clipboard.writeText(text).then(function() {
+            console.log('Async: Copying to clipboard was successful!');
+        }, function(err) {
+            console.error('Async: Could not copy text: ', err);
+        });
     });
 
     jQ(document).on('click', allDOMPaths.domPathMainInitiatorLabel, function () {
