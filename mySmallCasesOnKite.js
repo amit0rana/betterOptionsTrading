@@ -424,6 +424,31 @@ function main() {
         }
     });
 
+    jQ(document).on('change', "input.su-checkbox", function () {
+
+        var selectedRows = jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr.selected");
+
+        var pnl = 0;
+        selectedRows.each(function(rowIndex) {
+            pnl += parseFloat(jQ(jQ(this).find("td")[6]).text().replace(",",""));
+        });
+
+        var pnlTag = jQ("span[random-att='temppnl']");
+        if (pnlTag.length > 0) {
+            pnlTag.remove();
+        }
+        if (selectedRows.length>0) {
+            if (pnl > 0) {
+                jQ("div.positions > section.open-positions.table-wrapper > div > div > table > thead > tr > th.select > div > label").append(
+                    "<span random-att='temppnl' class='text-label green randomClassToHelpHide'>&nbsp;"+pnl+"</span>");
+            } else {
+                jQ("div.positions > section.open-positions.table-wrapper > div > div > table > thead > tr > th.select > div > label").append(
+                    "<span random-att='temppnl' class='text-label red randomClassToHelpHide'>&nbsp;"+pnl+"</span>");
+            }
+        }
+
+    });
+
     //dspatch tagSelector change event.
     var simulateSelectBoxEvent = function() {
         debug('simulating tagSelector change ');
