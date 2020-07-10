@@ -14,6 +14,8 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 ![strategies](https://dl.dropbox.com/s/414mh3oqvx4ppf2/strategies.png?dl=0)
 * Tag your reference trades for easier identification
 ![referenceTags](https://dl.dropbox.com/s/i18bklcdebtagia/referenceTags.png?dl=0)
+* Quickly add P&L of selected positions
+![addPositions](https://dl.dropbox.com/s/mvavj8njmt2xvtp/pnlAddition.png?dl=0)
 
 
 
