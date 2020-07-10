@@ -2,13 +2,16 @@
 
 Very simple "userscript" which adds following features to kite.zerodha.com ui
 
-* Group your F&O positions under 'strategies'. You will see strategy P&L on the right side of dropdown.
+** /positions page
+* Group your F&O positions under 'strategies'. Once you select a strategy only relevant positions will be shown.
 ![strategies](https://dl.dropbox.com/s/414mh3oqvx4ppf2/strategies.png?dl=0)
+* You can also see strategy's P&L on the right side of dropdown.
 * Tag your reference trades for easier identification
 ![referenceTags](https://dl.dropbox.com/s/i18bklcdebtagia/referenceTags.png?dl=0)
 * Quickly add P&L of selected positions
 ![addPositions](https://dl.dropbox.com/s/mvavj8njmt2xvtp/pnlAddition.png?dl=0)
 
+** /holdings page
 * Group your holdings in 'categories' or 'tags'
 * Small tag is shown next to your stock name indicating which category it belongs to.
 ![tags](https://dl.dropbox.com/s/ygk9id8c21b3mi8/HoldingsWithTags.png?dl=0)
