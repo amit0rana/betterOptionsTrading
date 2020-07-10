@@ -42,12 +42,12 @@ function main() {
 
     //Note: if script name as & then write it as &amp;
   */
-  <<< REPLACE >>>
+   <<< REPLACE >>>
 
     var D_LEVEL_INFO = 2;
     var D_LEVEL_DEBUG = 1;
 
-    var D_LEVEL = D_LEVEL_DEBUG;
+    var D_LEVEL = D_LEVEL_INFO;
 
     var allDOMPaths = {
         rowsFromHoldingsTable : "div.holdings > section > div > div > table > tbody > tr",
@@ -226,7 +226,8 @@ function main() {
 
                 allWatchlistRows.each(function(rowIndex){
                     var watchlistRowDiv = this;
-                    var watchlistStock = jQ(watchlistRowDiv).find(allDOMPaths.domPathStockNameInWatchlistRow).html();
+                    var stockName = jQ(watchlistRowDiv).find(allDOMPaths.domPathStockNameInWatchlistRow);
+                    var watchlistStock = stockName.html();
                     if (watchlistStock.includes("-BE")) {
                         watchlistStock = watchlistStock.split("-BE")[0];
                     }
@@ -315,7 +316,7 @@ function main() {
 
     //logic to scroll relevant stock in holding and highlight it
     jQ(document).on('click', allDOMPaths.domPathWatchlistRow, function () {
-        var watchlistStock = jQ(this).find("span.nice-name").html();
+        var watchlistStock = jQ(this).find(allDOMPaths.domPathStockNameInWatchlistRow).html();
         debug("clicked on : " + watchlistStock);
 
         var holdingTRs = jQ(allDOMPaths.rowsFromHoldingsTable);
