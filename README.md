@@ -2,6 +2,13 @@
 
 Very simple "userscript" which adds following features to kite.zerodha.com ui
 
+* Group your F&O positions under 'strategies'. You will see strategy P&L on the right side of dropdown.
+![strategies](https://dl.dropbox.com/s/414mh3oqvx4ppf2/strategies.png?dl=0)
+* Tag your reference trades for easier identification
+![referenceTags](https://dl.dropbox.com/s/i18bklcdebtagia/referenceTags.png?dl=0)
+* Quickly add P&L of selected positions
+![addPositions](https://dl.dropbox.com/s/mvavj8njmt2xvtp/pnlAddition.png?dl=0)
+
 * Group your holdings in 'categories' or 'tags'
 * Small tag is shown next to your stock name indicating which category it belongs to.
 ![tags](https://dl.dropbox.com/s/ygk9id8c21b3mi8/HoldingsWithTags.png?dl=0)
@@ -9,13 +16,6 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 ![header](https://dl.dropbox.com/s/zvefkb2pis0ygq4/headerWithTagSelector.png?dl=0)
 * One stock can be in multiple categories.
 * When you click on a stock in watchlist, if same stock is present in 'holdings', screen will be scrolled automatically bringing the stock in the middle and it will be highlighted for a few seconds.
-
-* Group your F&O positions under 'strategies'. You will see strategy P&L on the right side of dropdown.
-![strategies](https://dl.dropbox.com/s/414mh3oqvx4ppf2/strategies.png?dl=0)
-* Tag your reference trades for easier identification
-![referenceTags](https://dl.dropbox.com/s/i18bklcdebtagia/referenceTags.png?dl=0)
-* Quickly add P&L of selected positions
-![addPositions](https://dl.dropbox.com/s/mvavj8njmt2xvtp/pnlAddition.png?dl=0)
 
 
 
