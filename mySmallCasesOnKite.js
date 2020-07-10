@@ -33,7 +33,7 @@ border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: soli
 // the guts of this userscript
 function main() {
 
-  /* replace <<< REPLACE >>> below with your array (example below)
+  /* replace <<< REPLACE HOLDINGS>>> below with your array (example below)
     var holdings = {
       "Dividend" : ["SJVN","VEDL"],
       "Wealth Creators" : ["WHIRLPOOL","ICICIBANK",],
@@ -42,7 +42,15 @@ function main() {
 
     //Note: if script name as & then write it as &amp;
   */
-   <<< REPLACE >>>
+   <<< REPLACE HOLDINGS>>>
+
+   /* replace <<< REPLACE POSITIONS>>> below with your array (example below)
+     var positions = {
+      "BajajFinance" : ["12304386","12311298","12313858","12314370"],
+      "Bata": ["12431106"]
+     };
+   */
+    <<< REPLACE POSITIONS>>>
 
     var D_LEVEL_INFO = 2;
     var D_LEVEL_DEBUG = 1;
@@ -58,7 +66,8 @@ function main() {
         domPathTradingSymbolInsideOrdersTR : "span.tradingsymbol > span",
         domPathStockNameInWatchlistRow : "span.nice-name",
         domPathMainInitiatorLabel : "h3.page-title.small > span",
-        domPathTabToChangeWatchlist : "ul.marketwatch-selector.list-flat > li"
+        domPathTabToChangeWatchlist : "ul.marketwatch-selector.list-flat > li",
+        PathForPositions : "div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr"
     };
 
 
@@ -254,6 +263,100 @@ function main() {
         };
         return selectBox;
     }();
+
+    var positionGroupdropdown = function(){
+        var selectBox = document.createElement("SELECT");
+        selectBox.id = "tagSelector";
+        selectBox.classList.add("randomClassToHelpHide");
+        selectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;"
+
+        var option = document.createElement("option");
+        option.text = "All";
+        option.value= "All";
+        selectBox.add(option);
+        selectBox.addEventListener("change", function() {
+            var selectedGroup = this.value;
+
+            info("Group selected: " + selectedGroup);
+            var selectedPositions = positions[selectedGroup];
+
+            var currentUrl = window.location.pathname;
+            info(currentUrl);
+            if (currentUrl.includes('positions')) {
+
+                //START work on Positions AREA
+                var allPositionsRow = jQ(allDOMPaths.PathForPositions);
+                info('found positions row: ' + allPositionsRow.lenth);
+                allPositionsRow.show();
+                if (selectedGroup === "All") {
+                    jQ("#stocksInTagCount").text("");
+                    //don't do anything
+                } else {
+                    //logic to hide the rows in Holdings table not in our list
+                    var countHoldingsStocks = 0;
+                    allPositionsRow.addClass("allHiddenRows");
+
+                    var pnl = 0;
+                    allPositionsRow.each(function(rowIndex) {
+                        var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+
+                        var matchFound = false;
+
+                        matchFound = selectedPositions.includes(dataUidInTR.split(".")[1]);
+
+                        if (matchFound) {
+                            //dont do anything, let the row be shown.
+                            countHoldingsStocks++;
+                            pnl += parseFloat(jQ(jQ(this).find("td")[6]).text().replace(",",""));
+                            console.log(pnl);
+                        } else {
+                            jQ(this).hide();
+                        }
+                    });
+                    jQ("#stocksInTagCount").text(pnl.toFixed(2).toLocaleString());
+                }
+                //END work on Holdings AREA
+            }
+
+            return this;
+        });
+
+        for(var key in positions){
+            option = document.createElement("option");
+            option.text = key;
+            option.value = key;
+            selectBox.add(option);
+        };
+        return selectBox;
+    }();
+
+    jQ(document).on('click', "header.row.data-table-header", function () {
+        var currentUrl = window.location.pathname;
+        if (currentUrl.includes('positions')) {
+            if (jQ(".randomClassToHelpHide").length) {
+                jQ(".randomClassToHelpHide").remove();
+                jQ(".allHiddenRows").show();
+            } else {
+                //jQ("h3.page-title.small")[0].before(dropdown);
+                jQ("a.logo")[0].after(positionGroupdropdown);
+
+                var spanForCount = document.createElement("span");
+                spanForCount.classList.add("randomClassToHelpHide");
+                spanForCount.classList.add("tagSelectorStyle");
+                spanForCount.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
+
+                spanForCount.id ='stocksInTagCount';
+                jQ(positionGroupdropdown).after(spanForCount);
+
+                //simulateSelectBoxEvent();
+            }
+        }
+    });
+
+    jQ(document).on('click',allDOMPaths.PathForPositions, function() {
+        var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+        console.log(dataUidInTR.split(".")[1]);
+    });
 
     jQ(document).on('click', allDOMPaths.domPathMainInitiatorLabel, function () {
         // jQuery methods go here...

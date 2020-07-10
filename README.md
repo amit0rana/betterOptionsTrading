@@ -31,6 +31,8 @@ For now installation of script is intentionally kept manual.
 * ![Create a new script](https://dl.dropbox.com/s/k13sxt4wl6kfb4w/createNewScript.gif?dl=0)
 * Copy and paste content of the script from [this file](https://raw.githubusercontent.com/amit0rana/betterKite/master/mySmallCasesOnKite.js)
 * Create your categories, replace it in the script and save it.
+
+# Steps for Holdings
 * Format of the list
 ```
 var holdings = {
@@ -39,10 +41,21 @@ var holdings = {
   "Sell On profit" : ["LUMAXIND","RADICO"]
 };
 ```
-* Search for <<< REPLACE >>> and replace it with your list.
+* Search for <<< REPLACE HOLDINGS>>> and replace it with your list.
 ![Saving Script](https://dl.dropbox.com/s/geseihxqwzhmhe2/pasteAndSaveScript.gif?dl=0)
 * After saving, go to your kite screen and refresh. After refreshing you should see a red (1) badge next to Tempermonkey icon as shown in the image.
 * Go to holdings section and click on 'Holdings(xx)' text.
 ![Using Script](https://dl.dropbox.com/s/blxec4q9nop1jmo/usageScript.gif?dl=0)
-locatin of dropdown has changed. refer to image below:
+location of dropdown has changed. refer to image below:
 ![header](https://dl.dropbox.com/s/zvefkb2pis0ygq4/headerWithTagSelector.png?dl=0)
+
+# Steps for Positions
+* Format of the list
+```
+var positions = {
+ "BajajFinance" : ["12304386","12311298","12313858","12314370"],
+ "Bata": ["12431106"]
+};
+```
+* Search for <<< REPLACE POSITIONS>>> and replace it with your list.
+* Go to Positions section and click on 'Positions' text.
