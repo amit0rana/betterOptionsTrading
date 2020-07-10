@@ -10,10 +10,14 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 * One stock can have multiple tags.
 * When you click on a stock in watchlist, if same stock is present in 'holdings', screen will be scrolled bringing the stock in the middle and it will be highlighted for few seconds.
 
-* Group your option positions under 'strategies'
+* Group your option positions under 'strategies'. You will see strategy P&L on the right side of dropdown.
+![strategies](https://dl.dropbox.com/s/414mh3oqvx4ppf2/strategies.png?dl=0)
+* Tag reference trades
+![referenceTags](https://dl.dropbox.com/s/i18bklcdebtagia/referenceTags.png?dl=0)
 
 
-# How to use (belw instruction is for holdings page, similar thing works on positions as well)
+
+# How to use (below instruction is for holdings page, similar thing works on positions page as well)
 * Once installation is done, go to 'holdings' page and click on 'Holdings (..)' text.
 * Once you click you will see a dropdown (select box) next to kite logo on the header row. Between the logo and 'Dashboard' link.
 * you can now filter 'orders' screen and 'holdings' screen based on your selection. Watchlist will also be filtered. Also when you click on watchlist row, if same stock is present in your holdings list, it will be highlighted and brought to focus.
