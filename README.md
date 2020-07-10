@@ -13,7 +13,7 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 * Group your option positions under 'strategies'
 
 
-# How to use
+# How to use (belw instruction is for holdings page, similar thing works on positions as well)
 * Once installation is done, go to 'holdings' page and click on 'Holdings (..)' text.
 * Once you click you will see a dropdown (select box) next to kite logo on the header row. Between the logo and 'Dashboard' link.
 * you can now filter 'orders' screen and 'holdings' screen based on your selection. Watchlist will also be filtered. Also when you click on watchlist row, if same stock is present in your holdings list, it will be highlighted and brought to focus.
@@ -61,3 +61,9 @@ var positions = {
 ```
 * Search for <<< REPLACE POSITIONS>>> and replace it with your list.
 * Go to Positions section and click on 'Positions' text.
+* if you want to tag your reference trades separately then you can use below array.
+```
+var referenceTrades = [
+   "12304386","10397698", "10233602", "10237186"
+];
+```
