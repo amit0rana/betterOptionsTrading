@@ -3,16 +3,16 @@
 Very simple "userscript" which adds following features to kite.zerodha.com ui
 
 * Group your holdings in 'categories' or 'tags'
-* See a small tag next to your stock name indicating which category does the stock belong to.
+* Small tag is shown next to your stock name indicating which category it belongs to.
 ![tags](https://dl.dropbox.com/s/ygk9id8c21b3mi8/HoldingsWithTags.png?dl=0)
-* When a specific category is selected, only stocks in that category is shown in 'watchlist' or 'orders' or 'holdings' screen
+* Filter stocks based on category. Once filter is applied only stocks in that category will be shown in 'watchlist' or 'orders' or 'holdings' screen
 ![header](https://dl.dropbox.com/s/zvefkb2pis0ygq4/headerWithTagSelector.png?dl=0)
-* One stock can have multiple tags.
-* When you click on a stock in watchlist, if same stock is present in 'holdings', screen will be scrolled bringing the stock in the middle and it will be highlighted for few seconds.
+* One stock can be in multiple categories.
+* When you click on a stock in watchlist, if same stock is present in 'holdings', screen will be scrolled automatically bringing the stock in the middle and it will be highlighted for a few seconds.
 
-* Group your option positions under 'strategies'. You will see strategy P&L on the right side of dropdown.
+* Group your F&O positions under 'strategies'. You will see strategy P&L on the right side of dropdown.
 ![strategies](https://dl.dropbox.com/s/414mh3oqvx4ppf2/strategies.png?dl=0)
-* Tag reference trades
+* Tag your reference trades for easier identification
 ![referenceTags](https://dl.dropbox.com/s/i18bklcdebtagia/referenceTags.png?dl=0)
 
 
@@ -21,11 +21,6 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 * Once installation is done, go to 'holdings' page and click on 'Holdings (..)' text.
 * Once you click you will see a dropdown (select box) next to kite logo on the header row. Between the logo and 'Dashboard' link.
 * you can now filter 'orders' screen and 'holdings' screen based on your selection. Watchlist will also be filtered. Also when you click on watchlist row, if same stock is present in your holdings list, it will be highlighted and brought to focus.
-
-TODO
-* Save tags/categories instead of using array
-* Instructions for [Violentmonkey](https://openuserjs.org/about/Violentmonkey-for-Chrome)
-* Bug. selection doesn't reflect on order screen in one situation.
 
 # Installation
 
@@ -71,3 +66,8 @@ var referenceTrades = [
    "12304386","10397698", "10233602", "10237186"
 ];
 ```
+
+TODOs
+* Save tags/categories instead of using array
+* Instructions for [Violentmonkey](https://openuserjs.org/about/Violentmonkey-for-Chrome)
+* Bug. selection doesn't reflect on order screen in one situation.
