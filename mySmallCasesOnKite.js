@@ -67,7 +67,8 @@ function main() {
         domPathStockNameInWatchlistRow : "span.nice-name",
         domPathMainInitiatorLabel : "h3.page-title.small > span",
         domPathTabToChangeWatchlist : "ul.marketwatch-selector.list-flat > li",
-        PathForPositions : "div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr"
+        PathForPositions : "div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr",
+        positionHeader: "header.row.data-table-header"
     };
 
 
@@ -134,7 +135,6 @@ function main() {
                             //dont do anything, let the row be shown.
                             countHoldingsStocks++;
                             pnl += parseFloat(jQ(jQ(this).find("td")[5]).text().replace(",",""));
-                            console.log(pnl);
                         } else {
                             jQ(this).hide();
                         }
@@ -288,6 +288,9 @@ function main() {
                 var allPositionsRow = jQ(allDOMPaths.PathForPositions);
                 info('found positions row: ' + allPositionsRow.lenth);
                 allPositionsRow.show();
+
+                var allPositionOnKite = [];
+
                 if (selectedGroup === "All") {
                     jQ("#stocksInTagCount").text("");
                     //don't do anything
@@ -299,23 +302,40 @@ function main() {
                     var pnl = 0;
                     allPositionsRow.each(function(rowIndex) {
                         var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+                        var p = dataUidInTR.split(".")[1];
+                        allPositionOnKite.push(p);
 
                         var matchFound = false;
 
-                        matchFound = selectedPositions.includes(dataUidInTR.split(".")[1]);
+                        matchFound = selectedPositions.includes(p);
+
 
                         if (matchFound) {
                             //dont do anything, let the row be shown.
                             countHoldingsStocks++;
                             pnl += parseFloat(jQ(jQ(this).find("td")[6]).text().replace(",",""));
-                            console.log(pnl);
                         } else {
                             jQ(this).hide();
                         }
+
+
+
                     });
                     jQ("#stocksInTagCount").text(pnl.toFixed(2).toLocaleString());
                 }
-                //END work on Holdings AREA
+
+                //marking positions part of a group
+                debug('missing positions are: ');
+                var arrPositionsInOurArray = [];
+                for(var strategies in positions){
+                    arrPositionsInOurArray.push(...positions[strategies]);
+                };
+                var t = allPositionOnKite.filter(function(x) {
+                    return !arrPositionsWeHaveConsidered.includes(x);
+                })
+                debug(t);
+
+                //END work on Positions AREA
             }
 
             return this;
@@ -330,14 +350,13 @@ function main() {
         return selectBox;
     }();
 
-    jQ(document).on('click', "header.row.data-table-header", function () {
+    jQ(document).on('click', allDOMPaths.positionHeader, function () {
         var currentUrl = window.location.pathname;
         if (currentUrl.includes('positions')) {
             if (jQ(".randomClassToHelpHide").length) {
                 jQ(".randomClassToHelpHide").remove();
                 jQ(".allHiddenRows").show();
             } else {
-                //jQ("h3.page-title.small")[0].before(dropdown);
                 jQ("a.logo")[0].after(positionGroupdropdown);
 
                 var spanForCount = document.createElement("span");
@@ -348,7 +367,7 @@ function main() {
                 spanForCount.id ='stocksInTagCount';
                 jQ(positionGroupdropdown).after(spanForCount);
 
-                //simulateSelectBoxEvent();
+                simulateSelectBoxEvent();
             }
         }
     });
@@ -357,11 +376,10 @@ function main() {
         var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
 
         var text = dataUidInTR.split(".")[1];
-        console.log(text);
         navigator.clipboard.writeText(text).then(function() {
-            console.log('Async: Copying to clipboard was successful!');
+            debug('Async: Copying to clipboard was successful!');
         }, function(err) {
-            console.error('Async: Could not copy text: ', err);
+            debug('Async: Could not copy text: ', err);
         });
     });
 
@@ -402,6 +420,16 @@ function main() {
                 } else {
                     debug('sleeping as couldnt find holding');
                     setTimeout(function(){ simulateSelectBoxEvent(); }, 1000);
+                }
+            } else if (currentUrl.includes('positions')) {
+                var allPositionsRows = jQ(allDOMPaths.PathForPositions);
+                if (allPositionsRows.length > 0) {
+                    debug('initiating change event found holdings');
+                    tagSelector.dispatchEvent(new Event("change"));
+                } else {
+                    debug('sleeping as couldnt find positions');
+                    //setTimeout(function(){ simulateSelectBoxEvent(); }, 1000);
+                    setTimeout(function(){tagSelector.dispatchEvent(new Event("change")); }, 2000);
                 }
             } else if (currentUrl.includes('orders')) {
                 debug('this is just a work aroud. First order dom for order is accessible after few sec');
