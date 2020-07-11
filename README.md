@@ -48,7 +48,7 @@ var holdings = {
 };
 ```
 * Add your categories and stocks in the 'holdings' array.
-![Updating]()
+![Updating](https://dl.dropbox.com/s/olxz1lubi7aeebp/initialSetup.gif?dl=0)
 * After saving, go to your kite screen and refresh. After refreshing you should see a red (1) badge next to Tempermonkey icon as shown in the image.
 * Go to holdings section and click on 'Holdings(xx)' text.
 ![Using Script](https://dl.dropbox.com/s/blxec4q9nop1jmo/usageScript.gif?dl=0)
