@@ -47,8 +47,8 @@ var holdings = {
   "Sell On profit" : ["LUMAXIND","RADICO"]
 };
 ```
-* Search for <<< REPLACE HOLDINGS>>> and replace it with your list.
-![Saving Script](https://dl.dropbox.com/s/geseihxqwzhmhe2/pasteAndSaveScript.gif?dl=0)
+* Add your categories and stocks in the 'holdings' array.
+![Updating]()
 * After saving, go to your kite screen and refresh. After refreshing you should see a red (1) badge next to Tempermonkey icon as shown in the image.
 * Go to holdings section and click on 'Holdings(xx)' text.
 ![Using Script](https://dl.dropbox.com/s/blxec4q9nop1jmo/usageScript.gif?dl=0)
@@ -63,7 +63,9 @@ var positions = {
  "Bata": ["12431106"]
 };
 ```
-* Search for <<< REPLACE POSITIONS>>> and replace it with your list.
+* Add your position ids and strategies in the 'positions' variable.
+* See below on how to get position ids. The image also shows how to quickly check P&L
+![copypaste](https://dl.dropbox.com/s/nkfaa2mrtfu8jvz/copyPastingPosId.gif?dl=0)
 * Go to Positions section and click on 'Positions' text.
 * if you want to tag your reference trades separately then you can use below array.
 ```

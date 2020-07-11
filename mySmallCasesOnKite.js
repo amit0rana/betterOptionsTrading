@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         mySmallCasesOnKite
 // @namespace    http://mySmallCasesOnKite.net/
-// @version      0.1
+// @version      0.2
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -33,24 +33,32 @@ border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: soli
 // the guts of this userscript
 function main() {
 
-  /* replace <<< REPLACE HOLDINGS>>> below with your array (example below)
+  /* Fill the 'holidings' variable below with your stocks (example below)
     var holdings = {
       "Dividend" : ["SJVN","VEDL"],
       "Wealth Creators" : ["WHIRLPOOL","ICICIBANK",],
       "Sell On profit" : ["LUMAXIND","RADICO","M&amp;M"]
     };
 
-    //Note: if script name as & then write it as &amp;
-  */
-   <<< REPLACE HOLDINGS>>>
+    First part is group name that will come in dropdown, second part is the list.
 
-    /* replace <<< REPLACE POSITIONS>>> below with your array (example below)
+    //Note: if script name as & then write it as &amp;
+    //Note: Zerodha may either display NSE stock or BSE stock so better to mention both for the stock.
+  */
+   var holdings = {};
+
+    /* Fill the 'positions' variable below with your open positions id. (example below)
      var positions = {
       "BajajFinance" : ["12304386","12311298","12313858","12314370"],
       "Bata": ["12431106"]
      };
+
+     First part is the 'strategy name' and second part is positions under that strategy.
+
+     //Steps to find position IDs.
+     //Once the plugin is installed, simply click on the position name/row and the id will automatically be copied in your clipboard. Now can just just paste it.
    */
-    <<< REPLACE POSITIONS>>>
+    var positions = {};
 
     /* If you want to tag your reference trades separately, provide traide Ids in the array.
     Example below.
@@ -58,8 +66,8 @@ function main() {
         "12304386","10397698", "10233602", "10237186"
     ];
 
-    //note other variables start and end with {} but this one with []
-    By default array is empty.
+    //Steps to find position IDs.
+    //Once the plugin is installed, simply click on the position name/row and the id will automatically be copied in your clipboard. Now can just just paste it.
    */
     var referenceTrades = [];
 
