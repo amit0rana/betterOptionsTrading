@@ -153,7 +153,7 @@ function main() {
                         if (matchFound) {
                             //dont do anything, let the row be shown.
                             countHoldingsStocks++;
-                            pnl += parseFloat(jQ(jQ(this).find("td")[5]).text().replace(",",""));
+                            pnl += parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
                         } else {
                             jQ(this).hide();
                         }
@@ -332,7 +332,9 @@ function main() {
                         if (matchFound) {
                             //dont do anything, let the row be shown.
                             countHoldingsStocks++;
-                            pnl += parseFloat(jQ(jQ(this).find("td")[6]).text().replace(",",""));
+                            var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
+
+                            pnl += parseFloat(v);
 
                             var tagNameSpans = jQ(this).find("span[random-att='tagName']");
 
@@ -438,7 +440,9 @@ function main() {
 
         var pnl = 0;
         selectedRows.each(function(rowIndex) {
-            pnl += parseFloat(jQ(jQ(this).find("td")[6]).text().replace(",",""));
+            var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
+
+            pnl += parseFloat(v);
         });
 
         var pnlTag = jQ("span[random-att='temppnl']");
