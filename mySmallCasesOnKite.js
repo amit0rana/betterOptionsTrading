@@ -10,8 +10,13 @@
 
 // a function that loads jQuery and calls a callback function when jQuery has finished loading
 function addJQuery(callback) {
+
   var script = document.createElement("script");
   script.setAttribute("src", "//ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js");
+    //script.setAttribute("src", "//code.jquery.com/jquery-3.5.1.min.js");
+    //script.setAttribute("integrity","sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=");
+    //script.setAttribute("crossorigin","anonymous");
+
   script.addEventListener('load', function() {
     var script = document.createElement("script");
     script.textContent = "window.jQ=jQuery.noConflict(true);(" + callback.toString() + ")();";
@@ -62,7 +67,6 @@ function main() {
      //Once the plugin is installed, simply click on the position name/row and the id will automatically be copied in your clipboard. Now can just just paste it.
    */
     var positions = {
-
     };
 
     /* If you want to tag your reference trades separately, provide traide Ids in the array.
@@ -75,7 +79,6 @@ function main() {
     //Once the plugin is installed, simply click on the position name/row and the id will automatically be copied in your clipboard. Now can just just paste it.
    */
     var referenceTrades = [
-
     ];
 
     var D_LEVEL_INFO = 2;
@@ -402,13 +405,20 @@ function main() {
         var currentUrl = window.location.pathname;
         if (currentUrl.includes('positions')) {
             if (jQ(".randomClassToHelpHide").length) {
+                if (jQ("#randomForDeleteOptGroup")) {
+                    jQ("#randomForDeleteOptGroup").remove();
+                }
                 jQ(".randomClassToHelpHide").remove();
                 jQ(".allHiddenRows").show();
             } else {
-                var option = document.createElement("option");
-                option.text = "-----";
-                option.disabled = true;
-                positionGroupdropdown.add(option);
+
+
+                var optGrp = document.createElement("optgroup");
+                optGrp.text = "---AUTO GENERATED---";
+                optGrp.label = "---AUTO GENERATED---";
+                optGrp.id = "randomForDeleteOptGroup";
+                //option.disabled = true;
+                positionGroupdropdown.add(optGrp);
 
                 var allPositionsRow = jQ(allDOMPaths.PathForPositions);
                 var arrForUnique = [];
@@ -416,10 +426,10 @@ function main() {
 
                     var ts = jQ(this).find("td.open.instrument > span.tradingsymbol").text().split(" ")[0];
                     if (!arrForUnique.includes(ts)) {
-                        option = document.createElement("option");
+                        var option = document.createElement("option");
                         option.text = ts;
                         option.value = "SPECIAL"+ts;
-                        positionGroupdropdown.add(option);
+                        jQ(optGrp).append(option);
                         arrForUnique.push(ts);
                     }
                 });
