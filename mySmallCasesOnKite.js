@@ -45,9 +45,12 @@ function main() {
     //Note: if script name as & then write it as &amp;
     //Note: Zerodha may either display NSE stock or BSE stock so better to mention both for the stock.
   */
-   var holdings = {};
+   var holdings = {
 
-    /* Fill the 'positions' variable below with your open positions id. (example below)
+   };
+
+    /* Below step is needed ONLY IF you have multiple strategies for same stock.
+    Fill the 'positions' variable below with your open positions id. (example below)
      var positions = {
       "BajajFinance" : ["12304386","12311298","12313858","12314370"],
       "Bata": ["12431106"]
@@ -58,7 +61,9 @@ function main() {
      //Steps to find position IDs.
      //Once the plugin is installed, simply click on the position name/row and the id will automatically be copied in your clipboard. Now can just just paste it.
    */
-    var positions = {};
+    var positions = {
+
+    };
 
     /* If you want to tag your reference trades separately, provide traide Ids in the array.
     Example below.
@@ -69,7 +74,9 @@ function main() {
     //Steps to find position IDs.
     //Once the plugin is installed, simply click on the position name/row and the id will automatically be copied in your clipboard. Now can just just paste it.
    */
-    var referenceTrades = [];
+    var referenceTrades = [
+
+    ];
 
     var D_LEVEL_INFO = 2;
     var D_LEVEL_DEBUG = 1;
@@ -314,7 +321,7 @@ function main() {
                     jQ("#stocksInTagCount").text("");
                     //don't do anything
                 } else {
-                    //logic to hide the rows in Holdings table not in our list
+                    //logic to hide the rows in positions table not in our list
                     var countHoldingsStocks = 0;
                     allPositionsRow.addClass("allHiddenRows");
 
@@ -326,7 +333,15 @@ function main() {
 
                         var matchFound = false;
 
-                        matchFound = selectedPositions.includes(p);
+                        if (selectedGroup.includes("SPECIAL")) {
+                            var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL")+7);
+                            var ts = jQ(this).find("td.open.instrument > span.tradingsymbol").text().split(" ")[0];
+                            if (ts == s) {
+                                matchFound = true;
+                            }
+                        } else {
+                            matchFound = selectedPositions.includes(p);
+                        }
 
 
                         if (matchFound) {
@@ -371,15 +386,18 @@ function main() {
             return this;
         });
 
+        //add options to the positions select drop down
         for(var key in positions){
             option = document.createElement("option");
             option.text = key;
             option.value = key;
             selectBox.add(option);
         };
+
         return selectBox;
     }();
 
+    //click of positions
     jQ(document).on('click', allDOMPaths.positionHeader, function () {
         var currentUrl = window.location.pathname;
         if (currentUrl.includes('positions')) {
@@ -387,6 +405,26 @@ function main() {
                 jQ(".randomClassToHelpHide").remove();
                 jQ(".allHiddenRows").show();
             } else {
+                var option = document.createElement("option");
+                option.text = "-----";
+                option.disabled = true;
+                positionGroupdropdown.add(option);
+
+                var allPositionsRow = jQ(allDOMPaths.PathForPositions);
+                var arrForUnique = [];
+                allPositionsRow.each(function(rowIndex) {
+
+                    var ts = jQ(this).find("td.open.instrument > span.tradingsymbol").text().split(" ")[0];
+                    if (!arrForUnique.includes(ts)) {
+                        option = document.createElement("option");
+                        option.text = ts;
+                        option.value = "SPECIAL"+ts;
+                        positionGroupdropdown.add(option);
+                        arrForUnique.push(ts);
+                    }
+                });
+
+
                 jQ("a.logo")[0].after(positionGroupdropdown);
 
                 var spanForCount = document.createElement("span");
@@ -402,6 +440,7 @@ function main() {
         }
     });
 
+    //click of Positions row to copy pos id
     jQ(document).on('click',allDOMPaths.PathForPositions, function() {
         var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
 
@@ -413,6 +452,7 @@ function main() {
         });
     });
 
+    //click of Holdings
     jQ(document).on('click', allDOMPaths.domPathMainInitiatorLabel, function () {
         // jQuery methods go here...
         if (jQ(".randomClassToHelpHide").length) {
