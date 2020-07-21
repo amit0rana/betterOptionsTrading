@@ -50,9 +50,7 @@ function main() {
     //Note: if script name as & then write it as &amp;
     //Note: Zerodha may either display NSE stock or BSE stock so better to mention both for the stock.
   */
-   var holdings = {
-
-   };
+   var holdings = {};
 
     /* Below step is needed ONLY IF you have multiple strategies for same stock.
     Fill the 'positions' variable below with your open positions id. (example below)
@@ -66,20 +64,20 @@ function main() {
      //Steps to find position IDs.
      //Once the plugin is installed, simply click on the position name/row and the id will automatically be copied in your clipboard. Now can just just paste it.
    */
-    var positions = {
-    };
+    var positions = {};
 
-    /* If you want to tag your reference trades separately, provide traide Ids in the array.
+    /* If you want to tag your trades separately, provide traide Ids in the array along with the tag name and color
     Example below.
-     var referenceTrades = [
-        "12304386","10397698", "10233602", "10237186"
-    ];
+     var referenceTrades = {
+        "RF.blue" : ["12304386","10397698","20726530","11107330"],
+        "MT.red" : []
+    };
 
     //Steps to find position IDs.
     //Once the plugin is installed, simply click on the position name/row and the id will automatically be copied in your clipboard. Now can just just paste it.
    */
-    var referenceTrades = [
-    ];
+    var referenceTrades = {};
+
 
     var D_LEVEL_INFO = 2;
     var D_LEVEL_DEBUG = 1;
@@ -313,10 +311,30 @@ function main() {
             info(currentUrl);
             if (currentUrl.includes('positions')) {
 
+
                 //START work on Positions AREA
                 var allPositionsRow = jQ(allDOMPaths.PathForPositions);
                 info('found positions row: ' + allPositionsRow.lenth);
                 allPositionsRow.show();
+
+                //check if tags are present
+                var tagNameSpans = jQ("span[random-att='tagName']");
+                info('no of tags found: ' + tagNameSpans.length);
+                if (tagNameSpans.length < 1) {
+
+                    allPositionsRow.each(function(rowIndex) {
+                        var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+                        var p = dataUidInTR.split(".")[1];
+
+                        for(var tradeTag in referenceTrades){
+                            if (referenceTrades[tradeTag].includes(p)) {
+                                var color = tradeTag.split(".")[1];
+                                var tn = tradeTag.split(".")[0];
+                                jQ(this).find("span.exchange.text-xxsmall.dim").append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span class='text-label "+ color +" randomClassToHelpHide'>"+tn+"</span>");
+                            }
+                        };
+                    });
+                } else {debug('tags found');}
 
                 var allPositionOnKite = [];
 
@@ -353,15 +371,6 @@ function main() {
                             var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
 
                             pnl += parseFloat(v);
-
-                            var tagNameSpans = jQ(this).find("span[random-att='tagName']");
-
-                            if (tagNameSpans.length < 1) {
-                                if (referenceTrades.includes(p)) {
-                                    jQ(this).find("span.exchange.text-xxsmall.dim").append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span class='text-label blue randomClassToHelpHide'>RF</span>");
-                                }
-                            }
-
                         } else {
                             jQ(this).hide();
                         }
