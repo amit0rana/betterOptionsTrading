@@ -9,7 +9,7 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 * Once you select a strategy only relevant positions will be shown.
 ![strategies](https://dl.dropbox.com/s/414mh3oqvx4ppf2/strategies.png?dl=0)
 * You can also see strategy's P&L on the right side of dropdown.
-* Tag your reference trades for easier identification
+* Tag your reference trades for easier identification. You can give custom name and color for easy identification
 ![referenceTags](https://dl.dropbox.com/s/i18bklcdebtagia/referenceTags.png?dl=0)
 * Quickly see total P&L of 'selected' positions.
 ![addPositions](https://dl.dropbox.com/s/mvavj8njmt2xvtp/pnlAddition.png?dl=0)
@@ -58,12 +58,12 @@ var holdings = {
 location of dropdown has changed. refer to image below:
 ![header](https://dl.dropbox.com/s/zvefkb2pis0ygq4/headerWithTagSelector.png?dl=0)
 
-# Steps for Positions
+# Steps for custom Positions. You don't need below step if auto grouping by script name works for you
 * Format of the list
 ```
 var positions = {
- "BajajFinance" : ["12304386","12311298","12313858","12314370"],
- "Bata": ["12431106"]
+ "BajajFinanceStraddle" : ["12304386","12311298","12313858","12314370"],
+ "BataRatioSpread": ["12431106"]
 };
 ```
 * Add your position ids and strategies in the 'positions' variable.
@@ -72,9 +72,10 @@ var positions = {
 * Go to Positions section and click on 'Positions' text.
 * if you want to tag your reference trades separately then you can use below array.
 ```
-var referenceTrades = [
-   "12304386","10397698", "10233602", "10237186"
-];
+var referenceTrades = {
+    "RF.blue" : ["12304386","10397698","20726530","11107330"],
+    "MT.red" : []
+};
 ```
 
 TODOs
