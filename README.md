@@ -4,8 +4,8 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 
 #### https://kite.zerodha.com/positions page
 * There are two ways to group strategies
-** (1) Strategies are auto grouped by script. So all INFY stragies will be auto grouped under 'INFY'
-** (2) Manual groups can be created by modifying positions array
+** (1) Strategies are auto grouped by script name. So all INFY strategies will be auto grouped under 'INFY'
+** (2) Manual groups can be created by modifying 'positions array' in the code.
 * Once you select a strategy only relevant positions will be shown.
 ![strategies](https://dl.dropbox.com/s/414mh3oqvx4ppf2/strategies.png?dl=0)
 * You can also see strategy's P&L on the right side of dropdown.
