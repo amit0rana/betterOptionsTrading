@@ -6,6 +6,6 @@
 // @author       Amit
 // @match        https://kite.zerodha.com/*
 // @grant        none
-// @downloadURL
-// @updateURL
+// @downloadURL  https://github.com/amit0rana/betterKite/raw/master/mySmallCasesOnKite.user.js
+// @updateURL    https://github.com/amit0rana/betterKite/raw/master/mySmallCasesOnKite.meta.js
 // ==/UserScript==

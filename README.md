@@ -38,7 +38,7 @@ For now installation of script is intentionally kept manual.
 * Install [Tempermonkey](https://www.tampermonkey.net/) for your browser. [Chrome extension link](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
 * Follow steps as show in the image to create a new script.
 * ![Create a new script](https://dl.dropbox.com/s/k13sxt4wl6kfb4w/createNewScript.gif?dl=0)
-* Copy and paste content of the script from [this file](https://raw.githubusercontent.com/amit0rana/betterKite/master/mySmallCasesOnKite.js)
+* Copy and paste content of the script from [this file](https://github.com/amit0rana/betterKite/raw/master/mySmallCasesOnKite.user.js)
 * Create your categories, replace it in the script and save it.
 
 # Steps for Holdings

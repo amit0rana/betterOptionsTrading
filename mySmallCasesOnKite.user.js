@@ -6,6 +6,8 @@
 // @author       Amit
 // @match        https://kite.zerodha.com/*
 // @grant        none
+// @downloadURL  https://github.com/amit0rana/betterKite/raw/master/mySmallCasesOnKite.user.js
+// @updateURL    https://github.com/amit0rana/betterKite/raw/master/mySmallCasesOnKite.meta.js
 // ==/UserScript==
 
 // a function that loads jQuery and calls a callback function when jQuery has finished loading
