@@ -72,7 +72,7 @@ function main() {
     Example below.
      var referenceTrades = {
         "RF.blue" : ["12304386","10397698","20726530","11107330"],
-        "MT.red" : []
+        "MT.red" : ["11899650"]
     };
 
     //Steps to find position IDs.
@@ -116,7 +116,7 @@ function main() {
     //crete the dropdown to filter stocks.
     var dropdown = function(){
         var selectBox = document.createElement("SELECT");
-        selectBox.id = "tagSelector";
+        selectBox.id = "tagSelectorH";
         selectBox.classList.add("randomClassToHelpHide");
         selectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;"
 
@@ -136,7 +136,7 @@ function main() {
 
                 //START work on Holdings AREA
                 var allHoldingrows = jQ(allDOMPaths.rowsFromHoldingsTable);
-                info('found holdings row: ' + allHoldingrows.lenth);
+                info('found holdings row: ' + allHoldingrows.length);
                 allHoldingrows.show();
                 if (selectedCat === "All") {
                     jQ("#stocksInTagCount").text("");
@@ -295,7 +295,7 @@ function main() {
 
     var positionGroupdropdown = function(){
         var selectBox = document.createElement("SELECT");
-        selectBox.id = "tagSelector";
+        selectBox.id = "tagSelectorP";
         selectBox.classList.add("randomClassToHelpHide");
         selectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;"
 
@@ -316,7 +316,7 @@ function main() {
 
                 //START work on Positions AREA
                 var allPositionsRow = jQ(allDOMPaths.PathForPositions);
-                info('found positions row: ' + allPositionsRow.lenth);
+                info('found positions row: ' + allPositionsRow.length);
                 allPositionsRow.show();
 
                 //check if tags are present
@@ -411,7 +411,7 @@ function main() {
         return selectBox;
     }();
 
-    //click of positions
+    //click of positions header
     jQ(document).on('click', allDOMPaths.positionHeader, function () {
         var currentUrl = window.location.pathname;
         if (currentUrl.includes('positions')) {
@@ -422,13 +422,16 @@ function main() {
                 jQ(".randomClassToHelpHide").remove();
                 jQ(".allHiddenRows").show();
             } else {
-
+                var lastC = positionGroupdropdown.lastChild;
+                if (lastC.id == "randomForDeleteOptGroup") {
+                    positionGroupdropdown.removeChild(lastC);
+                }
 
                 var optGrp = document.createElement("optgroup");
                 optGrp.text = "---AUTO GENERATED---";
                 optGrp.label = "---AUTO GENERATED---";
                 optGrp.id = "randomForDeleteOptGroup";
-                //option.disabled = true;
+
                 positionGroupdropdown.add(optGrp);
 
                 var allPositionsRow = jQ(allDOMPaths.PathForPositions);
@@ -473,7 +476,7 @@ function main() {
         });
     });
 
-    //click of Holdings
+    //click of Holdings header
     jQ(document).on('click', allDOMPaths.domPathMainInitiatorLabel, function () {
         // jQuery methods go here...
         if (jQ(".randomClassToHelpHide").length) {
@@ -495,6 +498,7 @@ function main() {
         }
     });
 
+    //whenever selection in position row changes.
     jQ(document).on('change', "input.su-checkbox", function () {
 
         var selectedRows = jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr.selected");
@@ -525,30 +529,49 @@ function main() {
     //dspatch tagSelector change event.
     var simulateSelectBoxEvent = function() {
         debug('simulating tagSelector change ');
+        var currentUrl = window.location.pathname;
 
-        var tagSelector = document.querySelector("#tagSelector");
-        if (tagSelector) {
-            var currentUrl = window.location.pathname;
-            debug("simulateSelectBoxEvent: currentURL " + currentUrl);
-            if (currentUrl.includes('holdings')) {
+        var tagSelectorH = document.querySelector("#tagSelectorH");
+        var tagSelectorP = document.querySelector("#tagSelectorP");
+
+        if (currentUrl.includes('holdings')) {
+            //if (tagSelectorP) {tagSelectorP.style.display = "none";}
+            if (tagSelectorH) {
+                //tagSelectorH.style.display = "block";
                 var allHoldingrows = jQ(allDOMPaths.rowsFromHoldingsTable);
                 if (allHoldingrows.length > 0) {
                     debug('initiating change event found holdings');
-                    tagSelector.dispatchEvent(new Event("change"));
+                    tagSelectorH.dispatchEvent(new Event("change"));
                 } else {
                     debug('sleeping as couldnt find holding');
                     setTimeout(function(){ simulateSelectBoxEvent(); }, 1000);
                 }
-            } else if (currentUrl.includes('positions')) {
+            }
+        } else if (currentUrl.includes('positions')) {
+            //if (tagSelectorH) {tagSelectorH.style.display = "none";}
+            if (tagSelectorP) {
+                //tagSelectorP.style.display = "block";
                 var allPositionsRows = jQ(allDOMPaths.PathForPositions);
                 if (allPositionsRows.length > 0) {
                     debug('initiating change event found holdings');
-                    tagSelector.dispatchEvent(new Event("change"));
+                    tagSelectorP.dispatchEvent(new Event("change"));
                 } else {
                     debug('sleeping as couldnt find positions');
-                    //setTimeout(function(){ simulateSelectBoxEvent(); }, 1000);
-                    setTimeout(function(){tagSelector.dispatchEvent(new Event("change")); }, 2000);
+                    setTimeout(function(){ simulateSelectBoxEvent(); }, 2000);
+                    //setTimeout(function(){tagSelectorP.dispatchEvent(new Event("change")); }, 2000);
                 }
+            }
+        }
+
+        //FIX BELOW for ORDERS
+        /*
+        if (tagSelector) {
+            var currentUrl = window.location.pathname;
+            debug("simulateSelectBoxEvent: currentURL " + currentUrl);
+            if (currentUrl.includes('holdings')) {
+
+            } else if (currentUrl.includes('positions')) {
+
             } else if (currentUrl.includes('orders')) {
                 debug('this is just a work aroud. First order dom for order is accessible after few sec');
                 if (jQ(allDOMPaths.domPathPendingOrdersTR).length < 1 && jQ(allDOMPaths.domPathExecutedOrdersTR).length < 1) {
@@ -558,6 +581,7 @@ function main() {
                 }
             }
         }
+        */
     };
 
     //fire hide/show logic again if history/url changes.
