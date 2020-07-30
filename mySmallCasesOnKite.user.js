@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         mySmallCasesOnKite
 // @namespace    http://mySmallCasesOnKite.net/
-// @version      0.5
+// @version      0.6
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -12,6 +12,46 @@
 // @downloadURL  https://github.com/amit0rana/betterKite/raw/master/mySmallCasesOnKite.user.js
 // @updateURL    https://github.com/amit0rana/betterKite/raw/master/mySmallCasesOnKite.meta.js
 // ==/UserScript==
+
+window.jQ=jQuery.noConflict(true);
+var D_LEVEL_INFO = 2;
+var D_LEVEL_DEBUG = 1;
+var D_LEVEL = D_LEVEL_INFO;
+
+var log = function(level, logInfo) {
+    if (level >= D_LEVEL) {
+        console.log(logInfo);
+    }
+}
+var debug = function(logInfo) {
+    log( D_LEVEL_DEBUG , logInfo);
+}
+var info = function(logInfo) {
+    log( D_LEVEL_INFO , logInfo);
+}
+var allDOMPaths = {
+    rowsFromHoldingsTable : "div.holdings > section > div > div > table > tbody > tr",
+    attrNameForInstrumentTR : "data-uid",
+    domPathWatchlistRow : "div.instruments > div > div.vddl-draggable.instrument",
+    domPathPendingOrdersTR : "div.pending-orders > div > table > tbody > tr",
+    domPathExecutedOrdersTR : "div.completed-orders > div > table > tbody > tr",
+    domPathTradingSymbolInsideOrdersTR : "span.tradingsymbol > span",
+    domPathStockNameInWatchlistRow : "span.nice-name",
+    domPathMainInitiatorLabel : "h3.page-title.small > span",
+    domPathTabToChangeWatchlist : "ul.marketwatch-selector.list-flat > li",
+    PathForPositions : "div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr",
+    positionHeader: "header.row.data-table-header"
+};
+var holdings = initHoldings();
+
+var positions = initPositions();
+
+var referenceTrades = initReferenceTrades();
+const formatter = Intl.NumberFormat('en-IN', { 
+    style: 'currency', currency: 'INR'
+});
+
+main();
 
 function addStyle() {
     var style = document.createElement("style");
@@ -25,21 +65,9 @@ border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: soli
     //only for debuggin- document.body.appendChild(style);
 }
 
-// the guts of this userscript
-function main() {
-
-  /* Fill the 'holidings' variable below with your stocks (example below)
-    var holdings = {
-      "Dividend" : ["SJVN","VEDL"],
-      "Wealth Creators" : ["WHIRLPOOL","ICICIBANK",],
-      "Sell On profit" : ["LUMAXIND","RADICO","M&amp;M"]
-    };
-
-    First part is group name that will come in dropdown, second part is the list.
-
+function initHoldings() {
     //Note: if script name as & then write it as &amp;
     //Note: Zerodha may either display NSE stock or BSE stock so better to mention both for the stock.
-  */
 
     var GMHoldingsName = "BK_HOLDINGS";
     var defaultHoldings = {
@@ -48,7 +76,6 @@ function main() {
       "Sell On profit" : ["LUMAXIND","RADICO","M&amp;M"]
     };
     var holdings = GM_getValue(GMHoldingsName,defaultHoldings);
-
 
     GM_registerMenuCommand("Set Holdings", function() {
         var h = GM_getValue(GMHoldingsName,defaultHoldings);
@@ -65,26 +92,16 @@ function main() {
         window.location.reload();
     }, "h");
 
-    /* Below step is needed ONLY IF you have multiple strategies for same stock.
-    Fill the 'positions' variable below with your open positions id. (example below)
-     var positions = {
-      "BajajFinance" : ["12304386","12311298","12313858","12314370"],
-      "Bata": ["12431106"]
-     };
+    return holdings;
+}
 
-     First part is the 'strategy name' and second part is positions under that strategy.
-
-     //Steps to find position IDs.
-     //Once the plugin is installed, simply click on the position name/row and the id will automatically be copied in your clipboard. Now can just just paste it.
-   */
-
+function initPositions() {
     var GMPositionsName = "BK_POSITIONS";
     var defaultPositions = {
       "BajajFinance" : ["12304386","12311298"],
       "Bata": ["12431106"]
     };
     var positions = GM_getValue(GMPositionsName,defaultPositions);
-
 
     GM_registerMenuCommand("Set Positions", function() {
         var p = GM_getValue(GMPositionsName,defaultPositions);
@@ -101,16 +118,10 @@ function main() {
         window.location.reload();
     }, "p");
 
-    /* If you want to tag your trades separately, provide traide Ids in the array along with the tag name and color
-    Example below.
-     var referenceTrades = {
-        "RF.blue" : ["12304386","10397698","20726530","11107330"],
-        "MT.red" : ["11899650"]
-    };
+    return positions;
+}
 
-    //Steps to find position IDs.
-    //Once the plugin is installed, simply click on the position name/row and the id will automatically be copied in your clipboard. Now can just just paste it.
-   */
+function initReferenceTrades() {
     var GMRefTradeName = "BK_REF_TRADES";
     var defaultRefTrades = {
       "RF.blue" : ["12304386","10397698"],
@@ -134,346 +145,323 @@ function main() {
         window.location.reload();
     }, "r");
 
+    return referenceTrades;
+}
 
-    var D_LEVEL_INFO = 2;
-    var D_LEVEL_DEBUG = 1;
+function createHoldingsDropdown() {
+    var selectBox = document.createElement("SELECT");
+    selectBox.id = "tagSelectorH";
+    selectBox.classList.add("randomClassToHelpHide");
+    selectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;"
 
-    var D_LEVEL = D_LEVEL_INFO;
+    var option = document.createElement("option");
+    option.text = "All Holdings";
+    option.value= "All";
+    selectBox.add(option);
+    selectBox.addEventListener("change", function() {
+        var selectedCat = this.value;
 
-    var allDOMPaths = {
-        rowsFromHoldingsTable : "div.holdings > section > div > div > table > tbody > tr",
-        attrNameForInstrumentTR : "data-uid",
-        domPathWatchlistRow : "div.instruments > div > div.vddl-draggable.instrument",
-        domPathPendingOrdersTR : "div.pending-orders > div > table > tbody > tr",
-        domPathExecutedOrdersTR : "div.completed-orders > div > table > tbody > tr",
-        domPathTradingSymbolInsideOrdersTR : "span.tradingsymbol > span",
-        domPathStockNameInWatchlistRow : "span.nice-name",
-        domPathMainInitiatorLabel : "h3.page-title.small > span",
-        domPathTabToChangeWatchlist : "ul.marketwatch-selector.list-flat > li",
-        PathForPositions : "div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr",
-        positionHeader: "header.row.data-table-header"
-    };
+        info("Tag selected: " + selectedCat);
+        var selectedStocks = holdings[selectedCat];
 
+        var currentUrl = window.location.pathname;
+        info(currentUrl);
+        if (currentUrl.includes('holdings')) {
 
-    var log = function(level, logInfo) {
-        if (level >= D_LEVEL) {
-            console.log(logInfo);
-        }
-    }
-    var debug = function(logInfo) {
-        log( D_LEVEL_DEBUG , logInfo);
-    }
-    var info = function(logInfo) {
-        log( D_LEVEL_INFO , logInfo);
-    }
+            //START work on Holdings AREA
+            var allHoldingrows = jQ(allDOMPaths.rowsFromHoldingsTable);
+            info('found holdings row: ' + allHoldingrows.length);
+            allHoldingrows.show();
+            if (selectedCat === "All") {
+                jQ("#stocksInTagCount").text("");
+                //don't do anything
+            } else {
+                //logic to hide the rows in Holdings table not in our list
+                var countHoldingsStocks = 0;
+                allHoldingrows.addClass("allHiddenRows");
 
-    //crete the dropdown to filter stocks.
-    var dropdown = function(){
-        var selectBox = document.createElement("SELECT");
-        selectBox.id = "tagSelectorH";
-        selectBox.classList.add("randomClassToHelpHide");
-        selectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;"
+                var pnl = 0;
+                allHoldingrows.each(function(rowIndex) {
+                    var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+                    if (dataUidInTR.includes("-BE")) {
+                        dataUidInTR = dataUidInTR.split("-BE")[0];
+                    } else if (dataUidInTR.includes("NSE")) {
+                        dataUidInTR = dataUidInTR.split("NSE")[0];
+                    } else if (dataUidInTR.includes("BSE")) {
+                        dataUidInTR = dataUidInTR.split("BSE")[0];
+                    }
 
-        var option = document.createElement("option");
-        option.text = "All";
-        option.value= "All";
-        selectBox.add(option);
-        selectBox.addEventListener("change", function() {
-            var selectedCat = this.value;
+                    var matchFound = false;
+                    matchFound = selectedStocks.includes(dataUidInTR);
 
-            info("Tag selected: " + selectedCat);
-            var selectedStocks = holdings[selectedCat];
+                    if (matchFound) {
+                        //dont do anything, let the row be shown.
+                        countHoldingsStocks++;
+                        pnl += parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
+                    } else {
+                        jQ(this).hide();
+                    }
+                });
 
-            var currentUrl = window.location.pathname;
-            info(currentUrl);
-            if (currentUrl.includes('holdings')) {
+                jQ("#stocksInTagCount").text("("+countHoldingsStocks+") " + formatter.format(pnl));
 
-                //START work on Holdings AREA
-                var allHoldingrows = jQ(allDOMPaths.rowsFromHoldingsTable);
-                info('found holdings row: ' + allHoldingrows.length);
-                allHoldingrows.show();
-                if (selectedCat === "All") {
-                    jQ("#stocksInTagCount").text("");
-                    //don't do anything
-                } else {
-                    //logic to hide the rows in Holdings table not in our list
-                    var countHoldingsStocks = 0;
-                    allHoldingrows.addClass("allHiddenRows");
-
-                    var pnl = 0;
-                    allHoldingrows.each(function(rowIndex) {
-                        var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
-                        if (dataUidInTR.includes("-BE")) {
-                            dataUidInTR = dataUidInTR.split("-BE")[0];
-                        } else if (dataUidInTR.includes("NSE")) {
-                            dataUidInTR = dataUidInTR.split("NSE")[0];
-                        } else if (dataUidInTR.includes("BSE")) {
-                            dataUidInTR = dataUidInTR.split("BSE")[0];
-                        }
-
-                        var matchFound = false;
-                        matchFound = selectedStocks.includes(dataUidInTR);
-
-                        if (matchFound) {
-                            //dont do anything, let the row be shown.
-                            countHoldingsStocks++;
-                            pnl += parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
-                        } else {
-                            jQ(this).hide();
-                        }
-                    });
-
-                    jQ("#stocksInTagCount").text("("+countHoldingsStocks+") " + pnl.toFixed(2).toLocaleString());
-
-                }
-
-                //check if tags are present
-                var tagNameSpans = jQ("span[random-att='tagName']");
-                info('no of tags found: ' + tagNameSpans.length);
-                if (tagNameSpans.length < 1) {
-
-                    //add label indicating category of stock
-                    jQ("td.instrument.right-border > span").each(function(rowIndex){
-
-                        var displayedStockName = this.innerHTML;
-
-                        for(var categoryName in holdings){
-                            if (displayedStockName.includes("-BE")) {
-                                displayedStockName = displayedStockName.split("-BE")[0];
-                            }
-
-                            debug("stock name trying to tag: " + displayedStockName);
-                            if (holdings[categoryName].includes(displayedStockName)) {
-                                jQ(this).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span class='text-label blue randomClassToHelpHide'>"+categoryName+"</span>");
-                            }
-                        };
-
-                    });
-                } else {debug('tags found');}
-                //END work on Holdings AREA
-            } else if (currentUrl.includes('orders')) {
-                //START work on order AREA
-                var allPendingOrderRows = jQ(allDOMPaths.domPathPendingOrdersTR);
-
-                var allExecutedOrderRows = jQ(allDOMPaths.domPathExecutedOrdersTR);
-                allPendingOrderRows.show();
-                allExecutedOrderRows.show();
-
-                info("pending orders: " + allPendingOrderRows.length);
-
-                if (selectedCat === "All") {
-                    //don't do anything
-                } else {
-                    var countPendingOrdersStocks = 0;
-                    allPendingOrderRows.addClass("allHiddenRows");
-                    allPendingOrderRows.each(function(rowIndex){
-                        var workingRow = this;
-                        var stockInRow = jQ(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
-                        debug("found pending order: " + stockInRow);
-                        if (stockInRow.includes("-BE")) {
-                            stockInRow = stockInRow.split("-BE")[0];
-                        }
-                        var matchFound = false;
-                        matchFound = selectedStocks.includes(stockInRow);
-
-                        if (matchFound) {
-                            //do nothing
-                            countPendingOrdersStocks++;
-                        } else {
-                            jQ(workingRow).hide();
-                        }
-                    });
-
-                    jQ("#stocksInTagCount").text("("+countPendingOrdersStocks+") ");
-
-                    allExecutedOrderRows.addClass("allHiddenRows");
-                    allExecutedOrderRows.each(function(rowIndex){
-                        var workingRow = this;
-                        var stockInRow = jQ(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
-                        debug("found executed order: " + stockInRow);
-                        if (stockInRow.includes("-BE")) {
-                            stockInRow = stockInRow.split("-BE")[0];
-                        }
-                        var matchFound = false;
-                        matchFound = selectedStocks.includes(stockInRow);
-
-                        if (matchFound) {
-                            //do nothing
-                        } else {
-                            jQ(workingRow).hide();
-                        }
-                    });
-
-                }
-                //END work on order AREA
             }
 
-            //START work on watchlist AREA
-            var allWatchlistRows = jQ(allDOMPaths.domPathWatchlistRow);
-            allWatchlistRows.show();
+            //check if tags are present
+            var tagNameSpans = jQ("span[random-att='tagName']");
+            info('no of tags found: ' + tagNameSpans.length);
+            if (tagNameSpans.length < 1) {
+
+                //add label indicating category of stock
+                jQ("td.instrument.right-border > span").each(function(rowIndex){
+
+                    var displayedStockName = this.innerHTML;
+
+                    for(var categoryName in holdings){
+                        if (displayedStockName.includes("-BE")) {
+                            displayedStockName = displayedStockName.split("-BE")[0];
+                        }
+
+                        debug("stock name trying to tag: " + displayedStockName);
+                        if (holdings[categoryName].includes(displayedStockName)) {
+                            jQ(this).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span class='text-label blue randomClassToHelpHide'>"+categoryName+"</span>");
+                        }
+                    };
+
+                });
+            } else {debug('tags found');}
+            //END work on Holdings AREA
+        } else if (currentUrl.includes('orders')) {
+            //START work on order AREA
+            var allPendingOrderRows = jQ(allDOMPaths.domPathPendingOrdersTR);
+
+            var allExecutedOrderRows = jQ(allDOMPaths.domPathExecutedOrdersTR);
+            allPendingOrderRows.show();
+            allExecutedOrderRows.show();
+
+            info("pending orders: " + allPendingOrderRows.length);
+
             if (selectedCat === "All") {
                 //don't do anything
             } else {
-                allWatchlistRows.addClass("allHiddenRows");
-
-                allWatchlistRows.each(function(rowIndex){
-                    var watchlistRowDiv = this;
-                    var stockName = jQ(watchlistRowDiv).find(allDOMPaths.domPathStockNameInWatchlistRow);
-                    var watchlistStock = stockName.html();
-                    if (watchlistStock.includes("-BE")) {
-                        watchlistStock = watchlistStock.split("-BE")[0];
+                var countPendingOrdersStocks = 0;
+                allPendingOrderRows.addClass("allHiddenRows");
+                allPendingOrderRows.each(function(rowIndex){
+                    var workingRow = this;
+                    var stockInRow = jQ(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
+                    debug("found pending order: " + stockInRow);
+                    if (stockInRow.includes("-BE")) {
+                        stockInRow = stockInRow.split("-BE")[0];
                     }
                     var matchFound = false;
-                    matchFound = selectedStocks.includes(watchlistStock);
+                    matchFound = selectedStocks.includes(stockInRow);
+
+                    if (matchFound) {
+                        //do nothing
+                        countPendingOrdersStocks++;
+                    } else {
+                        jQ(workingRow).hide();
+                    }
+                });
+
+                jQ("#stocksInTagCount").text("("+countPendingOrdersStocks+") ");
+
+                allExecutedOrderRows.addClass("allHiddenRows");
+                allExecutedOrderRows.each(function(rowIndex){
+                    var workingRow = this;
+                    var stockInRow = jQ(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
+                    debug("found executed order: " + stockInRow);
+                    if (stockInRow.includes("-BE")) {
+                        stockInRow = stockInRow.split("-BE")[0];
+                    }
+                    var matchFound = false;
+                    matchFound = selectedStocks.includes(stockInRow);
 
                     if (matchFound) {
                         //do nothing
                     } else {
-                        jQ(watchlistRowDiv).hide();
+                        jQ(workingRow).hide();
                     }
                 });
+
             }
-            //END work on watchlist AREA
+            //END work on order AREA
+        }
 
-            return this;
-        });
+        //START work on watchlist AREA
+        var allWatchlistRows = jQ(allDOMPaths.domPathWatchlistRow);
+        allWatchlistRows.show();
+        if (selectedCat === "All") {
+            //don't do anything
+        } else {
+            allWatchlistRows.addClass("allHiddenRows");
 
-        for(var key in holdings){
-            option = document.createElement("option");
-            option.text = key;
-            option.value = key;
-            selectBox.add(option);
-        };
-        return selectBox;
-    }();
-
-    var positionGroupdropdown = function(){
-        var selectBox = document.createElement("SELECT");
-        selectBox.id = "tagSelectorP";
-        selectBox.classList.add("randomClassToHelpHide");
-        selectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;"
-
-        var option = document.createElement("option");
-        option.text = "All";
-        option.value= "All";
-        selectBox.add(option);
-
-        var userGeneratedGroups = document.createElement("optgroup");
-        userGeneratedGroups.text = "---USER GROUPS---";
-        userGeneratedGroups.label = "---USER GROUPS---";
-
-        selectBox.addEventListener("change", function() {
-            var selectedGroup = this.value;
-
-            info("Group selected: " + selectedGroup);
-            var selectedPositions = positions[selectedGroup];
-
-            var currentUrl = window.location.pathname;
-            info(currentUrl);
-            if (currentUrl.includes('positions')) {
-
-
-                //START work on Positions AREA
-                var allPositionsRow = jQ(allDOMPaths.PathForPositions);
-                info('found positions row: ' + allPositionsRow.length);
-                allPositionsRow.show();
-
-                //check if tags are present
-                var tagNameSpans = jQ("span[random-att='tagName']");
-                info('no of tags found: ' + tagNameSpans.length);
-                if (tagNameSpans.length < 1) {
-
-                    allPositionsRow.each(function(rowIndex) {
-                        var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
-                        var p = dataUidInTR.split(".")[1];
-
-                        for(var tradeTag in referenceTrades){
-                            if (referenceTrades[tradeTag].includes(p)) {
-                                var color = tradeTag.split(".")[1];
-                                var tn = tradeTag.split(".")[0];
-                                jQ(this).find("span.exchange.text-xxsmall.dim").append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span class='text-label "+ color +" randomClassToHelpHide'>"+tn+"</span>");
-                            }
-                        };
-                    });
-                } else {debug('tags found');}
-
-                var allPositionOnKite = [];
-
-                if (selectedGroup === "All") {
-                    jQ("#stocksInTagCount").text("");
-                    //don't do anything
-                } else {
-                    //logic to hide the rows in positions table not in our list
-                    var countHoldingsStocks = 0;
-                    allPositionsRow.addClass("allHiddenRows");
-
-                    var pnl = 0;
-                    allPositionsRow.each(function(rowIndex) {
-                        var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
-                        var p = dataUidInTR.split(".")[1];
-                        allPositionOnKite.push(p);
-
-                        var matchFound = false;
-
-                        if (selectedGroup.includes("SPECIAL")) {
-                            var lengthOfSpecial = 7;
-                            var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL")+lengthOfSpecial);
-                            var tradingSymbolText = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
-                            var ts = tradingSymbolText.split(" ")[0];
-                            if (ts == s) {
-                                matchFound = true;
-                            } else if (tradingSymbolText.includes(" " + s + " ")) {
-                                matchFound = true;
-                            }
-                        } else {
-                            matchFound = selectedPositions.includes(p);
-                        }
-
-
-                        if (matchFound) {
-                            //dont do anything, let the row be shown.
-                            countHoldingsStocks++;
-                            var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
-
-                            pnl += parseFloat(v);
-                        } else {
-                            jQ(this).hide();
-                        }
-
-
-
-                    });
-                    jQ("#stocksInTagCount").text(pnl.toFixed(2).toLocaleString());
+            allWatchlistRows.each(function(rowIndex){
+                var watchlistRowDiv = this;
+                var stockName = jQ(watchlistRowDiv).find(allDOMPaths.domPathStockNameInWatchlistRow);
+                var watchlistStock = stockName.html();
+                if (watchlistStock.includes("-BE")) {
+                    watchlistStock = watchlistStock.split("-BE")[0];
                 }
+                var matchFound = false;
+                matchFound = selectedStocks.includes(watchlistStock);
 
-                //marking positions part of a group
-                debug('missing positions are: ');
-                var arrPositionsInOurArray = [];
-                for(var strategies in positions){
-                    arrPositionsInOurArray.push(...positions[strategies]);
-                };
-                var t = allPositionOnKite.filter(function(x) {
-                    return !arrPositionsInOurArray.includes(x);
-                })
-                debug(t);
+                if (matchFound) {
+                    //do nothing
+                } else {
+                    jQ(watchlistRowDiv).hide();
+                }
+            });
+        }
+        //END work on watchlist AREA
 
-                //END work on Positions AREA
+        return this;
+    });
+
+    for(var key in holdings){
+        option = document.createElement("option");
+        option.text = key;
+        option.value = key;
+        selectBox.add(option);
+    };
+    return selectBox;
+}
+
+function createPositionsDropdown() {
+    var selectBox = document.createElement("SELECT");
+    selectBox.id = "tagSelectorP";
+    selectBox.classList.add("randomClassToHelpHide");
+    selectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;"
+
+    var option = document.createElement("option");
+    option.text = "All Positions";
+    option.value= "All";
+    selectBox.add(option);
+
+    var userGeneratedGroups = document.createElement("optgroup");
+    userGeneratedGroups.text = "---USER GROUPS---";
+    userGeneratedGroups.label = "---USER GROUPS---";
+
+    selectBox.addEventListener("change", function() {
+        var selectedGroup = this.value;
+
+        info("Group selected: " + selectedGroup);
+        var selectedPositions = positions[selectedGroup];
+
+        var currentUrl = window.location.pathname;
+        info(currentUrl);
+        if (currentUrl.includes('positions')) {
+
+
+            //START work on Positions AREA
+            var allPositionsRow = jQ(allDOMPaths.PathForPositions);
+            info('found positions row: ' + allPositionsRow.length);
+            allPositionsRow.show();
+
+            //check if tags are present
+            var tagNameSpans = jQ("span[random-att='tagName']");
+            info('no of tags found: ' + tagNameSpans.length);
+            if (tagNameSpans.length < 1) {
+
+                allPositionsRow.each(function(rowIndex) {
+                    var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+                    var p = dataUidInTR.split(".")[1];
+
+                    for(var tradeTag in referenceTrades){
+                        if (referenceTrades[tradeTag].includes(p)) {
+                            var color = tradeTag.split(".")[1];
+                            var tn = tradeTag.split(".")[0];
+                            jQ(this).find("span.exchange.text-xxsmall.dim").append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span class='text-label "+ color +" randomClassToHelpHide'>"+tn+"</span>");
+                        }
+                    };
+                });
+            } else {debug('tags found');}
+
+            var allPositionOnKite = [];
+
+            if (selectedGroup === "All") {
+                jQ("#stocksInTagCount").text("");
+                //don't do anything
+            } else {
+                //logic to hide the rows in positions table not in our list
+                var countPositionsDisplaying = 0;
+                allPositionsRow.addClass("allHiddenRows");
+
+                var pnl = 0;
+                allPositionsRow.each(function(rowIndex) {
+                    var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+                    var p = dataUidInTR.split(".")[1];
+                    allPositionOnKite.push(p);
+
+                    var matchFound = false;
+
+                    if (selectedGroup.includes("SPECIAL")) {
+                        var lengthOfSpecial = 7;
+                        var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL")+lengthOfSpecial);
+                        var tradingSymbolText = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
+                        var ts = tradingSymbolText.split(" ")[0];
+                        if (ts == s) {
+                            matchFound = true;
+                        } else if (tradingSymbolText.includes(" " + s + " ")) {
+                            matchFound = true;
+                        }
+                    } else {
+                        matchFound = selectedPositions.includes(p);
+                    }
+
+
+                    if (matchFound) {
+                        //dont do anything, let the row be shown.
+                        countPositionsDisplaying++;
+                        var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
+
+                        pnl += parseFloat(v);
+                    } else {
+                        jQ(this).hide();
+                    }
+
+
+
+                });
+                
+                jQ("#stocksInTagCount").text("("+countPositionsDisplaying+") " + formatter.format(pnl));
             }
 
-            return this;
-        });
+            //marking positions part of a group
+            debug('missing positions are: ');
+            var arrPositionsInOurArray = [];
+            for(var strategies in positions){
+                arrPositionsInOurArray.push(...positions[strategies]);
+            };
+            var t = allPositionOnKite.filter(function(x) {
+                return !arrPositionsInOurArray.includes(x);
+            })
+            debug(t);
 
-        //add options to the positions select drop down
-        for(var key in positions){
-            option = document.createElement("option");
-            option.text = key;
-            option.value = key;
-            jQ(userGeneratedGroups).append(option);
-        };
+            //END work on Positions AREA
+        }
 
-        selectBox.add(userGeneratedGroups);
-        return selectBox;
-    }();
+        return this;
+    });
+
+    //add options to the positions select drop down
+    for(var key in positions){
+        option = document.createElement("option");
+        option.text = key;
+        option.value = key;
+        jQ(userGeneratedGroups).append(option);
+    };
+
+    selectBox.add(userGeneratedGroups);
+    return selectBox;
+}
+
+// the guts of this userscript
+function main() {
+    //crete the dropdown to filter stocks.
+    var dropdown = createHoldingsDropdown();
+
+    var positionGroupdropdown = createPositionsDropdown();
 
     //click of positions header
     jQ(document).on('click', allDOMPaths.positionHeader, function () {
@@ -620,16 +608,16 @@ function main() {
         if (selectedRows.length>0) {
             if (pnl > 0) {
                 jQ("div.positions > section.open-positions.table-wrapper > div > div > table > thead > tr > th.select > div > label").append(
-                    "<span random-att='temppnl' class='text-label green randomClassToHelpHide'>&nbsp;"+pnl+"</span>");
+                    "<span random-att='temppnl' class='text-label green randomClassToHelpHide'>&nbsp;"+formatter.format(pnl)+"</span>");
             } else {
                 jQ("div.positions > section.open-positions.table-wrapper > div > div > table > thead > tr > th.select > div > label").append(
-                    "<span random-att='temppnl' class='text-label red randomClassToHelpHide'>&nbsp;"+pnl+"</span>");
+                    "<span random-att='temppnl' class='text-label red randomClassToHelpHide'>&nbsp;"+formatter.format(pnl)+"</span>");
             }
         }
 
     });
 
-    //dspatch tagSelector change event.
+    //dispatch tagSelector change event.
     var simulateSelectBoxEvent = function() {
         debug('simulating tagSelector change ');
         var currentUrl = window.location.pathname;
@@ -687,7 +675,7 @@ function main() {
         */
     };
 
-    //fire hide/show logic again if history/url changes.
+    //fire hide/show logic if history/url changes.
     var pushState = history.pushState;
     history.pushState = function () {
         pushState.apply(history, arguments);
@@ -734,10 +722,3 @@ function main() {
 
 }
 
-window.jQ=jQuery.noConflict(true);
-
-var currentUrl = window.location.hostname;
-console.log(currentUrl);
-if (currentUrl.includes('zerodha')) {
-    main();
-}
