@@ -1,31 +1,19 @@
 // ==UserScript==
 // @name         mySmallCasesOnKite
 // @namespace    http://mySmallCasesOnKite.net/
-// @version      0.4
+// @version      0.5
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
-// @grant        none
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_registerMenuCommand
+// @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
 // @downloadURL  https://github.com/amit0rana/betterKite/raw/master/mySmallCasesOnKite.user.js
 // @updateURL    https://github.com/amit0rana/betterKite/raw/master/mySmallCasesOnKite.meta.js
 // ==/UserScript==
 
-// a function that loads jQuery and calls a callback function when jQuery has finished loading
-function addJQuery(callback) {
-
-  var script = document.createElement("script");
-  script.setAttribute("src", "//ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js");
-    //script.setAttribute("src", "//code.jquery.com/jquery-3.5.1.min.js");
-    //script.setAttribute("integrity","sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=");
-    //script.setAttribute("crossorigin","anonymous");
-
-  script.addEventListener('load', function() {
-    var script = document.createElement("script");
-    script.textContent = "window.jQ=jQuery.noConflict(true);(" + callback.toString() + ")();";
-    document.body.appendChild(script);
-  }, false);
-  document.body.appendChild(script);
-
+function addStyle() {
     var style = document.createElement("style");
     style.textContent = `
 randomClassToHelpHide {outline: 1px dotted green;}
@@ -52,7 +40,30 @@ function main() {
     //Note: if script name as & then write it as &amp;
     //Note: Zerodha may either display NSE stock or BSE stock so better to mention both for the stock.
   */
-   var holdings = {};
+
+    var GMHoldingsName = "BK_HOLDINGS";
+    var defaultHoldings = {
+      "Dividend" : ["SJVN","VEDL"],
+      "Wealth Creators" : ["WHIRLPOOL","ICICIBANK",],
+      "Sell On profit" : ["LUMAXIND","RADICO","M&amp;M"]
+    };
+    var holdings = GM_getValue(GMHoldingsName,defaultHoldings);
+
+
+    GM_registerMenuCommand("Set Holdings", function() {
+        var h = GM_getValue(GMHoldingsName,defaultHoldings);
+        h = prompt("Provide Holdings object. Eg: {\"groupName 1\":[\"INFY\",\"RELIANCE\"],\"groupName 2\":[\"M&amp;M\",\"ICICIBANK\"]}", JSON.stringify(h));
+        if (h == null) return;
+        try {
+            holdings = JSON.parse(h);
+            GM_setValue(GMHoldingsName,holdings);
+        }
+        catch(err) {
+            alert("There was error in your input");
+        }
+
+        window.location.reload();
+    }, "h");
 
     /* Below step is needed ONLY IF you have multiple strategies for same stock.
     Fill the 'positions' variable below with your open positions id. (example below)
@@ -66,7 +77,29 @@ function main() {
      //Steps to find position IDs.
      //Once the plugin is installed, simply click on the position name/row and the id will automatically be copied in your clipboard. Now can just just paste it.
    */
-    var positions = {};
+
+    var GMPositionsName = "BK_POSITIONS";
+    var defaultPositions = {
+      "BajajFinance" : ["12304386","12311298"],
+      "Bata": ["12431106"]
+    };
+    var positions = GM_getValue(GMPositionsName,defaultPositions);
+
+
+    GM_registerMenuCommand("Set Positions", function() {
+        var p = GM_getValue(GMPositionsName,defaultPositions);
+        p = prompt("Provide Positions object. Eg: {\"strategy 1\":[\"12304386\",\"12311298\"],\"strategy 2\":[\"12431106\"]}", JSON.stringify(p));
+        if (p == null) return;
+        try {
+            positions = JSON.parse(p);
+            GM_setValue(GMPositionsName,positions);
+        }
+        catch(err) {
+            alert("There was error in your input");
+        }
+
+        window.location.reload();
+    }, "p");
 
     /* If you want to tag your trades separately, provide traide Ids in the array along with the tag name and color
     Example below.
@@ -78,7 +111,28 @@ function main() {
     //Steps to find position IDs.
     //Once the plugin is installed, simply click on the position name/row and the id will automatically be copied in your clipboard. Now can just just paste it.
    */
-    var referenceTrades = {};
+    var GMRefTradeName = "BK_REF_TRADES";
+    var defaultRefTrades = {
+      "RF.blue" : ["12304386","10397698"],
+      "MT.red" : ["11899650"]
+    };
+    var referenceTrades = GM_getValue(GMRefTradeName,defaultRefTrades);
+
+
+    GM_registerMenuCommand("Reference Trades & Martingales", function() {
+        var rt = GM_getValue(GMRefTradeName,defaultRefTrades);
+        rt = prompt("Provide trades object. Eg: {\"RF.blue\":[\"12304386\",\"12311298\"],\"MT.red\":[\"12431106\"]}", JSON.stringify(rt));
+        if (rt == null) return;
+        try {
+            referenceTrades = JSON.parse(rt);
+            GM_setValue(GMRefTradeName,referenceTrades);
+        }
+        catch(err) {
+            alert("There was error in your input");
+        }
+
+        window.location.reload();
+    }, "r");
 
 
     var D_LEVEL_INFO = 2;
@@ -303,6 +357,11 @@ function main() {
         option.text = "All";
         option.value= "All";
         selectBox.add(option);
+
+        var userGeneratedGroups = document.createElement("optgroup");
+        userGeneratedGroups.text = "---USER GROUPS---";
+        userGeneratedGroups.label = "---USER GROUPS---";
+
         selectBox.addEventListener("change", function() {
             var selectedGroup = this.value;
 
@@ -409,9 +468,10 @@ function main() {
             option = document.createElement("option");
             option.text = key;
             option.value = key;
-            selectBox.add(option);
+            jQ(userGeneratedGroups).append(option);
         };
 
+        selectBox.add(userGeneratedGroups);
         return selectBox;
     }();
 
@@ -674,8 +734,10 @@ function main() {
 
 }
 
+window.jQ=jQuery.noConflict(true);
+
 var currentUrl = window.location.hostname;
 console.log(currentUrl);
 if (currentUrl.includes('zerodha')) {
-    addJQuery(main);
+    main();
 }
