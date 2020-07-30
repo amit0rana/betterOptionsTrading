@@ -3,10 +3,11 @@
 Very simple "userscript" which adds following features to kite.zerodha.com ui
 
 #### https://kite.zerodha.com/positions page
-* There are two ways to group strategies
-** (1) Strategies are auto grouped by script name. So all INFY strategies will be auto grouped under 'INFY'
-** (2) Manual groups can be created by modifying 'positions array' in the code.
-* Once you select a strategy only relevant positions will be shown.
+* Strategies are grouped in 3 ways.
+  * (1) Strategies are auto grouped by script name. So all INFY strategies will be auto grouped under 'INFY'
+  * (2) Strategies are auto grouped by expiry.
+  * (3) Manual groups can be created by modifying 'positions array'.
+* Once you select a strategy from the dropdown, only relevant positions will be shown.
 ![strategies](https://dl.dropbox.com/s/414mh3oqvx4ppf2/strategies.png?dl=0)
 
 * ![strategies2](https://dl.dropbox.com/s/qjyok361dk9jo6c/strategies2.png?dl=0)
@@ -43,7 +44,7 @@ Follow below mentioned steps
 * ![Create a new script](https://dl.dropbox.com/s/k13sxt4wl6kfb4w/createNewScript.gif?dl=0)
 * open any new tab and click of tempermoney icon -> 'Check for userscript updates'. Wait for update to finish.
 * You can verify setup is complete by verifying version number of the script. If you click on tempermoney -> Dashboad, version of the script should be > 0.1
-* ![Full Installation Video](https://dl.dropbox.com/s/rqf8a2nmlyii37i/InstallationVideo.mov?dl=0)
+* ![Full Installation Video](https://dl.dropbox.com/s/tgvjk7014jkflzs/InstallationVideo.gif?dl=0)
 
 # Steps for Holdings
 * Format of the list
@@ -56,7 +57,7 @@ Follow below mentioned steps
 ```
 * Group your holdings as shown in the example above.
 * Click on tempermonkey icon -> Set Holidings, and then copy paste your json object.
-![Video on How to update](https://dl.dropbox.com/s/ttrvkyoynvz5560/SetHoldings.mov?dl=0)
+![Video on How to update holdings](https://dl.dropbox.com/s/xogmrtxr5mrl072/SetHoldings.gif?dl=0)
 * Once you save, page should auto refresh and you should see a red (1) badge next to Tempermonkey icon as shown in the image.
 * Go to holdings section and click on 'Holdings(xx)' text.
 ![Using Script](https://dl.dropbox.com/s/blxec4q9nop1jmo/usageScript.gif?dl=0)
@@ -84,6 +85,7 @@ location of dropdown has changed. refer to image below:
     "MT.red" : ["10397698"]
 }
 ```
+* ![addingRT](https://dl.dropbox.com/s/2izfa0y5u6ny22v/addingReferenceTrade.gif?dl=0)
 
 TODOs
 * Instructions for [Violentmonkey](https://openuserjs.org/about/Violentmonkey-for-Chrome)
