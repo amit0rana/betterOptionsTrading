@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         mySmallCasesOnKite
 // @namespace    http://mySmallCasesOnKite.net/
-// @version      0.3
+// @version      0.4
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -357,9 +357,13 @@ function main() {
                         var matchFound = false;
 
                         if (selectedGroup.includes("SPECIAL")) {
-                            var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL")+7);
-                            var ts = jQ(this).find("td.open.instrument > span.tradingsymbol").text().split(" ")[0];
+                            var lengthOfSpecial = 7;
+                            var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL")+lengthOfSpecial);
+                            var tradingSymbolText = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
+                            var ts = tradingSymbolText.split(" ")[0];
                             if (ts == s) {
+                                matchFound = true;
+                            } else if (tradingSymbolText.includes(" " + s + " ")) {
                                 matchFound = true;
                             }
                         } else {
@@ -419,26 +423,42 @@ function main() {
                 if (jQ("#randomForDeleteOptGroup")) {
                     jQ("#randomForDeleteOptGroup").remove();
                 }
+                if (jQ("#randomForDeleteOptGroupE")) {
+                    jQ("#randomForDeleteOptGroupE").remove();
+                }
                 jQ(".randomClassToHelpHide").remove();
                 jQ(".allHiddenRows").show();
             } else {
                 var lastC = positionGroupdropdown.lastChild;
+                if (lastC.id == "randomForDeleteOptGroupE") {
+                    positionGroupdropdown.removeChild(lastC);
+                }
+
+                lastC = positionGroupdropdown.lastChild;
                 if (lastC.id == "randomForDeleteOptGroup") {
                     positionGroupdropdown.removeChild(lastC);
                 }
 
                 var optGrp = document.createElement("optgroup");
-                optGrp.text = "---AUTO GENERATED---";
-                optGrp.label = "---AUTO GENERATED---";
+                optGrp.text = "---SCRIPT WISE---";
+                optGrp.label = "---SCRIPT WISE---";
                 optGrp.id = "randomForDeleteOptGroup";
 
-                positionGroupdropdown.add(optGrp);
+                var optGrpExpiry = document.createElement("optgroup");
+                optGrpExpiry.text = "---EXPIRY WISE---";
+                optGrpExpiry.label = "---EXPIRY WISE---";
+                optGrpExpiry.id = "randomForDeleteOptGroupE";
+
 
                 var allPositionsRow = jQ(allDOMPaths.PathForPositions);
                 var arrForUnique = [];
+                var uniqueExpiryArray = [];
                 allPositionsRow.each(function(rowIndex) {
 
-                    var ts = jQ(this).find("td.open.instrument > span.tradingsymbol").text().split(" ")[0];
+                    var tradingSymbol = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
+
+                    //creating auto generated script wise grouping
+                    var ts = tradingSymbol.split(" ")[0];
                     if (!arrForUnique.includes(ts)) {
                         var option = document.createElement("option");
                         option.text = ts;
@@ -446,7 +466,30 @@ function main() {
                         jQ(optGrp).append(option);
                         arrForUnique.push(ts);
                     }
+
+                    //creating auto generated expiry wise grouping
+                    var arr = tradingSymbol.split(" ");
+                    var ex = "";
+                    var len = arr.length-2;
+                    //for futures AXISBANK JUL FUT
+                    if (arr.length == 3) {
+                        len = arr.length-1;
+                    }
+                    for (var i=1 ; i < len ; i++) {
+                        ex = ex + " " + arr[i];
+                    }
+                    ex = ex.trim();
+                    if (!uniqueExpiryArray.includes(ex)) {
+                        var option2 = document.createElement("option");
+                        option2.text = ex;
+                        option2.value = "SPECIAL"+ex;
+                        jQ(optGrpExpiry).append(option2);
+                        uniqueExpiryArray.push(ex);
+                    }
                 });
+
+                positionGroupdropdown.add(optGrp);
+                positionGroupdropdown.add(optGrpExpiry);
 
 
                 jQ("a.logo")[0].after(positionGroupdropdown);
@@ -631,4 +674,8 @@ function main() {
 
 }
 
-addJQuery(main);
+var currentUrl = window.location.hostname;
+console.log(currentUrl);
+if (currentUrl.includes('zerodha')) {
+    addJQuery(main);
+}
