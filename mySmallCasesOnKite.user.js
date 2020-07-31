@@ -14,22 +14,22 @@
 // ==/UserScript==
 
 window.jQ=jQuery.noConflict(true);
-var D_LEVEL_INFO = 2;
-var D_LEVEL_DEBUG = 1;
-var D_LEVEL = D_LEVEL_INFO;
+const D_LEVEL_INFO = 2;
+const D_LEVEL_DEBUG = 1;
+const D_LEVEL = D_LEVEL_INFO;
 
-var log = function(level, logInfo) {
+const log = function(level, logInfo) {
     if (level >= D_LEVEL) {
         console.log(logInfo);
     }
 }
-var debug = function(logInfo) {
+const debug = function(logInfo) {
     log( D_LEVEL_DEBUG , logInfo);
 }
-var info = function(logInfo) {
+const info = function(logInfo) {
     log( D_LEVEL_INFO , logInfo);
 }
-var allDOMPaths = {
+const allDOMPaths = {
     rowsFromHoldingsTable : "div.holdings > section > div > div > table > tbody > tr",
     attrNameForInstrumentTR : "data-uid",
     domPathWatchlistRow : "div.instruments > div > div.vddl-draggable.instrument",
@@ -42,11 +42,11 @@ var allDOMPaths = {
     PathForPositions : "div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr",
     positionHeader: "header.row.data-table-header"
 };
-var holdings = initHoldings();
+const holdings = initHoldings();
 
-var positions = initPositions();
+const positions = initPositions();
 
-var referenceTrades = initReferenceTrades();
+const referenceTrades = initReferenceTrades();
 const formatter = Intl.NumberFormat('en-IN', { 
     style: 'currency', currency: 'INR'
 });

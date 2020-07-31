@@ -36,15 +36,12 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 # Installation
 
 Follow below mentioned steps
-* Install [Tempermonkey](https://www.tampermonkey.net/) for your browser. [Chrome extension link](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
+* Install [Tempermonkey](https://www.tampermonkey.net/) for your browser (works on all browsers). [Chrome extension link](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
 * Follow steps as show in the image to create a new script.
-  * Click on tempermonkey icon in the extension bar
-  * Click on "Create a new script"
-  * copy paste content of [this file](https://raw.githubusercontent.com/amit0rana/betterKite/master/setup.meta.js) file and save.
-* ![Create a new script](https://dl.dropbox.com/s/k13sxt4wl6kfb4w/createNewScript.gif?dl=0)
-* open any new tab and click of tempermoney icon -> 'Check for userscript updates'. Wait for update to finish.
-* You can verify setup is complete by verifying version number of the script. If you click on tempermoney -> Dashboad, version of the script should be > 0.1
-* ![Full Installation Video](https://dl.dropbox.com/s/tgvjk7014jkflzs/InstallationVideo.gif?dl=0)
+  * Open [this link](https://github.com/amit0rana/betterKite/raw/master/mySmallCasesOnKite.user.js) in a new tab. <https://github.com/amit0rana/betterKite/raw/master/mySmallCasesOnKite.user.js>
+  * Tampermonkey will automatically identify the file as userscript and give you option to install.
+  * You can verify the installation by click on Tampermonkey icon (next to address bar) and then go to 'Dashboard'. You should see 'mySmallCasesOnKite' installed.
+  * Now just go to <https://kite.zerodha.com> and start using.
 
 # Steps for Holdings
 * Format of the list
