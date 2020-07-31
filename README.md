@@ -37,11 +37,14 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 
 Follow below mentioned steps
 * Install [Tempermonkey](https://www.tampermonkey.net/) for your browser (works on all browsers). [Chrome extension link](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
-* Follow steps as show in the image to create a new script.
-  * Open [this link](https://github.com/amit0rana/betterKite/raw/master/mySmallCasesOnKite.user.js) in a new tab. <https://github.com/amit0rana/betterKite/raw/master/mySmallCasesOnKite.user.js>
-  * Tampermonkey will automatically identify the file as userscript and give you option to install.
-  * You can verify the installation by click on Tampermonkey icon (next to address bar) and then go to 'Dashboard'. You should see 'mySmallCasesOnKite' installed.
-  * Now just go to <https://kite.zerodha.com> and start using.
+* Open [this link](https://github.com/amit0rana/betterKite/raw/master/betterKite.user.js) in a new tab. Or copy paste <https://github.com/amit0rana/betterKite/raw/master/betterKite.user.js>
+* Tampermonkey will automatically identify the file as userscript and give you option to install. (sell image below)
+* ![tampermonkey install](https://dl.dropbox.com/s/igmzrottr3m14e0/tampermonkeyInstall.png?dl=0)
+* Click on 'Install' button.
+* You can verify the installation by clicking on Tampermonkey icon (next to address bar) and then go to 'Dashboard'. You should see 'betterKite' installed. (see below)
+* ![dashboard menu](https://dl.dropbox.com/s/dv1reqb84mz00bm/dashboardmenuoption.png?dl=0)
+* ![dashboard sample](https://dl.dropbox.com/s/xnyv2nwb5shnz7s/dashboardSample.png?dl=0)
+* Now just go to <https://kite.zerodha.com> and start using.
 
 # Steps for Holdings
 * Format of the list
