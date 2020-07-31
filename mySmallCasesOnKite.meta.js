@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         mySmallCasesOnKite
-// @namespace    http://mySmallCasesOnKite.net/
+// @namespace    https://github.com/amit0rana/betterKite
 // @version      0.6
 // @description  Introduces small features on top of kite app
 // @author       Amit
