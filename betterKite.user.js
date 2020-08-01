@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      0.6
+// @version      0.7
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -14,6 +14,7 @@
 // ==/UserScript==
 
 window.jQ=jQuery.noConflict(true);
+const GMHoldingsName = "BK_HOLDINGS";
 const D_LEVEL_INFO = 2;
 const D_LEVEL_DEBUG = 1;
 const D_LEVEL = D_LEVEL_INFO;
@@ -69,7 +70,6 @@ function initHoldings() {
     //Note: if script name as & then write it as &amp;
     //Note: Zerodha may either display NSE stock or BSE stock so better to mention both for the stock.
 
-    var GMHoldingsName = "BK_HOLDINGS";
     var defaultHoldings = {
       "Dividend" : ["SJVN","VEDL"],
       "Wealth Creators" : ["WHIRLPOOL","ICICIBANK",],
@@ -148,6 +148,36 @@ function initReferenceTrades() {
     return referenceTrades;
 }
 
+function assignHoldingTags() {
+    //check if tags are present
+    var tagNameSpans = jQ("span[random-att='tagName']");
+    info('no of tags found: ' + tagNameSpans.length);
+    if (tagNameSpans.length < 1) {
+
+        //add label indicating category of stock
+        jQ("td.instrument.right-border > span:nth-child(1)").each(function(rowIndex){
+
+            var displayedStockName = this.innerHTML;
+            if (displayedStockName.includes("-BE")) {
+                displayedStockName = displayedStockName.split("-BE")[0];
+            }
+
+            debug("stock name trying to tag: " + displayedStockName);
+
+            if (jQ(this).find("#tagAddIcon").length < 1) {
+                jQ(this).append("<span id='tagAddIcon' class='text-label grey randomClassToHelpHide' value='"+displayedStockName+"'>+</span>");
+            }
+
+            for(var categoryName in holdings){
+                if (holdings[categoryName].includes(displayedStockName)) {
+                    jQ(this).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForTagDeleteAction' class='text-label blue randomClassToHelpHide' tag='"+categoryName+"' stock='"+displayedStockName+"'>"+categoryName+"</span>");
+                }
+            };
+
+        });
+    } else {debug('tags found');}
+}
+
 function createHoldingsDropdown() {
     var selectBox = document.createElement("SELECT");
     selectBox.id = "tagSelectorH";
@@ -207,29 +237,8 @@ function createHoldingsDropdown() {
 
             }
 
-            //check if tags are present
-            var tagNameSpans = jQ("span[random-att='tagName']");
-            info('no of tags found: ' + tagNameSpans.length);
-            if (tagNameSpans.length < 1) {
+            assignHoldingTags();
 
-                //add label indicating category of stock
-                jQ("td.instrument.right-border > span").each(function(rowIndex){
-
-                    var displayedStockName = this.innerHTML;
-
-                    for(var categoryName in holdings){
-                        if (displayedStockName.includes("-BE")) {
-                            displayedStockName = displayedStockName.split("-BE")[0];
-                        }
-
-                        debug("stock name trying to tag: " + displayedStockName);
-                        if (holdings[categoryName].includes(displayedStockName)) {
-                            jQ(this).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span class='text-label blue randomClassToHelpHide'>"+categoryName+"</span>");
-                        }
-                    };
-
-                });
-            } else {debug('tags found');}
             //END work on Holdings AREA
         } else if (currentUrl.includes('orders')) {
             //START work on order AREA
@@ -462,6 +471,49 @@ function main() {
     var dropdown = createHoldingsDropdown();
 
     var positionGroupdropdown = createPositionsDropdown();
+
+    //on click of + to assign tag
+    jQ(document).on('click', "#tagAddIcon", function () {
+        var stock = jQ(this).attr('value');
+        var tagName = prompt('Which group do you want to put '+ stock +' in?').toUpperCase();
+        
+        if (tagName == null) return;
+
+        //get existing array, if not present create
+        if (holdings[tagName]) {
+            var existingArray = holdings[tagName];
+            if (!existingArray.includes(stock)) {
+                existingArray.push(stock);
+            }
+        } else {
+            holdings[tagName] = [stock];
+        }
+
+        GM_setValue(GMHoldingsName,holdings);
+        debug(holdings);
+        window.location.reload();
+    });
+
+    //on click of a tag. ask user if they want to remove the tag
+    jQ(document).on('click', "#idForTagDeleteAction", function () {
+        var stock = jQ(this).attr('stock');
+        var tagName = jQ(this).attr('tag');
+        
+        if (confirm('Do you want to remove this tag?')) {
+            //get existing array
+            var existingArray = holdings[tagName];
+            existingArray.splice(existingArray.indexOf(stock), 1 );
+            
+            if (existingArray.length < 1) {
+                delete(holdings[tagName]);
+            }
+
+
+            GM_setValue(GMHoldingsName,holdings);
+            debug(holdings);
+            window.location.reload();
+        }
+    });
 
     //click of positions header
     jQ(document).on('click', allDOMPaths.positionHeader, function () {
