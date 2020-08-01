@@ -14,7 +14,7 @@
 // ==/UserScript==
 
 window.jQ=jQuery.noConflict(true);
-const PRO_MODE = true;
+const PRO_MODE = false;
 const GMHoldingsName = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
