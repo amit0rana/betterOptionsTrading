@@ -36,7 +36,7 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 # Installation
 
 Follow below mentioned steps
-* Install [Tempermonkey](https://www.tampermonkey.net/) for your browser (works on all browsers). [Chrome extension link](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
+* Install [Tempermonkey](https://www.tampermonkey.net/) for your browser (works on all browsers. Tested on Chrome, Vivaldi, Edge). [Chrome extension link](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
 * Open [this link](https://github.com/amit0rana/betterKite/raw/master/betterKite.user.js) in a new tab. Or copy paste <https://github.com/amit0rana/betterKite/raw/master/betterKite.user.js>
 * Tampermonkey will automatically identify the file as userscript and give you option to install. (sell image below)
 * ![tampermonkey install](https://dl.dropbox.com/s/khs3itzctu13ayw/tampermonkeyInstall.png?dl=0)
@@ -47,22 +47,15 @@ Follow below mentioned steps
 * Now just go to <https://kite.zerodha.com> and start using.
 
 # Steps for Holdings
-* Format of the list
-```
-{
-  "Dividend" : ["SJVN","VEDL"],
-  "Wealth Creators" : ["WHIRLPOOL","ICICIBANK",],
-  "Sell On profit" : ["LUMAXIND","RADICO"]
-}
-```
-* Group your holdings as shown in the example above.
-* Click on tempermonkey icon -> Set Holidings, and then copy paste your json object.
-![Video on How to update holdings](https://dl.dropbox.com/s/xogmrtxr5mrl072/SetHoldings.gif?dl=0)
-* Once you save, page should auto refresh and you should see a red (1) badge next to Tempermonkey icon as shown in the image.
+* Refer to images below on how to use.
 * Go to holdings section and click on 'Holdings(xx)' text.
-![Using Script](https://dl.dropbox.com/s/blxec4q9nop1jmo/usageScript.gif?dl=0)
-location of dropdown has changed. refer to image below:
-![header](https://dl.dropbox.com/s/zvefkb2pis0ygq4/headerWithTagSelector.png?dl=0)
+* click on + icon to add tags, click on tag to remove it, use the dropdown for filtering.
+* ![how to use](https://dl.dropbox.com/s/tllta7nzcfl145a/holdingsHowToUse.gif?dl=0)
+* ![add remove tags](https://dl.dropbox.com/s/nbjuxiu7yh9p51i/addingRemovingTags.gif?dl=0)
+
+# steps for marking trades as reference trades or base trade or martingales
+* Process is same as taging holdings, important thing to keep in mind is the format of the tag.
+* Tag should be formated as tagName.color for example: RT.red or BS.blue etc. 
 
 # Steps for custom Positions. You don't need below step if auto grouping by script name works for you
 * Format of the list
@@ -78,14 +71,7 @@ location of dropdown has changed. refer to image below:
 * ![position](https://dl.dropbox.com/s/58bv2iz95c9yryv/setPositionsOption.png?dl=0)
 * ![rtmt](https://dl.dropbox.com/s/7qfdx8efdtzb015/setRTMTOption.png?dl=0)
 * Go to Positions section and click on 'Positions' text.
-* if you want to tag your reference trades and martingales separately then you can use below array.
-```
-{
-    "RF.blue" : ["12304386","10397698"],
-    "MT.red" : ["10397698"]
-}
-```
-* ![addingRT](https://dl.dropbox.com/s/2izfa0y5u6ny22v/addingReferenceTrade.gif?dl=0)
+
 
 TODOs
 * Instructions for [Violentmonkey](https://openuserjs.org/about/Violentmonkey-for-Chrome)

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      0.7
+// @version      0.8
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -14,7 +14,10 @@
 // ==/UserScript==
 
 window.jQ=jQuery.noConflict(true);
+const PRO_MODE = true;
 const GMHoldingsName = "BK_HOLDINGS";
+const GMPositionsName = "BK_POSITIONS";
+const GMRefTradeName = "BK_REF_TRADES";
 const D_LEVEL_INFO = 2;
 const D_LEVEL_DEBUG = 1;
 const D_LEVEL = D_LEVEL_INFO;
@@ -77,33 +80,35 @@ function initHoldings() {
     };
     var holdings = GM_getValue(GMHoldingsName,defaultHoldings);
 
-    GM_registerMenuCommand("Set Holdings", function() {
-        var h = GM_getValue(GMHoldingsName,defaultHoldings);
-        h = prompt("Provide Holdings object. Eg: {\"groupName 1\":[\"INFY\",\"RELIANCE\"],\"groupName 2\":[\"M&amp;M\",\"ICICIBANK\"]}", JSON.stringify(h));
-        if (h == null) return;
-        try {
-            holdings = JSON.parse(h);
-            GM_setValue(GMHoldingsName,holdings);
-        }
-        catch(err) {
-            alert("There was error in your input");
-        }
+    if (PRO_MODE) {
+        GM_registerMenuCommand("Set Holdings", function() {
+            var h = GM_getValue(GMHoldingsName,defaultHoldings);
+            h = prompt("Provide Holdings object. Eg: {\"groupName 1\":[\"INFY\",\"RELIANCE\"],\"groupName 2\":[\"M&amp;M\",\"ICICIBANK\"]}", JSON.stringify(h));
+            if (h == null) return;
+            try {
+                holdings = JSON.parse(h);
+                GM_setValue(GMHoldingsName,holdings);
+            }
+            catch(err) {
+                alert("There was error in your input");
+            }
 
-        window.location.reload();
-    }, "h");
+            window.location.reload();
+        }, "h");
+    }
 
     return holdings;
 }
 
 function initPositions() {
-    var GMPositionsName = "BK_POSITIONS";
     var defaultPositions = {
       "BajajFinance" : ["12304386","12311298"],
       "Bata": ["12431106"]
     };
     var positions = GM_getValue(GMPositionsName,defaultPositions);
 
-    GM_registerMenuCommand("Set Positions", function() {
+    
+    GM_registerMenuCommand("Custom Strategies", function() {
         var p = GM_getValue(GMPositionsName,defaultPositions);
         p = prompt("Provide Positions object. Eg: {\"strategy 1\":[\"12304386\",\"12311298\"],\"strategy 2\":[\"12431106\"]}", JSON.stringify(p));
         if (p == null) return;
@@ -117,33 +122,34 @@ function initPositions() {
 
         window.location.reload();
     }, "p");
+    
 
     return positions;
 }
 
 function initReferenceTrades() {
-    var GMRefTradeName = "BK_REF_TRADES";
     var defaultRefTrades = {
       "RF.blue" : ["12304386","10397698"],
       "MT.red" : ["11899650"]
     };
     var referenceTrades = GM_getValue(GMRefTradeName,defaultRefTrades);
 
+    if (PRO_MODE) {
+        GM_registerMenuCommand("Reference Trades & Martingales", function() {
+            var rt = GM_getValue(GMRefTradeName,defaultRefTrades);
+            rt = prompt("Provide trades object. Eg: {\"RF.blue\":[\"12304386\",\"12311298\"],\"MT.red\":[\"12431106\"]}", JSON.stringify(rt));
+            if (rt == null) return;
+            try {
+                referenceTrades = JSON.parse(rt);
+                GM_setValue(GMRefTradeName,referenceTrades);
+            }
+            catch(err) {
+                alert("There was error in your input");
+            }
 
-    GM_registerMenuCommand("Reference Trades & Martingales", function() {
-        var rt = GM_getValue(GMRefTradeName,defaultRefTrades);
-        rt = prompt("Provide trades object. Eg: {\"RF.blue\":[\"12304386\",\"12311298\"],\"MT.red\":[\"12431106\"]}", JSON.stringify(rt));
-        if (rt == null) return;
-        try {
-            referenceTrades = JSON.parse(rt);
-            GM_setValue(GMRefTradeName,referenceTrades);
-        }
-        catch(err) {
-            alert("There was error in your input");
-        }
-
-        window.location.reload();
-    }, "r");
+            window.location.reload();
+        }, "r");
+    }
 
     return referenceTrades;
 }
@@ -164,15 +170,15 @@ function assignHoldingTags() {
 
             debug("stock name trying to tag: " + displayedStockName);
 
-            if (jQ(this).find("#tagAddIcon").length < 1) {
-                jQ(this).append("<span id='tagAddIcon' class='text-label grey randomClassToHelpHide' value='"+displayedStockName+"'>+</span>");
-            }
-
             for(var categoryName in holdings){
                 if (holdings[categoryName].includes(displayedStockName)) {
                     jQ(this).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForTagDeleteAction' class='text-label blue randomClassToHelpHide' tag='"+categoryName+"' stock='"+displayedStockName+"'>"+categoryName+"</span>");
                 }
-            };
+            }
+
+            if (jQ(this).find("#tagAddIcon").length < 1) {
+                jQ(this).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='tagAddIcon' class='text-label grey randomClassToHelpHide' value='"+displayedStockName+"'>+</span>");
+            }
 
         });
     } else {debug('tags found');}
@@ -336,6 +342,33 @@ function createHoldingsDropdown() {
     return selectBox;
 }
 
+function assignPositionTags() {
+    //check if tags are present
+    var tagNameSpans = jQ("span[random-att='tagName']");
+    info('no of tags found: ' + tagNameSpans.length);
+    if (tagNameSpans.length < 1) {
+        var allPositionsRow = jQ(allDOMPaths.PathForPositions);
+        allPositionsRow.each(function(rowIndex) {
+            var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+            var p = dataUidInTR.split(".")[1];
+
+            var positionSpan = jQ(this).find("span.exchange.text-xxsmall.dim");
+
+            for(var tradeTag in referenceTrades){
+                if (referenceTrades[tradeTag].includes(p)) {
+                    var color = tradeTag.split(".")[1];
+                    var tn = tradeTag.split(".")[0];
+                    jQ(positionSpan).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForPositionTagDeleteAction' tag='"+tradeTag+"' position='"+p+"' class='text-label "+ color +" randomClassToHelpHide'>"+tn+"</span>");
+                }
+            }
+
+            if (jQ(this).find("#positionTagAddIcon").length < 1) {
+                jQ(positionSpan).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='"+p+"'>+</span>");
+            }
+        });
+    } else {debug('tags found');}
+}
+
 function createPositionsDropdown() {
     var selectBox = document.createElement("SELECT");
     selectBox.id = "tagSelectorP";
@@ -367,24 +400,7 @@ function createPositionsDropdown() {
             info('found positions row: ' + allPositionsRow.length);
             allPositionsRow.show();
 
-            //check if tags are present
-            var tagNameSpans = jQ("span[random-att='tagName']");
-            info('no of tags found: ' + tagNameSpans.length);
-            if (tagNameSpans.length < 1) {
-
-                allPositionsRow.each(function(rowIndex) {
-                    var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
-                    var p = dataUidInTR.split(".")[1];
-
-                    for(var tradeTag in referenceTrades){
-                        if (referenceTrades[tradeTag].includes(p)) {
-                            var color = tradeTag.split(".")[1];
-                            var tn = tradeTag.split(".")[0];
-                            jQ(this).find("span.exchange.text-xxsmall.dim").append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span class='text-label "+ color +" randomClassToHelpHide'>"+tn+"</span>");
-                        }
-                    };
-                });
-            } else {debug('tags found');}
+            assignPositionTags();
 
             var allPositionOnKite = [];
 
@@ -467,12 +483,23 @@ function createPositionsDropdown() {
 
 // the guts of this userscript
 function main() {
+    GM_registerMenuCommand("Reset Data", function() {
+        if (confirm('Are you sure you want to reset all tag data?')) {
+            GM_setValue(GMHoldingsName,{});
+            GM_setValue(GMPositionsName,{});
+            GM_setValue(GMRefTradeName,{});
+
+            window.location.reload();
+        }
+        
+    }, "r");
+
     //crete the dropdown to filter stocks.
     var dropdown = createHoldingsDropdown();
 
     var positionGroupdropdown = createPositionsDropdown();
 
-    //on click of + to assign tag
+    //on click of + to assign tag to holdings
     jQ(document).on('click', "#tagAddIcon", function () {
         var stock = jQ(this).attr('value');
         var tagName = prompt('Which group do you want to put '+ stock +' in?').toUpperCase();
@@ -494,7 +521,7 @@ function main() {
         window.location.reload();
     });
 
-    //on click of a tag. ask user if they want to remove the tag
+    //on click of a holding tag. ask user if they want to remove the tag
     jQ(document).on('click', "#idForTagDeleteAction", function () {
         var stock = jQ(this).attr('stock');
         var tagName = jQ(this).attr('tag');
@@ -511,6 +538,49 @@ function main() {
 
             GM_setValue(GMHoldingsName,holdings);
             debug(holdings);
+            window.location.reload();
+        }
+    });
+
+    //on click of + to assign tag to positions
+    jQ(document).on('click', "#positionTagAddIcon", function () {
+        var position = jQ(this).attr('value');
+        var tagName = prompt('Please provide tag name and color. For eg: MT.red or RT.blue or BS.green');
+        
+        if (tagName == null) return;
+
+        //get existing array, if not present create
+        var existingArray = referenceTrades[tagName];
+        if (existingArray) {
+            if (!existingArray.includes(position)) {
+                existingArray.push(position);
+            }
+        } else {
+            referenceTrades[tagName] = [position];
+        }
+
+        GM_setValue(GMRefTradeName,referenceTrades);
+
+        window.location.reload();
+    });
+
+    //on click of a position tag. ask user if they want to remove the tag
+    jQ(document).on('click', "#idForPositionTagDeleteAction", function () {
+        var position = jQ(this).attr('position');
+        var tagName = jQ(this).attr('tag');
+        
+        if (confirm('Do you want to remove this tag?')) {
+            //get existing array
+            var existingArray = referenceTrades[tagName];
+            existingArray.splice(existingArray.indexOf(position), 1 );
+            
+            if (existingArray.length < 1) {
+                delete(referenceTrades[tagName]);
+            }
+
+
+            GM_setValue(GMRefTradeName,referenceTrades);
+            
             window.location.reload();
         }
     });
