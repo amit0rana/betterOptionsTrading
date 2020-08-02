@@ -184,8 +184,6 @@ function assignHoldingTags() {
                 displayedStockName = displayedStockName.split("-BE")[0];
             }
 
-            debug("stock name trying to tag: " + displayedStockName);
-
             for(var categoryName in holdings){
                 if (holdings[categoryName].includes(displayedStockName)) {
                     jQ(this).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForTagDeleteAction' class='text-label blue randomClassToHelpHide' tag='"+categoryName+"' stock='"+displayedStockName+"'>"+categoryName+"</span>");
@@ -664,7 +662,7 @@ function toggleDropdown() {
                 break;
             case DD_POSITONS:
                 // do nothing
-                hideDropdown();
+                //hideDropdown();
                 break;
             case DD_HOLDINGS:
                 // hide holidings
@@ -686,7 +684,7 @@ function toggleDropdown() {
                 break;
             case DD_HOLDINGS:
                 // do nothing
-                hideDropdown();
+                //hideDropdown();
         }
     }
 }
@@ -765,9 +763,10 @@ function main() {
     //on click of + to assign tag to holdings
     jQ(document).on('click', "#tagAddIcon", function () {
         var stock = jQ(this).attr('value');
-        var tagName = prompt('Which group do you want to put '+ stock +' in?').toUpperCase();
+        var tagName = prompt('Which group do you want to put '+ stock +' in?');
         
         if (tagName == null) return;
+        tagName = tagName.toUpperCase();
 
         //get existing array, if not present create
         if (holdings[tagName]) {
@@ -853,7 +852,12 @@ function main() {
         var currentUrl = window.location.pathname;
         if (currentUrl.includes('positions')) {
             debug('click on positions header.');
-            toggleDropdown();
+            if (jQ('#tagSelectorP').is(":visible")) {
+                hideDropdown();
+            } else {
+                //toggleDropdown();
+                showPositionDropdown();
+            }
         }
     });
 
@@ -955,4 +959,3 @@ function main() {
     });
 
 }
-
