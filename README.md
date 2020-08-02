@@ -66,12 +66,11 @@ Follow below mentioned steps
 }
 ```
 * Create a JSON object as shown above. Left side is the 'stragety name' that will show in dropdown and right side is list of trades.
+* Click on Tempermonkey icon -> then click on 'Option Strategies'.
+* Copy paste your JSON object in the prompt.
+* Page will refresh, now click on 'Positions(x)' text. You will see your custom strategies in the dropdown
 * See below on how to get position ids. The image also shows how to quickly check P&L
-![copypaste](https://dl.dropbox.com/s/nkfaa2mrtfu8jvz/copyPastingPosId.gif?dl=0)
-* ![position](https://dl.dropbox.com/s/58bv2iz95c9yryv/setPositionsOption.png?dl=0)
-* ![rtmt](https://dl.dropbox.com/s/7qfdx8efdtzb015/setRTMTOption.png?dl=0)
-* Go to Positions section and click on 'Positions' text.
-
+* ![copypaste](https://dl.dropbox.com/s/nkfaa2mrtfu8jvz/copyPastingPosId.gif?dl=0)
 
 TODOs
 * Instructions for [Violentmonkey](https://openuserjs.org/about/Violentmonkey-for-Chrome)

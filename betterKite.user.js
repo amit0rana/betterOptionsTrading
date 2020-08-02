@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      0.8
+// @version      0.9
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -108,7 +108,7 @@ function initPositions() {
     var positions = GM_getValue(GMPositionsName,defaultPositions);
 
     
-    GM_registerMenuCommand("Custom Strategies", function() {
+    GM_registerMenuCommand("Option Strategies", function() {
         var p = GM_getValue(GMPositionsName,defaultPositions);
         p = prompt("Provide Positions object. Eg: {\"strategy 1\":[\"12304386\",\"12311298\"],\"strategy 2\":[\"12431106\"]}", JSON.stringify(p));
         if (p == null) return;
@@ -155,6 +155,16 @@ function initReferenceTrades() {
 }
 
 function assignHoldingTags() {
+    jQ(allDOMPaths.rowsFromHoldingsTable).hover(
+        function() {
+            var displayedStockName = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
+            jQ(this).find(".instrument.right-border").append("<span random-att='tagAddBtn' title='Add tag'><span class='randomClassToHelpHide'>&nbsp;</span><span id='tagAddIcon' class='text-label grey randomClassToHelpHide' value='"+displayedStockName+"'>+</span></span>");
+        },
+        function() {
+            jQ(this).find("span[random-att='tagAddBtn']").remove();
+        }
+    );
+
     //check if tags are present
     var tagNameSpans = jQ("span[random-att='tagName']");
     info('no of tags found: ' + tagNameSpans.length);
@@ -176,12 +186,20 @@ function assignHoldingTags() {
                 }
             }
 
-            if (jQ(this).find("#tagAddIcon").length < 1) {
-                jQ(this).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='tagAddIcon' class='text-label grey randomClassToHelpHide' value='"+displayedStockName+"'>+</span>");
-            }
-
         });
     } else {debug('tags found');}
+}
+
+function removeExtraCharsFromStockName(dataUidInTR) {
+    if (dataUidInTR.includes("-BE")) {
+        dataUidInTR = dataUidInTR.split("-BE")[0];
+    } else if (dataUidInTR.includes("NSE")) {
+        dataUidInTR = dataUidInTR.split("NSE")[0];
+    } else if (dataUidInTR.includes("BSE")) {
+        dataUidInTR = dataUidInTR.split("BSE")[0];
+    }
+
+    return dataUidInTR;
 }
 
 function createHoldingsDropdown() {
@@ -218,14 +236,7 @@ function createHoldingsDropdown() {
 
                 var pnl = 0;
                 allHoldingrows.each(function(rowIndex) {
-                    var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
-                    if (dataUidInTR.includes("-BE")) {
-                        dataUidInTR = dataUidInTR.split("-BE")[0];
-                    } else if (dataUidInTR.includes("NSE")) {
-                        dataUidInTR = dataUidInTR.split("NSE")[0];
-                    } else if (dataUidInTR.includes("BSE")) {
-                        dataUidInTR = dataUidInTR.split("BSE")[0];
-                    }
+                    var dataUidInTR = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
 
                     var matchFound = false;
                     matchFound = selectedStocks.includes(dataUidInTR);
@@ -343,6 +354,18 @@ function createHoldingsDropdown() {
 }
 
 function assignPositionTags() {
+    jQ(allDOMPaths.PathForPositions).hover(
+        function() {
+            var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+            var p = dataUidInTR.split(".")[1];
+
+            jQ(this).find(".open.instrument").append("<span random-att='tagAddBtn' title='Add tag'><span class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='"+p+"'>+</span></span>");
+        },
+        function() {
+            jQ(this).find("span[random-att='tagAddBtn']").remove();
+        }
+    );
+
     //check if tags are present
     var tagNameSpans = jQ("span[random-att='tagName']");
     info('no of tags found: ' + tagNameSpans.length);
@@ -360,10 +383,6 @@ function assignPositionTags() {
                     var tn = tradeTag.split(".")[0];
                     jQ(positionSpan).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForPositionTagDeleteAction' tag='"+tradeTag+"' position='"+p+"' class='text-label "+ color +" randomClassToHelpHide'>"+tn+"</span>");
                 }
-            }
-
-            if (jQ(this).find("#positionTagAddIcon").length < 1) {
-                jQ(positionSpan).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='"+p+"'>+</span>");
             }
         });
     } else {debug('tags found');}
