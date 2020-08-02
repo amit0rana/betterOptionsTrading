@@ -20,7 +20,11 @@ const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
 const D_LEVEL_INFO = 2;
 const D_LEVEL_DEBUG = 1;
-const D_LEVEL = D_LEVEL_INFO;
+const D_LEVEL = D_LEVEL_DEBUG;
+const DD_NONE = '';
+const DD_HOLDINGS = 'H';
+const DD_POSITONS = 'P';
+var dropdownDisplay = DD_NONE;
 
 const log = function(level, logInfo) {
     if (level >= D_LEVEL) {
@@ -157,8 +161,10 @@ function initReferenceTrades() {
 function assignHoldingTags() {
     jQ(allDOMPaths.rowsFromHoldingsTable).hover(
         function() {
-            var displayedStockName = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
-            jQ(this).find(".instrument.right-border").append("<span random-att='tagAddBtn' title='Add tag'><span class='randomClassToHelpHide'>&nbsp;</span><span id='tagAddIcon' class='text-label grey randomClassToHelpHide' value='"+displayedStockName+"'>+</span></span>");
+            if (jQ(this).find("span[random-att='tagAddBtn']").length < 1) {
+                var displayedStockName = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
+                jQ(this).find(".instrument.right-border").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='tagAddIcon' class='text-label grey randomClassToHelpHide' value='"+displayedStockName+"'>+</span></span>");
+            }
         },
         function() {
             jQ(this).find("span[random-att='tagAddBtn']").remove();
@@ -356,10 +362,12 @@ function createHoldingsDropdown() {
 function assignPositionTags() {
     jQ(allDOMPaths.PathForPositions).hover(
         function() {
-            var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
-            var p = dataUidInTR.split(".")[1];
+            if (jQ(this).find("span[random-att='tagAddBtn']").length < 1) {
+                var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+                var p = dataUidInTR.split(".")[1];
 
-            jQ(this).find(".open.instrument").append("<span random-att='tagAddBtn' title='Add tag'><span class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='"+p+"'>+</span></span>");
+                jQ(this).find(".open.instrument").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='"+p+"'>+</span></span>");
+            }
         },
         function() {
             jQ(this).find("span[random-att='tagAddBtn']").remove();
@@ -500,7 +508,230 @@ function createPositionsDropdown() {
     return selectBox;
 }
 
-// the guts of this userscript
+function hideDropdown() {
+    jQ(".randomClassToHelpHide").remove();
+    jQ(".allHiddenRows").show();
+
+    dropdownDisplay = DD_NONE;
+    //if (jQ(".randomClassToHelpHide").length) {
+            // if (jQ("#randomForDeleteOptGroup")) {
+            //     jQ("#randomForDeleteOptGroup").remove();
+            // }
+            // if (jQ("#randomForDeleteOptGroupE")) {
+            //     jQ("#randomForDeleteOptGroupE").remove();
+            // }
+            //jQ(".randomClassToHelpHide").remove();
+            //jQ(".allHiddenRows").show();
+
+            //dropdownDisplay = DD_NONE;
+        //}
+}
+
+
+function showPositionDropdown() {
+    debug('showPositionDropdown');
+    
+    var positionGroupdropdown = createPositionsDropdown();
+
+    var allPositionsRow = jQ(allDOMPaths.PathForPositions);
+
+    if (allPositionsRow.length < 1) {
+        debug('sleeping as couldnt find positions');
+        setTimeout(function(){ showPositionDropdown(); }, 2000);
+        return;
+    }
+
+    var lastC = positionGroupdropdown.lastChild;
+    if (lastC.id == "randomForDeleteOptGroupE") {
+        positionGroupdropdown.removeChild(lastC);
+    }
+
+    lastC = positionGroupdropdown.lastChild;
+    if (lastC.id == "randomForDeleteOptGroup") {
+        positionGroupdropdown.removeChild(lastC);
+    }
+
+    var optGrp = document.createElement("optgroup");
+    optGrp.text = "---SCRIPT WISE---";
+    optGrp.label = "---SCRIPT WISE---";
+    optGrp.id = "randomForDeleteOptGroup";
+
+    var optGrpExpiry = document.createElement("optgroup");
+    optGrpExpiry.text = "---EXPIRY WISE---";
+    optGrpExpiry.label = "---EXPIRY WISE---";
+    optGrpExpiry.id = "randomForDeleteOptGroupE";
+
+    var arrForUnique = [];
+    var uniqueExpiryArray = [];
+    allPositionsRow.each(function(rowIndex) {
+
+        var tradingSymbol = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
+
+        //creating auto generated script wise grouping
+        var ts = tradingSymbol.split(" ")[0];
+        if (!arrForUnique.includes(ts)) {
+            var option = document.createElement("option");
+            option.text = ts;
+            option.value = "SPECIAL"+ts;
+            jQ(optGrp).append(option);
+            arrForUnique.push(ts);
+        }
+
+        //creating auto generated expiry wise grouping
+        var arr = tradingSymbol.split(" ");
+        var ex = "";
+        var len = arr.length-2;
+        //for futures AXISBANK JUL FUT
+        if (arr.length == 3) {
+            len = arr.length-1;
+        }
+        for (var i=1 ; i < len ; i++) {
+            ex = ex + " " + arr[i];
+        }
+        ex = ex.trim();
+        if (!uniqueExpiryArray.includes(ex)) {
+            var option2 = document.createElement("option");
+            option2.text = ex;
+            option2.value = "SPECIAL"+ex;
+            jQ(optGrpExpiry).append(option2);
+            uniqueExpiryArray.push(ex);
+        }
+    });
+
+    positionGroupdropdown.add(optGrp);
+    positionGroupdropdown.add(optGrpExpiry);
+
+
+    jQ("a.logo")[0].after(positionGroupdropdown);
+
+    var spanForCount = document.createElement("span");
+    spanForCount.classList.add("randomClassToHelpHide");
+    spanForCount.classList.add("tagSelectorStyle");
+    spanForCount.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
+
+    spanForCount.id ='stocksInTagCount';
+    jQ(positionGroupdropdown).after(spanForCount);
+
+    dropdownDisplay = DD_POSITONS;
+    simulateSelectBoxEvent();
+}
+
+function showHoldingDropdown() {
+    dropdownDisplay = DD_HOLDINGS;
+    //crete the dropdown to filter stocks.
+    var dropdown = createHoldingsDropdown();
+
+    //jQ("h3.page-title.small")[0].before(dropdown);
+    jQ("a.logo")[0].after(dropdown);
+
+    var spanForCount = document.createElement("span");
+    spanForCount.classList.add("randomClassToHelpHide");
+    spanForCount.classList.add("tagSelectorStyle");
+    spanForCount.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
+
+    spanForCount.id ='stocksInTagCount';
+    jQ(dropdown).after(spanForCount);
+
+    simulateSelectBoxEvent();
+}
+
+function toggleDropdown() {
+    debug('toggleDropdown');
+    var currentUrl = window.location.pathname;
+    if (currentUrl.includes('positions')) {
+        switch(dropdownDisplay) {
+            case DD_NONE:
+                // show positions dropdown
+                showPositionDropdown();
+                break;
+            case DD_POSITONS:
+                // do nothing
+                hideDropdown();
+                break;
+            case DD_HOLDINGS:
+                // hide holidings
+                hideDropdown();
+                // show positions
+                showPositionDropdown();
+        }
+    } else if (currentUrl.includes('holdings')) {
+        switch(dropdownDisplay) {
+            case DD_NONE:
+                // show holdings dropdown
+                showHoldingDropdown();
+                break;
+            case DD_POSITONS:
+                // hide positions
+                hideDropdown();
+                // show holdings
+                showHoldingDropdown();
+                break;
+            case DD_HOLDINGS:
+                // do nothing
+                hideDropdown();
+        }
+    }
+}
+
+//dispatch tagSelector change event.
+function simulateSelectBoxEvent() {
+    debug('simulating tagSelector change ');
+    var currentUrl = window.location.pathname;
+
+    var tagSelectorH = document.querySelector("#tagSelectorH");
+    var tagSelectorP = document.querySelector("#tagSelectorP");
+
+    if (currentUrl.includes('holdings')) {
+        //if (tagSelectorP) {tagSelectorP.style.display = "none";}
+        if (tagSelectorH) {
+            //tagSelectorH.style.display = "block";
+            var allHoldingrows = jQ(allDOMPaths.rowsFromHoldingsTable);
+            if (allHoldingrows.length > 0) {
+                debug('initiating change event found holdings');
+                tagSelectorH.dispatchEvent(new Event("change"));
+            } else {
+                debug('sleeping as couldnt find holding');
+                setTimeout(function(){ simulateSelectBoxEvent(); }, 1000);
+            }
+        }
+    } else if (currentUrl.includes('positions')) {
+        //if (tagSelectorH) {tagSelectorH.style.display = "none";}
+        if (tagSelectorP) {
+            //tagSelectorP.style.display = "block";
+            var allPositionsRows = jQ(allDOMPaths.PathForPositions);
+            if (allPositionsRows.length > 0) {
+                debug('initiating change event found holdings');
+                tagSelectorP.dispatchEvent(new Event("change"));
+            } else {
+                debug('sleeping as couldnt find positions');
+                setTimeout(function(){ simulateSelectBoxEvent(); }, 2000);
+                //setTimeout(function(){tagSelectorP.dispatchEvent(new Event("change")); }, 2000);
+            }
+        }
+    }
+
+    //FIX BELOW for ORDERS
+    /*
+    if (tagSelector) {
+        var currentUrl = window.location.pathname;
+        debug("simulateSelectBoxEvent: currentURL " + currentUrl);
+        if (currentUrl.includes('holdings')) {
+
+        } else if (currentUrl.includes('positions')) {
+
+        } else if (currentUrl.includes('orders')) {
+            debug('this is just a work aroud. First order dom for order is accessible after few sec');
+            if (jQ(allDOMPaths.domPathPendingOrdersTR).length < 1 && jQ(allDOMPaths.domPathExecutedOrdersTR).length < 1) {
+                setTimeout(function(){tagSelector.dispatchEvent(new Event("change")); }, 2000);
+            } else {
+                tagSelector.dispatchEvent(new Event("change"));
+            }
+        }
+    }
+    */
+}
+
+// all behavior related actions go here.
 function main() {
     GM_registerMenuCommand("Reset Data", function() {
         if (confirm('Are you sure you want to reset all tag data?')) {
@@ -512,11 +743,6 @@ function main() {
         }
         
     }, "r");
-
-    //crete the dropdown to filter stocks.
-    var dropdown = createHoldingsDropdown();
-
-    var positionGroupdropdown = createPositionsDropdown();
 
     //on click of + to assign tag to holdings
     jQ(document).on('click', "#tagAddIcon", function () {
@@ -608,91 +834,17 @@ function main() {
     jQ(document).on('click', allDOMPaths.positionHeader, function () {
         var currentUrl = window.location.pathname;
         if (currentUrl.includes('positions')) {
-            if (jQ(".randomClassToHelpHide").length) {
-                if (jQ("#randomForDeleteOptGroup")) {
-                    jQ("#randomForDeleteOptGroup").remove();
-                }
-                if (jQ("#randomForDeleteOptGroupE")) {
-                    jQ("#randomForDeleteOptGroupE").remove();
-                }
-                jQ(".randomClassToHelpHide").remove();
-                jQ(".allHiddenRows").show();
-            } else {
-                var lastC = positionGroupdropdown.lastChild;
-                if (lastC.id == "randomForDeleteOptGroupE") {
-                    positionGroupdropdown.removeChild(lastC);
-                }
+            debug('click on positions header.');
+            toggleDropdown();
+        }
+    });
 
-                lastC = positionGroupdropdown.lastChild;
-                if (lastC.id == "randomForDeleteOptGroup") {
-                    positionGroupdropdown.removeChild(lastC);
-                }
-
-                var optGrp = document.createElement("optgroup");
-                optGrp.text = "---SCRIPT WISE---";
-                optGrp.label = "---SCRIPT WISE---";
-                optGrp.id = "randomForDeleteOptGroup";
-
-                var optGrpExpiry = document.createElement("optgroup");
-                optGrpExpiry.text = "---EXPIRY WISE---";
-                optGrpExpiry.label = "---EXPIRY WISE---";
-                optGrpExpiry.id = "randomForDeleteOptGroupE";
-
-
-                var allPositionsRow = jQ(allDOMPaths.PathForPositions);
-                var arrForUnique = [];
-                var uniqueExpiryArray = [];
-                allPositionsRow.each(function(rowIndex) {
-
-                    var tradingSymbol = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
-
-                    //creating auto generated script wise grouping
-                    var ts = tradingSymbol.split(" ")[0];
-                    if (!arrForUnique.includes(ts)) {
-                        var option = document.createElement("option");
-                        option.text = ts;
-                        option.value = "SPECIAL"+ts;
-                        jQ(optGrp).append(option);
-                        arrForUnique.push(ts);
-                    }
-
-                    //creating auto generated expiry wise grouping
-                    var arr = tradingSymbol.split(" ");
-                    var ex = "";
-                    var len = arr.length-2;
-                    //for futures AXISBANK JUL FUT
-                    if (arr.length == 3) {
-                        len = arr.length-1;
-                    }
-                    for (var i=1 ; i < len ; i++) {
-                        ex = ex + " " + arr[i];
-                    }
-                    ex = ex.trim();
-                    if (!uniqueExpiryArray.includes(ex)) {
-                        var option2 = document.createElement("option");
-                        option2.text = ex;
-                        option2.value = "SPECIAL"+ex;
-                        jQ(optGrpExpiry).append(option2);
-                        uniqueExpiryArray.push(ex);
-                    }
-                });
-
-                positionGroupdropdown.add(optGrp);
-                positionGroupdropdown.add(optGrpExpiry);
-
-
-                jQ("a.logo")[0].after(positionGroupdropdown);
-
-                var spanForCount = document.createElement("span");
-                spanForCount.classList.add("randomClassToHelpHide");
-                spanForCount.classList.add("tagSelectorStyle");
-                spanForCount.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
-
-                spanForCount.id ='stocksInTagCount';
-                jQ(positionGroupdropdown).after(spanForCount);
-
-                simulateSelectBoxEvent();
-            }
+    //click of Holdings header
+    jQ(document).on('click', allDOMPaths.domPathMainInitiatorLabel, function () {
+        var currentUrl = window.location.pathname;
+        if (currentUrl.includes('holdings')) {
+            debug('click on holdings header.');
+            toggleDropdown();
         }
     });
 
@@ -708,27 +860,7 @@ function main() {
         });
     });
 
-    //click of Holdings header
-    jQ(document).on('click', allDOMPaths.domPathMainInitiatorLabel, function () {
-        // jQuery methods go here...
-        if (jQ(".randomClassToHelpHide").length) {
-            jQ(".randomClassToHelpHide").remove();
-            jQ(".allHiddenRows").show();
-        } else {
-            //jQ("h3.page-title.small")[0].before(dropdown);
-            jQ("a.logo")[0].after(dropdown);
-
-            var spanForCount = document.createElement("span");
-            spanForCount.classList.add("randomClassToHelpHide");
-            spanForCount.classList.add("tagSelectorStyle");
-            spanForCount.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
-
-            spanForCount.id ='stocksInTagCount';
-            jQ(dropdown).after(spanForCount);
-
-            simulateSelectBoxEvent();
-        }
-    });
+    
 
     //whenever selection in position row changes.
     jQ(document).on('change', "input.su-checkbox", function () {
@@ -758,69 +890,12 @@ function main() {
 
     });
 
-    //dispatch tagSelector change event.
-    var simulateSelectBoxEvent = function() {
-        debug('simulating tagSelector change ');
-        var currentUrl = window.location.pathname;
-
-        var tagSelectorH = document.querySelector("#tagSelectorH");
-        var tagSelectorP = document.querySelector("#tagSelectorP");
-
-        if (currentUrl.includes('holdings')) {
-            //if (tagSelectorP) {tagSelectorP.style.display = "none";}
-            if (tagSelectorH) {
-                //tagSelectorH.style.display = "block";
-                var allHoldingrows = jQ(allDOMPaths.rowsFromHoldingsTable);
-                if (allHoldingrows.length > 0) {
-                    debug('initiating change event found holdings');
-                    tagSelectorH.dispatchEvent(new Event("change"));
-                } else {
-                    debug('sleeping as couldnt find holding');
-                    setTimeout(function(){ simulateSelectBoxEvent(); }, 1000);
-                }
-            }
-        } else if (currentUrl.includes('positions')) {
-            //if (tagSelectorH) {tagSelectorH.style.display = "none";}
-            if (tagSelectorP) {
-                //tagSelectorP.style.display = "block";
-                var allPositionsRows = jQ(allDOMPaths.PathForPositions);
-                if (allPositionsRows.length > 0) {
-                    debug('initiating change event found holdings');
-                    tagSelectorP.dispatchEvent(new Event("change"));
-                } else {
-                    debug('sleeping as couldnt find positions');
-                    setTimeout(function(){ simulateSelectBoxEvent(); }, 2000);
-                    //setTimeout(function(){tagSelectorP.dispatchEvent(new Event("change")); }, 2000);
-                }
-            }
-        }
-
-        //FIX BELOW for ORDERS
-        /*
-        if (tagSelector) {
-            var currentUrl = window.location.pathname;
-            debug("simulateSelectBoxEvent: currentURL " + currentUrl);
-            if (currentUrl.includes('holdings')) {
-
-            } else if (currentUrl.includes('positions')) {
-
-            } else if (currentUrl.includes('orders')) {
-                debug('this is just a work aroud. First order dom for order is accessible after few sec');
-                if (jQ(allDOMPaths.domPathPendingOrdersTR).length < 1 && jQ(allDOMPaths.domPathExecutedOrdersTR).length < 1) {
-                    setTimeout(function(){tagSelector.dispatchEvent(new Event("change")); }, 2000);
-                } else {
-                    tagSelector.dispatchEvent(new Event("change"));
-                }
-            }
-        }
-        */
-    };
-
     //fire hide/show logic if history/url changes.
     var pushState = history.pushState;
     history.pushState = function () {
         pushState.apply(history, arguments);
-        simulateSelectBoxEvent();
+        debug('pushstate call toggle');
+        toggleDropdown();
     };
 
     //on click of watchlist tab (1-5)
