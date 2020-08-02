@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      0.9
+// @version      1.00
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -196,7 +196,7 @@ function assignHoldingTags() {
     } else {debug('tags found');}
 }
 
-function removeExtraCharsFromStockName(dataUidInTR) {
+function removeExtraCharsFromStockName(dataUidInTR, selectedCat) {
     if (dataUidInTR.includes("-BE")) {
         dataUidInTR = dataUidInTR.split("-BE")[0];
     } else if (dataUidInTR.includes("NSE")) {
@@ -206,6 +206,33 @@ function removeExtraCharsFromStockName(dataUidInTR) {
     }
 
     return dataUidInTR;
+}
+
+function filterWatchlist(stocksToFilter, selectedCat) {
+    var allWatchlistRows = jQ(allDOMPaths.domPathWatchlistRow);
+    allWatchlistRows.show();
+    if (selectedCat === "All") {
+        //don't do anything
+    } else {
+        allWatchlistRows.addClass("allHiddenRows");
+
+        allWatchlistRows.each(function(rowIndex){
+            var watchlistRowDiv = this;
+            var stockName = jQ(watchlistRowDiv).find(allDOMPaths.domPathStockNameInWatchlistRow);
+            var watchlistStock = stockName.text();
+            if (watchlistStock.includes("-BE")) {
+                watchlistStock = watchlistStock.split("-BE")[0];
+            }
+            var matchFound = false;
+            matchFound = stocksToFilter.includes(watchlistStock);
+
+            if (matchFound) {
+                //do nothing
+            } else {
+                jQ(watchlistRowDiv).hide();
+            }
+        });
+    }
 }
 
 function createHoldingsDropdown() {
@@ -321,30 +348,7 @@ function createHoldingsDropdown() {
         }
 
         //START work on watchlist AREA
-        var allWatchlistRows = jQ(allDOMPaths.domPathWatchlistRow);
-        allWatchlistRows.show();
-        if (selectedCat === "All") {
-            //don't do anything
-        } else {
-            allWatchlistRows.addClass("allHiddenRows");
-
-            allWatchlistRows.each(function(rowIndex){
-                var watchlistRowDiv = this;
-                var stockName = jQ(watchlistRowDiv).find(allDOMPaths.domPathStockNameInWatchlistRow);
-                var watchlistStock = stockName.html();
-                if (watchlistStock.includes("-BE")) {
-                    watchlistStock = watchlistStock.split("-BE")[0];
-                }
-                var matchFound = false;
-                matchFound = selectedStocks.includes(watchlistStock);
-
-                if (matchFound) {
-                    //do nothing
-                } else {
-                    jQ(watchlistRowDiv).hide();
-                }
-            });
-        }
+        filterWatchlist(selectedStocks, selectedCat);
         //END work on watchlist AREA
 
         return this;
@@ -430,6 +434,7 @@ function createPositionsDropdown() {
             assignPositionTags();
 
             var allPositionOnKite = [];
+            var stocksInList = [];
 
             if (selectedGroup === "All") {
                 jQ("#stocksInTagCount").text("");
@@ -440,20 +445,30 @@ function createPositionsDropdown() {
                 allPositionsRow.addClass("allHiddenRows");
 
                 var pnl = 0;
+                
                 allPositionsRow.each(function(rowIndex) {
                     var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
                     var p = dataUidInTR.split(".")[1];
                     allPositionOnKite.push(p);
 
                     var matchFound = false;
+                    var tradingSymbolText = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
 
                     if (selectedGroup.includes("SPECIAL")) {
                         var lengthOfSpecial = 7;
                         var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL")+lengthOfSpecial);
-                        var tradingSymbolText = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
                         var ts = tradingSymbolText.split(" ")[0];
                         if (ts == s) {
                             matchFound = true;
+                            if (!stocksInList.includes(ts)) {
+                                if (ts == 'BANKNIFTY') {
+                                    stocksInList.push('NIFTY BANK');
+                                } else if(ts == 'NIFTY') {
+                                    stocksInList.push('NIFTY 50');
+                                } else {
+                                    stocksInList.push(ts);
+                                }
+                            }
                         } else if (tradingSymbolText.includes(" " + s + " ")) {
                             matchFound = true;
                         }
@@ -468,16 +483,19 @@ function createPositionsDropdown() {
                         var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
 
                         pnl += parseFloat(v);
+                        if (!stocksInList.includes(tradingSymbolText)) {
+                            stocksInList.push(tradingSymbolText);
+                        }
                     } else {
                         jQ(this).hide();
                     }
-
-
-
                 });
                 
                 jQ("#stocksInTagCount").text("("+countPositionsDisplaying+") " + formatter.format(pnl));
             }
+
+            debug(stocksInList);
+            filterWatchlist(stocksInList, selectedGroup);
 
             //marking positions part of a group
             debug('missing positions are: ');
