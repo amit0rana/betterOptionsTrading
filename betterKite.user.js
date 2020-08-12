@@ -50,6 +50,7 @@ const allDOMPaths = {
     PathForPositions : "div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr",
     positionHeader: "header.row.data-table-header"
 };
+
 const holdings = initHoldings();
 
 const positions = initPositions();
@@ -288,62 +289,7 @@ function createHoldingsDropdown() {
             assignHoldingTags();
 
             //END work on Holdings AREA
-        } else if (currentUrl.includes('orders')) {
-            //START work on order AREA
-            var allPendingOrderRows = jQ(allDOMPaths.domPathPendingOrdersTR);
-
-            var allExecutedOrderRows = jQ(allDOMPaths.domPathExecutedOrdersTR);
-            allPendingOrderRows.show();
-            allExecutedOrderRows.show();
-
-            info("pending orders: " + allPendingOrderRows.length);
-
-            if (selectedCat === "All") {
-                //don't do anything
-            } else {
-                var countPendingOrdersStocks = 0;
-                allPendingOrderRows.addClass("allHiddenRows");
-                allPendingOrderRows.each(function(rowIndex){
-                    var workingRow = this;
-                    var stockInRow = jQ(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
-                    debug("found pending order: " + stockInRow);
-                    if (stockInRow.includes("-BE")) {
-                        stockInRow = stockInRow.split("-BE")[0];
-                    }
-                    var matchFound = false;
-                    matchFound = selectedStocks.includes(stockInRow);
-
-                    if (matchFound) {
-                        //do nothing
-                        countPendingOrdersStocks++;
-                    } else {
-                        jQ(workingRow).hide();
-                    }
-                });
-
-                jQ("#stocksInTagCount").text("("+countPendingOrdersStocks+") ");
-
-                allExecutedOrderRows.addClass("allHiddenRows");
-                allExecutedOrderRows.each(function(rowIndex){
-                    var workingRow = this;
-                    var stockInRow = jQ(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
-                    debug("found executed order: " + stockInRow);
-                    if (stockInRow.includes("-BE")) {
-                        stockInRow = stockInRow.split("-BE")[0];
-                    }
-                    var matchFound = false;
-                    matchFound = selectedStocks.includes(stockInRow);
-
-                    if (matchFound) {
-                        //do nothing
-                    } else {
-                        jQ(workingRow).hide();
-                    }
-                });
-
-            }
-            //END work on order AREA
-        }
+        } 
 
         //START work on watchlist AREA
         filterWatchlist(selectedStocks, selectedCat);
@@ -422,8 +368,6 @@ function createPositionsDropdown() {
         var currentUrl = window.location.pathname;
         info(currentUrl);
         if (currentUrl.includes('positions')) {
-
-
             //START work on Positions AREA
             var allPositionsRow = jQ(allDOMPaths.PathForPositions);
             info('found positions row: ' + allPositionsRow.length);
@@ -458,6 +402,10 @@ function createPositionsDropdown() {
                         var ts = tradingSymbolText.split(" ")[0];
                         if (ts == s) {
                             matchFound = true;
+                        } else if (tradingSymbolText.includes(" " + s + " ")) {
+                            matchFound = true;
+                        }
+                        if (matchFound) {
                             if (!stocksInList.includes(ts)) {
                                 if (ts == 'BANKNIFTY') {
                                     stocksInList.push('NIFTY BANK');
@@ -467,8 +415,6 @@ function createPositionsDropdown() {
                                     stocksInList.push(ts);
                                 }
                             }
-                        } else if (tradingSymbolText.includes(" " + s + " ")) {
-                            matchFound = true;
                         }
                     } else {
                         matchFound = selectedPositions.includes(p);
@@ -529,40 +475,37 @@ function hideDropdown() {
     jQ(".allHiddenRows").show();
 
     dropdownDisplay = DD_NONE;
-    //if (jQ(".randomClassToHelpHide").length) {
-            // if (jQ("#randomForDeleteOptGroup")) {
-            //     jQ("#randomForDeleteOptGroup").remove();
-            // }
-            // if (jQ("#randomForDeleteOptGroupE")) {
-            //     jQ("#randomForDeleteOptGroupE").remove();
-            // }
-            //jQ(".randomClassToHelpHide").remove();
-            //jQ(".allHiddenRows").show();
-
-            //dropdownDisplay = DD_NONE;
-        //}
 }
 
 
-function showPositionDropdown() {
+function showPositionDropdown(retry = true) {
     debug('showPositionDropdown');
-    
-    var positionGroupdropdown = createPositionsDropdown();
 
     var allPositionsRow = jQ(allDOMPaths.PathForPositions);
 
     if (allPositionsRow.length < 1) {
         debug('sleeping as couldnt find positions');
-        setTimeout(function(){ showPositionDropdown(); }, 2000);
+        //TODO if no positions this will cause loop
+        setTimeout(function(){ showPositionDropdown(false); }, 2000);
         return;
     }
 
+    var positionGroupdropdown;
+    debug(jQ('#tagSelectorP').exists());
+    if (jQ('#tagSelectorP').exists()) {
+        positionGroupdropdown = jQ('#tagSelectorP');
+    } else {
+        positionGroupdropdown = createPositionsDropdown();
+    }
+
     var lastC = positionGroupdropdown.lastChild;
+    debug(lastC);
     if (lastC.id == "randomForDeleteOptGroupE") {
         positionGroupdropdown.removeChild(lastC);
     }
 
     lastC = positionGroupdropdown.lastChild;
+    debug(lastC);
     if (lastC.id == "randomForDeleteOptGroup") {
         positionGroupdropdown.removeChild(lastC);
     }
@@ -651,9 +594,8 @@ function showHoldingDropdown() {
     simulateSelectBoxEvent();
 }
 
-function toggleDropdown() {
+function toggleDropdown(currentUrl) {
     debug('toggleDropdown');
-    var currentUrl = window.location.pathname;
     if (currentUrl.includes('positions')) {
         switch(dropdownDisplay) {
             case DD_NONE:
@@ -663,6 +605,7 @@ function toggleDropdown() {
             case DD_POSITONS:
                 // do nothing
                 //hideDropdown();
+                simulateSelectBoxEvent();
                 break;
             case DD_HOLDINGS:
                 // hide holidings
@@ -685,6 +628,7 @@ function toggleDropdown() {
             case DD_HOLDINGS:
                 // do nothing
                 //hideDropdown();
+                simulateSelectBoxEvent();
         }
     }
 }
@@ -745,6 +689,86 @@ function simulateSelectBoxEvent() {
         }
     }
     */
+}
+
+function filterOrders() {
+    debug('filter orders');
+    //there are 3 sections
+    //Open or pending orders
+    
+    var tagSelectorH = document.querySelector("#tagSelectorH");
+    var tagSelectorP = document.querySelector("#tagSelectorP");
+
+    var selectedCat = "All";
+
+    if(tagSelectorH) {
+        selectedCat = tagSelectorH.value;
+    } else if(tagSelectorP) {
+        selectedCat = tagSelectorP.value;
+    } else {
+        //do nothing
+        return;
+    }
+
+    return;
+
+    //START work on order AREA
+    var allPendingOrderRows = jQ(allDOMPaths.domPathPendingOrdersTR);
+
+    var allExecutedOrderRows = jQ(allDOMPaths.domPathExecutedOrdersTR);
+    allPendingOrderRows.show();
+    allExecutedOrderRows.show();
+
+    info("pending orders: " + allPendingOrderRows.length);
+
+    if (selectedCat === "All") {
+        //don't do anything
+    } else {
+        var countPendingOrdersStocks = 0;
+        allPendingOrderRows.addClass("allHiddenRows");
+        allPendingOrderRows.each(function(rowIndex){
+            var workingRow = this;
+            var stockInRow = jQ(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
+            debug("found pending order: " + stockInRow);
+            if (stockInRow.includes("-BE")) {
+                stockInRow = stockInRow.split("-BE")[0];
+            }
+            var matchFound = false;
+            matchFound = selectedStocks.includes(stockInRow);
+
+            if (matchFound) {
+                //do nothing
+                countPendingOrdersStocks++;
+            } else {
+                jQ(workingRow).hide();
+            }
+        });
+
+        jQ("#stocksInTagCount").text("("+countPendingOrdersStocks+") ");
+
+        allExecutedOrderRows.addClass("allHiddenRows");
+        allExecutedOrderRows.each(function(rowIndex){
+            var workingRow = this;
+            var stockInRow = jQ(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
+            debug("found executed order: " + stockInRow);
+            if (stockInRow.includes("-BE")) {
+                stockInRow = stockInRow.split("-BE")[0];
+            }
+            var matchFound = false;
+            matchFound = selectedStocks.includes(stockInRow);
+
+            if (matchFound) {
+                //do nothing
+            } else {
+                jQ(workingRow).hide();
+            }
+        });
+
+    }
+    //END work on order AREA
+    
+    //Executed orders
+    //Trades
 }
 
 // all behavior related actions go here.
@@ -866,7 +890,7 @@ function main() {
         var currentUrl = window.location.pathname;
         if (currentUrl.includes('holdings')) {
             debug('click on holdings header.');
-            toggleDropdown();
+            toggleDropdown(currentUrl);
         }
     });
 
@@ -917,7 +941,12 @@ function main() {
     history.pushState = function () {
         pushState.apply(history, arguments);
         debug('pushstate call toggle');
-        toggleDropdown();
+        var currentUrl = window.location.pathname;
+        if (currentUrl.includes('orders')) {
+            filterOrders();
+        } else {
+            toggleDropdown(currentUrl);
+        }
     };
 
     //on click of watchlist tab (1-5)
@@ -958,4 +987,8 @@ function main() {
         }
     });
 
+}
+
+jQ.fn.exists = function () {
+    return this.length !== 0;
 }
