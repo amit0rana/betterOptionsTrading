@@ -1,3 +1,7 @@
+const D_LEVEL_INFO = 2;
+const D_LEVEL_DEBUG = 1;
+const D_LEVEL = D_LEVEL_INFO;
+
 const log = function(level, logInfo) {
     if (level >= D_LEVEL) {
         console.log(logInfo);
