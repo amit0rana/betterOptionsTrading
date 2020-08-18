@@ -13,3 +13,6 @@ const debug = function(logInfo) {
 const info = function(logInfo) {
     log( D_LEVEL_INFO , logInfo);
 }
+const formatter = Intl.NumberFormat('en-IN', { 
+    style: 'currency', currency: 'INR'
+});
