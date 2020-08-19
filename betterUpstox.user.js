@@ -9,6 +9,7 @@
 // @grant        GM_getValue
 // @grant        GM_registerMenuCommand
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
+// @require      https://github.com/amit0rana/betterKite/raw/master/common.js
 // @require      https://gist.github.com/raw/2625891/waitForKeyElements.js
 // @downloadURL  https://github.com/amit0rana/betterKite/raw/master/betterUpstox.user.js
 // @updateURL    https://github.com/amit0rana/betterKite/raw/master/betterUpstox.meta.js
@@ -16,24 +17,7 @@
 
 //window.jQ=jQuery.noConflict(true);
 
-const D_LEVEL_INFO = 2;
-const D_LEVEL_DEBUG = 1;
-const D_LEVEL = D_LEVEL_DEBUG;
-
-const log = function(level, logInfo) {
-    if (level >= D_LEVEL) {
-        console.log(logInfo);
-    }
-}
-const debug = function(logInfo) {
-    log( D_LEVEL_DEBUG , logInfo);
-}
-const info = function(logInfo) {
-    log( D_LEVEL_INFO , logInfo);
-}
-const formatter = Intl.NumberFormat('en-IN', {
-    style: 'currency', currency: 'INR'
-});
+const D_LEVEL = D_LEVEL_INFO;
 
 waitForKeyElements ("div._headerLinks_12987", main);
 //main();
