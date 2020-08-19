@@ -9,6 +9,7 @@
 // @grant        GM_getValue
 // @grant        GM_registerMenuCommand
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
+// @require      https://github.com/amit0rana/betterKite/raw/master/common.js
 // @downloadURL  https://github.com/amit0rana/betterKite/raw/master/betterKite.user.js
 // @updateURL    https://github.com/amit0rana/betterKite/raw/master/betterKite.meta.js
 // ==/UserScript==
@@ -18,25 +19,14 @@ const PRO_MODE = false;
 const GMHoldingsName = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
-const D_LEVEL_INFO = 2;
-const D_LEVEL_DEBUG = 1;
+
 const D_LEVEL = D_LEVEL_INFO;
 const DD_NONE = '';
 const DD_HOLDINGS = 'H';
 const DD_POSITONS = 'P';
 var dropdownDisplay = DD_NONE;
 
-const log = function(level, logInfo) {
-    if (level >= D_LEVEL) {
-        console.log(logInfo);
-    }
-}
-const debug = function(logInfo) {
-    log( D_LEVEL_DEBUG , logInfo);
-}
-const info = function(logInfo) {
-    log( D_LEVEL_INFO , logInfo);
-}
+
 const allDOMPaths = {
     rowsFromHoldingsTable : "div.holdings > section > div > div > table > tbody > tr",
     attrNameForInstrumentTR : "data-uid",
@@ -56,9 +46,6 @@ const holdings = initHoldings();
 const positions = initPositions();
 
 const referenceTrades = initReferenceTrades();
-const formatter = Intl.NumberFormat('en-IN', { 
-    style: 'currency', currency: 'INR'
-});
 
 main();
 
