@@ -24,4 +24,14 @@ Follow below mentioned steps
 
 
 # Note
-* P&L doesn't update on realtime. It shows the P&L at the time of filter.
+* Steps to disable the script
+
+![disable](https://dl.dropbox.com/s/pp7bqiyzwak6cjp/troubleshootDisableBetterUpstoxVideo.gif?dl=0)
+(if you can't see the image above click here: https://dl.dropbox.com/s/pp7bqiyzwak6cjp/troubleshootDisableBetterUpstoxVideo.gif?dl=0)
+
+* How to upgrade to next version. 
+
+![upgrade](https://dl.dropbox.com/s/8urhzpu6x78yxhk/upgradeScriptBetterUpstox.png?dl=0)
+(if you can't see the image above click here: https://dl.dropbox.com/s/8urhzpu6x78yxhk/upgradeScriptBetterUpstox.png?dl=0)
+
+P&L doesn't update on realtime. It shows the P&L at the time of filter.
