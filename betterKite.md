@@ -46,12 +46,12 @@ Follow below mentioned steps
 * You can verify the installation by clicking on Tampermonkey icon (next to address bar) and then go to 'Dashboard'. You should see 'betterKite' installed. (see below)
 * ![dashboard menu](https://dl.dropbox.com/s/dv1reqb84mz00bm/dashboardmenuoption.png?dl=0)
 * ![dashboard sample](https://dl.dropbox.com/s/blv2j9t8e6iohkt/dashboardSample.png?dl=0)
-* Now just go to <https://kite.zerodha.com> and start using.
+* Now just go to <https://kite.zerodha.com> (refresh the page if its already open) and start using.
 
 # Steps for Holdings
 * Refer to images below on how to use.
-* Go to holdings section and click on 'Holdings(xx)' text.
-* click on + icon to add tags, click on tag to remove it, use the dropdown for filtering.
+* Go to holdings section
+* click on + icon next to the stock name to add tags, click on tag to remove it, use the dropdown for filtering.
 * ![how to use](https://dl.dropbox.com/s/tllta7nzcfl145a/holdingsHowToUse.gif?dl=0)
 * ![add remove tags](https://dl.dropbox.com/s/nbjuxiu7yh9p51i/addingRemovingTags.gif?dl=0)
 
