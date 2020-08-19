@@ -6,7 +6,8 @@ This userscript adds simple features on https://pro.upstox.com/trading UI
 * Solution: Create a 'watchlist', give it name of your strategy, add scripts part of the strategy in the watchlist and click on 'Filter' to only see the positions pertaining to that strategy. 
     * Once you filter, you can see number of positions in that strategy and total P&L
 
-![usage https://dl.dropbox.com/s/18ik0c8vffg1t4x/betterUpstoxUsageGif.gif?dl=0](https://dl.dropbox.com/s/18ik0c8vffg1t4x/betterUpstoxUsageGif.gif?dl=0)
+![usage](https://dl.dropbox.com/s/18ik0c8vffg1t4x/betterUpstoxUsageGif.gif?dl=0)
+(if you can't see the image above, click here: https://dl.dropbox.com/s/18ik0c8vffg1t4x/betterUpstoxUsageGif.gif?dl=0)
 
 # Installation
 
@@ -18,4 +19,5 @@ Follow below mentioned steps
 * You can verify the installation by clicking on Tampermonkey icon (next to address bar) and then go to 'Dashboard'. You should see 'betterUpstox' installed. 
 * Now just go to <https://pro.upstox.com> (if the page is already open, then refresh it) and start using.
 
-![filter https://dl.dropbox.com/s/yt8wc31kcqxjw6w/betterUpstoxFilter.png?dl=0](https://dl.dropbox.com/s/yt8wc31kcqxjw6w/betterUpstoxFilter.png?dl=0)
+![filter](https://dl.dropbox.com/s/yt8wc31kcqxjw6w/betterUpstoxFilter.png?dl=0)
+(if you can't see the image above click here: https://dl.dropbox.com/s/yt8wc31kcqxjw6w/betterUpstoxFilter.png?dl=0)
