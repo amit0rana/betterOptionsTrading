@@ -21,3 +21,7 @@ Follow below mentioned steps
 
 ![filter](https://dl.dropbox.com/s/yt8wc31kcqxjw6w/betterUpstoxFilter.png?dl=0)
 (if you can't see the image above click here: https://dl.dropbox.com/s/yt8wc31kcqxjw6w/betterUpstoxFilter.png?dl=0)
+
+
+# Note
+* P&L doesn't update on realtime. It shows the P&L at the time of filter.
