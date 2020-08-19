@@ -28,10 +28,12 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 
 
 
-# How to use (below instruction is for holdings page, similar thing works on positions page as well)
-* Once installation is done, go to 'holdings' page and click on 'Holdings (..)' text.
-* Once you click you will see a dropdown (select box) next to kite logo on the header row. Between the logo and 'Dashboard' link.
-* you can now filter 'orders' screen and 'holdings' screen based on your selection. Watchlist will also be filtered. Also when you click on watchlist row, if same stock is present in your holdings list, it will be highlighted and brought to focus.
+# How to use
+* Once installation is done, go to 'holdings' page and you will see a dropdown next to the logo listing all your groups.
+  * On holding pages, dropdown will show all the groups under which you want to keep your holding stocks
+  * On Positions page, dropdown will show all the strategies.
+* you can now filter 'positions' screen and 'holdings' screen based on your selection. Watchlist will also be filtered. 
+* When you click on watchlist row, if same stock is present in your holdings list, it will be highlighted and brought to focus.
 
 # Installation
 
