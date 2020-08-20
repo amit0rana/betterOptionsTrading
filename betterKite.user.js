@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      1.00
+// @version      1.01
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -99,7 +99,7 @@ function initPositions() {
     };
     var positions = GM_getValue(GMPositionsName,defaultPositions);
 
-    
+
     GM_registerMenuCommand("Option Strategies", function() {
         var p = GM_getValue(GMPositionsName,defaultPositions);
         p = prompt("Provide Positions object. Eg: {\"strategy 1\":[\"12304386\",\"12311298\"],\"strategy 2\":[\"12431106\"]}", JSON.stringify(p));
@@ -114,7 +114,7 @@ function initPositions() {
 
         window.location.reload();
     }, "p");
-    
+
 
     return positions;
 }
@@ -210,7 +210,11 @@ function filterWatchlist(stocksToFilter, selectedCat) {
                 watchlistStock = watchlistStock.split("-BE")[0];
             }
             var matchFound = false;
-            matchFound = stocksToFilter.includes(watchlistStock);
+            if (Array.isArray(stocksToFilter)) {
+                matchFound = stocksToFilter.includes(watchlistStock);
+            } else {
+                matchFound = watchlistStock.includes(stocksToFilter);
+            }
 
             if (matchFound) {
                 //do nothing
@@ -276,7 +280,7 @@ function createHoldingsDropdown() {
             assignHoldingTags();
 
             //END work on Holdings AREA
-        } 
+        }
 
         //START work on watchlist AREA
         filterWatchlist(selectedStocks, selectedCat);
@@ -374,7 +378,7 @@ function createPositionsDropdown() {
                 allPositionsRow.addClass("allHiddenRows");
 
                 var pnl = 0;
-                
+
                 allPositionsRow.each(function(rowIndex) {
                     var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
                     var p = dataUidInTR.split(".")[1];
@@ -421,7 +425,7 @@ function createPositionsDropdown() {
                         jQ(this).hide();
                     }
                 });
-                
+
                 jQ("#stocksInTagCount").text("("+countPositionsDisplaying+") " + formatter.format(pnl));
             }
 
@@ -682,7 +686,7 @@ function filterOrders() {
     debug('filter orders');
     //there are 3 sections
     //Open or pending orders
-    
+
     var tagSelectorH = document.querySelector("#tagSelectorH");
     var tagSelectorP = document.querySelector("#tagSelectorP");
 
@@ -753,7 +757,7 @@ function filterOrders() {
 
     }
     //END work on order AREA
-    
+
     //Executed orders
     //Trades
 }
@@ -768,14 +772,41 @@ function main() {
 
             window.location.reload();
         }
-        
+
     }, "r");
+
+    GM_registerMenuCommand("Add/Remove Watchlist Filter", function() {
+        var filter = jQ("#watchlistFilterId");
+        if (filter.length > 0) {
+            jQ(filter).remove();
+        } else {
+            var wFilter = document.createElement("li");
+            wFilter.id = 'watchlistFilterId';
+            wFilter.classList.add("randomClassToHelpHide");
+            wFilter.classList.add("item");
+            wFilter.innerText = "Filter";
+
+            jQ("div.marketwatch-sidebar.marketwatch-wrap > ul > li.settings").before(wFilter);
+        }
+
+    }, "a");
+
+    jQ(document).on('click',"#watchlistFilterId", function(){
+        var h = prompt("Provide filter text");
+        if (h == null) {
+            jQ("#watchlistFilterId").text("Filter");
+            filterWatchlist("", "All");
+            return;
+        }
+        filterWatchlist(h.toUpperCase(), "");
+        jQ("#watchlistFilterId").text("Filter *");
+    });
 
     //on click of + to assign tag to holdings
     jQ(document).on('click', "#tagAddIcon", function () {
         var stock = jQ(this).attr('value');
         var tagName = prompt('Which group do you want to put '+ stock +' in?');
-        
+
         if (tagName == null) return;
         tagName = tagName.toUpperCase();
 
@@ -798,12 +829,12 @@ function main() {
     jQ(document).on('click', "#idForTagDeleteAction", function () {
         var stock = jQ(this).attr('stock');
         var tagName = jQ(this).attr('tag');
-        
+
         if (confirm('Do you want to remove this tag?')) {
             //get existing array
             var existingArray = holdings[tagName];
             existingArray.splice(existingArray.indexOf(stock), 1 );
-            
+
             if (existingArray.length < 1) {
                 delete(holdings[tagName]);
             }
@@ -819,7 +850,7 @@ function main() {
     jQ(document).on('click', "#positionTagAddIcon", function () {
         var position = jQ(this).attr('value');
         var tagName = prompt('Please provide tag name and color. For eg: MT.red or RT.blue or BS.green');
-        
+
         if (tagName == null) return;
 
         //get existing array, if not present create
@@ -841,19 +872,19 @@ function main() {
     jQ(document).on('click', "#idForPositionTagDeleteAction", function () {
         var position = jQ(this).attr('position');
         var tagName = jQ(this).attr('tag');
-        
+
         if (confirm('Do you want to remove this tag?')) {
             //get existing array
             var existingArray = referenceTrades[tagName];
             existingArray.splice(existingArray.indexOf(position), 1 );
-            
+
             if (existingArray.length < 1) {
                 delete(referenceTrades[tagName]);
             }
 
 
             GM_setValue(GMRefTradeName,referenceTrades);
-            
+
             window.location.reload();
         }
     });
@@ -893,7 +924,7 @@ function main() {
         });
     });
 
-    
+
 
     //whenever selection in position row changes.
     jQ(document).on('change', "input.su-checkbox", function () {
