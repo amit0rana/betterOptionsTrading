@@ -968,7 +968,14 @@ function main() {
     };
 
     //on click of watchlist tab (1-5)
-    jQ(document).on('click', allDOMPaths.domPathTabToChangeWatchlist,simulateSelectBoxEvent);
+    jQ(document).on('click', allDOMPaths.domPathTabToChangeWatchlist,function(){
+        info("clicked on: " + jQ(this).attr("id"));
+        if (jQ(this).attr("id") == "watchlistFilterId") {
+            //do nothing
+        } else {
+            simulateSelectBoxEvent();
+        }
+    });
 
     //logic to scroll relevant stock in holding and highlight it
     jQ(document).on('click', allDOMPaths.domPathWatchlistRow, function () {
