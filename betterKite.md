@@ -48,14 +48,14 @@ Follow below mentioned steps
 * ![dashboard sample](https://dl.dropbox.com/s/blv2j9t8e6iohkt/dashboardSample.png?dl=0)
 * Now just go to <https://kite.zerodha.com> (refresh the page if its already open) and start using.
 
-# Steps for Holdings
+# Steps for grouping your Holdings
 * Refer to images below on how to use.
 * Go to holdings section
 * click on + icon next to the stock name to add tags, click on tag to remove it, use the dropdown for filtering.
 * ![how to use](https://dl.dropbox.com/s/tllta7nzcfl145a/holdingsHowToUse.gif?dl=0)
 * ![add remove tags](https://dl.dropbox.com/s/nbjuxiu7yh9p51i/addingRemovingTags.gif?dl=0)
 
-# steps for marking trades as reference trades or base trade or martingales
+# Steps for marking trades as reference trades or base trade or martingales
 * Process is same as taging holdings, important thing to keep in mind is the format of the tag.
 * Tag should be formated as tagName.color for example: RT.red or BS.blue etc. 
 
