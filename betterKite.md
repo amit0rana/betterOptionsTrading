@@ -2,7 +2,7 @@
 
 Very simple "userscript" which adds following features to kite.zerodha.com ui
 
-#### https://kite.zerodha.com/positions page
+# https://kite.zerodha.com/positions page
 * Strategies are grouped in 3 ways.
   * (1) Strategies are auto grouped by script name. So all INFY strategies will be auto grouped under 'INFY'
   * (2) Strategies are auto grouped by expiry.
@@ -17,7 +17,7 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 * Quickly see total P&L of 'selected' positions.
 ![addPositions](https://dl.dropbox.com/s/mvavj8njmt2xvtp/pnlAddition.png?dl=0)
 
-#### https://kite.zerodha.com/holdings page
+# https://kite.zerodha.com/holdings page
 * Group your holdings in 'categories' or 'tags'
 * Small tag is shown next to your stock name indicating which category it belongs to.
 ![tags](https://dl.dropbox.com/s/ygk9id8c21b3mi8/HoldingsWithTags.png?dl=0)
