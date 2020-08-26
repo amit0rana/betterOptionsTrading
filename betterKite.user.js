@@ -368,9 +368,21 @@ function createPositionsDropdown() {
 
             var allPositionOnKite = [];
             var stocksInList = [];
+            var misCount = 0;
 
+            jQ("#misNotificationId").remove();
             if (selectedGroup === "All") {
                 jQ("#stocksInTagCount").text("");
+                
+                misCount = 0;
+
+                allPositionsRow.each(function(rowIndex) {
+                    var productType = jQ(this).find("td.open.product > span").text().trim();
+
+                    if (productType.startsWith("MIS")) {
+                        misCount++;
+                    }
+                });
                 //don't do anything
             } else {
                 //logic to hide the rows in positions table not in our list
@@ -378,7 +390,7 @@ function createPositionsDropdown() {
                 allPositionsRow.addClass("allHiddenRows");
 
                 var pnl = 0;
-                var misCount = 0;
+                misCount = 0;
 
                 allPositionsRow.each(function(rowIndex) {
                     var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
@@ -388,10 +400,6 @@ function createPositionsDropdown() {
                     var matchFound = false;
                     var tradingSymbolText = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
                     var productType = jQ(this).find("td.open.product > span").text().trim();
-
-                    if (productType == "MIS") {
-                        misCount++;
-                    }
 
                     if (selectedGroup.includes("SPECIAL")) {
                         var lengthOfSpecial = 7;
@@ -427,6 +435,9 @@ function createPositionsDropdown() {
                         if (!stocksInList.includes(tradingSymbolText)) {
                             stocksInList.push(tradingSymbolText);
                         }
+                        if (productType == "MIS") {
+                            misCount++;
+                        }
                     } else {
                         jQ(this).hide();
                     }
@@ -434,12 +445,14 @@ function createPositionsDropdown() {
 
                 var textDisplay = "("+countPositionsDisplaying+") " + formatter.format(pnl);
 
-                info('mis: ' + misCount);
-                if (misCount > 0) {
-                    textDisplay = textDisplay + " *MIS*";
-                }
-
                 jQ("#stocksInTagCount").text(textDisplay);
+                
+            }
+
+            info('mis: ' + misCount);
+            if (misCount > 0) {
+                //textDisplay = textDisplay + " *MIS*";
+                jQ("h3.page-title.small").after("<span id='misNotificationId' class='text-label red randomClassToHelpHide'>MIS</span>");
             }
 
             debug(stocksInList);
