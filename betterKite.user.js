@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      1.02
+// @version      1.03
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -421,6 +421,10 @@ function createPositionsDropdown() {
                                 }
                             }
                         }
+                    } else if(selectedGroup == "MISONLY") {
+                        if (productType == "MIS") {
+                            matchFound = true;
+                        }
                     } else {
                         matchFound = selectedPositions.includes(p);
                     }
@@ -537,11 +541,21 @@ function showPositionDropdown(retry = true) {
     optGrpExpiry.label = "---EXPIRY WISE---";
     optGrpExpiry.id = "randomForDeleteOptGroupE";
 
+    var optGrpMis = document.createElement("optgroup");
+    optGrpMis.text = "---MIS Positions---";
+    optGrpMis.label = "---MIS Positins---";
+    optGrpMis.id = "randomForDeleteOptGroupM";
+
+    var optionTmp = document.createElement("option");
+    optionTmp.text = "All MIS Only";
+    optionTmp.value = "MISONLY";
+
     var arrForUnique = [];
     var uniqueExpiryArray = [];
     allPositionsRow.each(function(rowIndex) {
 
         var tradingSymbol = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
+        var positionProductType = jQ(this).find("td.open.product > span").text().trim();
 
         //creating auto generated script wise grouping
         var ts = tradingSymbol.split(" ")[0];
@@ -576,6 +590,8 @@ function showPositionDropdown(retry = true) {
 
     positionGroupdropdown.add(optGrp);
     positionGroupdropdown.add(optGrpExpiry);
+    jQ(optGrpMis).append(optionTmp);
+    positionGroupdropdown.add(optGrpMis);
 
 
     jQ("a.logo")[0].after(positionGroupdropdown);
