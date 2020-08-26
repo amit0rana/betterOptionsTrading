@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      1.01
+// @version      1.02
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -378,6 +378,7 @@ function createPositionsDropdown() {
                 allPositionsRow.addClass("allHiddenRows");
 
                 var pnl = 0;
+                var misCount = 0;
 
                 allPositionsRow.each(function(rowIndex) {
                     var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
@@ -386,6 +387,11 @@ function createPositionsDropdown() {
 
                     var matchFound = false;
                     var tradingSymbolText = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
+                    var productType = jQ(this).find("td.open.product > span").text().trim();
+
+                    if (productType == "MIS") {
+                        misCount++;
+                    }
 
                     if (selectedGroup.includes("SPECIAL")) {
                         var lengthOfSpecial = 7;
@@ -426,7 +432,14 @@ function createPositionsDropdown() {
                     }
                 });
 
-                jQ("#stocksInTagCount").text("("+countPositionsDisplaying+") " + formatter.format(pnl));
+                var textDisplay = "("+countPositionsDisplaying+") " + formatter.format(pnl);
+
+                info('mis: ' + misCount);
+                if (misCount > 0) {
+                    textDisplay = textDisplay + " *MIS*";
+                }
+
+                jQ("#stocksInTagCount").text(textDisplay);
             }
 
             debug(stocksInList);
@@ -762,6 +775,22 @@ function filterOrders() {
     //Trades
 }
 
+var filterText = "";
+function toggleFilter() {
+    var filter = jQ("#watchlistFilterId");
+    if (filter.length > 0) {
+        jQ(filter).remove();
+    } else {
+        var wFilter = document.createElement("li");
+        wFilter.id = 'watchlistFilterId';
+        wFilter.classList.add("randomClassToHelpHide");
+        wFilter.classList.add("item");
+        wFilter.innerText = "Filter";
+
+        jQ("div.marketwatch-sidebar.marketwatch-wrap > ul > li.settings").before(wFilter);
+    }
+}
+
 // all behavior related actions go here.
 function main() {
     GM_registerMenuCommand("Reset Data", function() {
@@ -776,30 +805,21 @@ function main() {
     }, "r");
 
     GM_registerMenuCommand("Add/Remove Watchlist Filter", function() {
-        var filter = jQ("#watchlistFilterId");
-        if (filter.length > 0) {
-            jQ(filter).remove();
-        } else {
-            var wFilter = document.createElement("li");
-            wFilter.id = 'watchlistFilterId';
-            wFilter.classList.add("randomClassToHelpHide");
-            wFilter.classList.add("item");
-            wFilter.innerText = "Filter";
-
-            jQ("div.marketwatch-sidebar.marketwatch-wrap > ul > li.settings").before(wFilter);
-        }
-
+        toggleFilter();
     }, "a");
 
     jQ(document).on('click',"#watchlistFilterId", function(){
-        var h = prompt("Provide filter text");
-        if (h == null) {
+        var h = prompt("Provide filter text. Press Esc or Click cancel to reset filter.", filterText);
+        if (h == null || h == "") {
+            filterText = "";
             jQ("#watchlistFilterId").text("Filter");
-            filterWatchlist("", "All");
+            filterWatchlist(filterText, "All");
             return;
+        } else {
+            filterText = h.toUpperCase();
+            filterWatchlist(filterText, "");
+            jQ("#watchlistFilterId").text("Filter *");
         }
-        filterWatchlist(h.toUpperCase(), "");
-        jQ("#watchlistFilterId").text("Filter *");
     });
 
     //on click of + to assign tag to holdings
