@@ -15,7 +15,7 @@
 // ==/UserScript==
 
 window.jQ=jQuery.noConflict(true);
-const version = "v2.00";
+const version = "v2.01";
 const PRO_MODE = false;
 const GMHoldingsName = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
