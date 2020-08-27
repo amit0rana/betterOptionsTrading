@@ -33,5 +33,6 @@ Follow below mentioned steps
 
 ![upgrade](https://dl.dropbox.com/s/8urhzpu6x78yxhk/upgradeScriptBetterUpstox.png?dl=0)
 (if you can't see the image above click here: https://dl.dropbox.com/s/8urhzpu6x78yxhk/upgradeScriptBetterUpstox.png?dl=0)
+* Do not forget to refresh the page after update
 
 * P&L doesn't update on realtime. It shows the P&L at the time of filter.
