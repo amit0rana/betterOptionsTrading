@@ -49,6 +49,7 @@ Follow below mentioned steps
 * ![dashboard menu](https://dl.dropbox.com/s/dv1reqb84mz00bm/dashboardmenuoption.png?dl=0)
 * ![dashboard sample](https://dl.dropbox.com/s/blv2j9t8e6iohkt/dashboardSample.png?dl=0)
 * Now just go to <https://kite.zerodha.com> (refresh the page if its already open) and start using.
+* Verify that your version should be more than v2.00. Click on Tempermonkey icon, you will see version in the 'Reset Data (WARNING) menu item.
 
 # Steps for grouping your Holdings
 * Refer to images below on how to use.
