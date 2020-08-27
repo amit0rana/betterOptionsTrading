@@ -25,6 +25,7 @@ const DD_NONE = '';
 const DD_HOLDINGS = 'H';
 const DD_POSITONS = 'P';
 var dropdownDisplay = DD_NONE;
+var showOnlyMISPositions = false;
 
 
 const allDOMPaths = {
@@ -38,7 +39,7 @@ const allDOMPaths = {
     domPathMainInitiatorLabel : "h3.page-title.small > span",
     domPathTabToChangeWatchlist : "ul.marketwatch-selector.list-flat > li",
     PathForPositions : "div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr",
-    positionHeader: "header.row.data-table-header"
+    positionHeader: "header.row.data-table-header > h3"
 };
 
 const holdings = initHoldings();
@@ -370,21 +371,7 @@ function createPositionsDropdown() {
             var stocksInList = [];
             var misCount = 0;
 
-            jQ("#misNotificationId").remove();
-            if (selectedGroup === "All") {
-                jQ("#stocksInTagCount").text("");
-                
-                misCount = 0;
-
-                allPositionsRow.each(function(rowIndex) {
-                    var productType = jQ(this).find("td.open.product > span").text().trim();
-
-                    if (productType.startsWith("MIS")) {
-                        misCount++;
-                    }
-                });
-                //don't do anything
-            } else {
+            
                 //logic to hide the rows in positions table not in our list
                 var countPositionsDisplaying = 0;
                 allPositionsRow.addClass("allHiddenRows");
@@ -399,7 +386,7 @@ function createPositionsDropdown() {
 
                     var matchFound = false;
                     var tradingSymbolText = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
-                    var productType = jQ(this).find("td.open.product > span").text().trim();
+                    var productType = jQ(this).find("td.product > span").text().trim();
 
                     if (selectedGroup.includes("SPECIAL")) {
                         var lengthOfSpecial = 7;
@@ -421,14 +408,20 @@ function createPositionsDropdown() {
                                 }
                             }
                         }
-                    } else if(selectedGroup == "MISONLY") {
-                        if (productType == "MIS") {
-                            matchFound = true;
-                        }
+                    }  else if (selectedGroup === "All") {
+                        matchFound = true;
                     } else {
                         matchFound = selectedPositions.includes(p);
                     }
 
+                    if(showOnlyMISPositions) {
+                        if (productType == "MIS") {
+                            //let filter decision pass
+                        } else {
+                            //overide filter decision and hide.
+                            matchFound = false;
+                        }
+                    }
 
                     if (matchFound) {
                         //dont do anything, let the row be shown.
@@ -447,17 +440,22 @@ function createPositionsDropdown() {
                     }
                 });
 
+                jQ("#misCoundId").text("("+misCount+")");
+
                 var textDisplay = "("+countPositionsDisplaying+") " + formatter.format(pnl);
 
                 jQ("#stocksInTagCount").text(textDisplay);
-                
-            }
 
-            info('mis: ' + misCount);
-            if (misCount > 0) {
-                //textDisplay = textDisplay + " *MIS*";
-                jQ("h3.page-title.small").after("<span id='misNotificationId' class='text-label red randomClassToHelpHide'>MIS</span>");
-            }
+                jQ("#stocksInTagCount").removeClass("text-green");
+                jQ("#stocksInTagCount").removeClass("text-red");
+                jQ("#stocksInTagCount").removeClass("text-black");
+                if(pnl>0) {
+                    jQ("#stocksInTagCount").addClass("text-green");
+                } else if (pnl<0) {
+                    jQ("#stocksInTagCount").addClass("text-red");
+                } else {
+                    jQ("#stocksInTagCount").addClass("text-black");
+                }
 
             debug(stocksInList);
             filterWatchlist(stocksInList, selectedGroup);
@@ -491,6 +489,24 @@ function createPositionsDropdown() {
     return selectBox;
 }
 
+function createMisFilter() {
+    var s = jQ("<span id='misNotificationId' class='randomClassToHelpHide' style='font-size: 10px;margin: 0px 10px; border-left: 1px solid rgb(224, 224, 224); padding: 10px 10px;'>Show <span  class='text-label red randomClassToHelpHide'>MIS</span> Only</span>");
+
+    var i = document.createElement("INPUT");
+    i.style = 'margin: 5px';
+    i.type = 'checkbox';
+    i.id = "misFilterId";
+    i.name='misFilter';
+    i.value='SHOWMISONLY';
+    i.checked = showOnlyMISPositions;
+
+    jQ(s).append(i);
+
+    jQ(s).append("<span id='misCoundId'></span>");
+
+    return s;
+}
+
 function hideDropdown() {
     jQ(".randomClassToHelpHide").remove();
     jQ(".allHiddenRows").show();
@@ -500,6 +516,9 @@ function hideDropdown() {
 
 
 function showPositionDropdown(retry = true) {
+    jQ("#misNotificationId").remove();
+    jQ(jQ("h3.page-title.small")[0]).after(createMisFilter());
+
     debug('showPositionDropdown');
 
     var allPositionsRow = jQ(allDOMPaths.PathForPositions);
@@ -507,7 +526,7 @@ function showPositionDropdown(retry = true) {
     if (allPositionsRow.length < 1) {
         debug('sleeping as couldnt find positions');
         //TODO if no positions this will cause loop
-        setTimeout(function(){ showPositionDropdown(false); }, 2000);
+        setTimeout(function(){ showPositionDropdown(false); }, 1000);
         return;
     }
 
@@ -541,22 +560,21 @@ function showPositionDropdown(retry = true) {
     optGrpExpiry.label = "---EXPIRY WISE---";
     optGrpExpiry.id = "randomForDeleteOptGroupE";
 
-    var optGrpMis = document.createElement("optgroup");
-    optGrpMis.text = "---MIS Positions---";
-    optGrpMis.label = "---MIS Positins---";
-    optGrpMis.id = "randomForDeleteOptGroupM";
+    //var optGrpMis = document.createElement("optgroup");
+    //optGrpMis.text = "---MIS Positions---";
+    //optGrpMis.label = "---MIS Positins---";
+    //optGrpMis.id = "randomForDeleteOptGroupM";
 
-    var optionTmp = document.createElement("option");
-    optionTmp.text = "All MIS Only";
-    optionTmp.value = "MISONLY";
+    //var optionTmp = document.createElement("option");
+    //optionTmp.text = "All MIS Only";
+    //optionTmp.value = "MISONLY";
 
     var arrForUnique = [];
     var uniqueExpiryArray = [];
     allPositionsRow.each(function(rowIndex) {
 
         var tradingSymbol = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
-        var positionProductType = jQ(this).find("td.open.product > span").text().trim();
-
+        
         //creating auto generated script wise grouping
         var ts = tradingSymbol.split(" ")[0];
         if (!arrForUnique.includes(ts)) {
@@ -590,8 +608,8 @@ function showPositionDropdown(retry = true) {
 
     positionGroupdropdown.add(optGrp);
     positionGroupdropdown.add(optGrpExpiry);
-    jQ(optGrpMis).append(optionTmp);
-    positionGroupdropdown.add(optGrpMis);
+    //jQ(optGrpMis).append(optionTmp);
+    //positionGroupdropdown.add(optGrpMis);
 
 
     jQ("a.logo")[0].after(positionGroupdropdown);
@@ -837,6 +855,16 @@ function main() {
         toggleFilter();
     }, "a");
 
+    //click of mis filter
+    jQ(document).on('click',"#misFilterId", function(){
+        var filterValue = this.value;
+        showOnlyMISPositions = this.checked;
+
+        info(filterValue + showOnlyMISPositions);
+        simulateSelectBoxEvent();
+    });
+
+    //click of watchlist filter
     jQ(document).on('click',"#watchlistFilterId", function(){
         var h = prompt("Provide filter text. Press Esc or Click cancel to reset filter.", filterText);
         if (h == null || h == "") {
