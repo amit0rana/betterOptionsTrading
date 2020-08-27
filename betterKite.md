@@ -63,7 +63,7 @@ Follow below mentioned steps
 
 # Steps for custom Positions. You don't need below step if auto grouping by script name works for you
 * Please see the animated gif below
-![addingDeletingStrategies](https://www.dropbox.com/s/23mec9h3zd8iolw/AddingDeletingStrategy.gif?dl=0)
+![addingDeletingStrategies](https://dl.dropbox.com/s/23mec9h3zd8iolw/AddingDeletingStrategy.gif?dl=0)
 (if you can't see the image above see this video: https://dl.dropbox.com/s/iay4ld2ibdx3t91/AddingDeletingStrategy.mp4?dl=0)
 
 TODOs
