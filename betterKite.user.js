@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.00
+// @version      2.01
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -15,6 +15,7 @@
 // ==/UserScript==
 
 window.jQ=jQuery.noConflict(true);
+const version = "v2.00";
 const PRO_MODE = false;
 const GMHoldingsName = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
@@ -121,15 +122,22 @@ function initPositions() {
         info("selected ps "+ selectedPositions.length);
 
         var msg = '';
-        if (selectedPositions.length > 0) {
-            msg = 'You have selected '+selectedPositions.length+' positions. Please provide name of the strategy:';
-        } else {
-            msg = 'You have not selected any position. \n\nPlease tell your strategy name:\n\nNOTE: IF THERE IS AN EXISTING STRATEGY WITH SAME NAME THEN IT WILL BE RE-SET. If there is no strategy with this name then we will create an empty one. You can add positions later or cancel now, select positions and then add.';
+        if (selectedPositions.length <= 0) {
+            alert('Please select atleast one position to be added to a strategy');
+            return;
+            //msg = 'You have selected '+selectedPositions.length+' positions. Please provide name of the strategy. \n\nNOTE: (1) If strategy name exists then position will be added to the group. \n(2) If this is new name then new strategy will be created.';
         }
+
+        msg = 'Please tell your strategy name:\n\nNOTE: (1) If there is an existing strategy with same name then we will add selected position to same strategy. \n(2)If there is no strategy with this name then we will create a new one.';
+        
         var strategyName = prompt(msg);
         if (strategyName == null) return;
         strategyName = strategyName.toUpperCase();
         var storedStrategies = GM_getValue(GMPositionsName,defaultPositions);
+        var keys = [];
+        for (var k in storedStrategies) {
+            keys.push(k);
+        }
 
         var positionArray = [];
         selectedPositions.each(function(rowIndex) {
@@ -140,7 +148,12 @@ function initPositions() {
         });
 
         debug(JSON.stringify(storedStrategies));
-        storedStrategies[strategyName] = positionArray;
+
+        if(keys.includes(strategyName)) {
+            storedStrategies[strategyName] = storedStrategies[strategyName].concat(positionArray);
+        } else {
+            storedStrategies[strategyName] = positionArray;
+        }
         debug(JSON.stringify(storedStrategies));
 
         GM_setValue(GMPositionsName,storedStrategies);
@@ -893,7 +906,7 @@ function addWatchlistFilter() {
 
 // all behavior related actions go here.
 function main() {
-    GM_registerMenuCommand("Reset Data (WARNING)", function() {
+    GM_registerMenuCommand("Reset Data (WARNING) "+version, function() {
         if (confirm('Are you sure you want to reset all tag data?')) {
             if (confirm('I am checking with you one last time, are you sure?')) {
                 GM_setValue(GMHoldingsName,{});
