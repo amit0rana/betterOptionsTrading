@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      1.03
+// @version      2.00
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -100,22 +100,79 @@ function initPositions() {
     };
     var positions = GM_getValue(GMPositionsName,defaultPositions);
 
+    if (PRO_MODE) {
+        GM_registerMenuCommand("Option Strategies", function() {
+            var p = GM_getValue(GMPositionsName,defaultPositions);
+            p = prompt("Provide Positions object. Eg: {\"strategy 1\":[\"12304386\",\"12311298\"],\"strategy 2\":[\"12431106\"]}", JSON.stringify(p));
+            if (p == null) return;
+            try {
+                positions = JSON.parse(p);
+                GM_setValue(GMPositionsName,positions);
+            }
+            catch(err) {
+                alert("There was error in your input");
+            }
 
-    GM_registerMenuCommand("Option Strategies", function() {
-        var p = GM_getValue(GMPositionsName,defaultPositions);
-        p = prompt("Provide Positions object. Eg: {\"strategy 1\":[\"12304386\",\"12311298\"],\"strategy 2\":[\"12431106\"]}", JSON.stringify(p));
-        if (p == null) return;
-        try {
-            positions = JSON.parse(p);
-            GM_setValue(GMPositionsName,positions);
-        }
-        catch(err) {
-            alert("There was error in your input");
-        }
+            window.location.reload();
+        }, "p");
+    }
+    GM_registerMenuCommand("Add to or Create new Strategy", function() {
+        var selectedPositions = jQ(allDOMPaths.PathForPositions).filter(':has(:checkbox:checked)');
+        info("selected ps "+ selectedPositions.length);
 
+        var msg = '';
+        if (selectedPositions.length > 0) {
+            msg = 'You have selected '+selectedPositions.length+' positions. Please provide name of the strategy:';
+        } else {
+            msg = 'You have not selected any position. \n\nPlease tell your strategy name:\n\nNOTE: IF THERE IS AN EXISTING STRATEGY WITH SAME NAME THEN IT WILL BE RE-SET. If there is no strategy with this name then we will create an empty one. You can add positions later or cancel now, select positions and then add.';
+        }
+        var strategyName = prompt(msg);
+        if (strategyName == null) return;
+        strategyName = strategyName.toUpperCase();
+        var storedStrategies = GM_getValue(GMPositionsName,defaultPositions);
+
+        var positionArray = [];
+        selectedPositions.each(function(rowIndex) {
+            var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+
+            var text = dataUidInTR.split(".")[1];
+            positionArray.push(text);
+        });
+
+        debug(JSON.stringify(storedStrategies));
+        storedStrategies[strategyName] = positionArray;
+        debug(JSON.stringify(storedStrategies));
+
+        GM_setValue(GMPositionsName,storedStrategies);
         window.location.reload();
-    }, "p");
+    }, "s");
 
+    GM_registerMenuCommand("Delete A Strategy", function() {
+        var storedStrategies = GM_getValue(GMPositionsName,defaultPositions);
+        var keys = [];
+        for (var k in storedStrategies) {
+            keys.push(k);
+        }
+
+        var strategyToDelete = prompt("Please specify which strategy do you want to delete: " + keys.toString());
+        if (strategyToDelete == null) return;
+        strategyToDelete = strategyToDelete.toUpperCase();
+
+        if(keys.includes(strategyToDelete)) {
+            var confirmDelete = confirm("Deleting strategy " + strategyToDelete + "\n\nNOTE: Deletion does not have any impact on the Positions, this will simply delete strategy from the dropdown. Please confirm, name is correct?");
+            if (confirmDelete == false) return;
+
+            debug(JSON.stringify(storedStrategies));
+            delete storedStrategies[strategyToDelete];
+            debug(JSON.stringify(storedStrategies));
+            GM_setValue(GMPositionsName,storedStrategies);
+
+            window.location.reload();
+        } else {
+            alert('You do not have any custom strategy with this name. No action taken. Input you gave was: ' + strategyToDelete);
+        }
+
+    }, "d");
 
     return positions;
 }
@@ -386,7 +443,7 @@ function createPositionsDropdown() {
 
                     var matchFound = false;
                     var tradingSymbolText = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
-                    var productType = jQ(this).find("td.product > span").text().trim();
+                    var productType = jQ(this).find("td.open.product > span").text().trim();
 
                     if (selectedGroup.includes("SPECIAL")) {
                         var lengthOfSpecial = 7;
@@ -823,37 +880,31 @@ function filterOrders() {
 }
 
 var filterText = "";
-function toggleFilter() {
-    var filter = jQ("#watchlistFilterId");
-    if (filter.length > 0) {
-        jQ(filter).remove();
-    } else {
-        var wFilter = document.createElement("li");
-        wFilter.id = 'watchlistFilterId';
-        wFilter.classList.add("randomClassToHelpHide");
-        wFilter.classList.add("item");
-        wFilter.innerText = "Filter";
+function addWatchlistFilter() {
+    //jQ("#watchlistFilterId").remove();
+    var wFilter = document.createElement("li");
+    wFilter.id = 'watchlistFilterId';
+    wFilter.classList.add("randomClassToHelpHide");
+    wFilter.classList.add("item");
+    wFilter.innerText = "Filter";
 
-        jQ("div.marketwatch-sidebar.marketwatch-wrap > ul > li.settings").before(wFilter);
-    }
+    jQ("div.marketwatch-sidebar.marketwatch-wrap > ul > li.settings").before(wFilter);
 }
 
 // all behavior related actions go here.
 function main() {
-    GM_registerMenuCommand("Reset Data", function() {
+    GM_registerMenuCommand("Reset Data (WARNING)", function() {
         if (confirm('Are you sure you want to reset all tag data?')) {
-            GM_setValue(GMHoldingsName,{});
-            GM_setValue(GMPositionsName,{});
-            GM_setValue(GMRefTradeName,{});
-
-            window.location.reload();
+            if (confirm('I am checking with you one last time, are you sure?')) {
+                GM_setValue(GMHoldingsName,{});
+                GM_setValue(GMPositionsName,{});
+                GM_setValue(GMRefTradeName,{});
+    
+                window.location.reload();
+            }
         }
 
     }, "r");
-
-    GM_registerMenuCommand("Add/Remove Watchlist Filter", function() {
-        toggleFilter();
-    }, "a");
 
     //click of mis filter
     jQ(document).on('click',"#misFilterId", function(){
@@ -976,6 +1027,7 @@ function main() {
             } else {
                 //toggleDropdown();
                 showPositionDropdown();
+                addWatchlistFilter();
             }
         }
     });

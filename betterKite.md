@@ -16,6 +16,7 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 ![referenceTags](https://dl.dropbox.com/s/i18bklcdebtagia/referenceTags.png?dl=0)
 * Quickly see total P&L of 'selected' positions.
 ![addPositions](https://dl.dropbox.com/s/mvavj8njmt2xvtp/pnlAddition.png?dl=0)
+* "Filter" button is added next to 1,2,3,4,5 watchlist. You can use this to filter your watchlist.
 
 # https://kite.zerodha.com/holdings page
 * Group your holdings in 'categories' or 'tags'
@@ -34,6 +35,7 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
   * On Positions page, dropdown will show all the strategies.
 * you can now filter 'positions' screen and 'holdings' screen based on your selection. Watchlist will also be filtered. 
 * When you click on watchlist row, if same stock is present in your holdings list, it will be highlighted and brought to focus.
+* You can enabled/disable the filter dropdown by clicking on 'Position()' or 'Holdings()' heading.
 
 # Installation
 
@@ -60,19 +62,9 @@ Follow below mentioned steps
 * Tag should be formated as tagName.color for example: RT.red or BS.blue etc. 
 
 # Steps for custom Positions. You don't need below step if auto grouping by script name works for you
-* Format of the list
-```
-{
- "BajajFinanceStraddle" : ["12304386","12311298"],
- "BataRatioSpread": ["12431106"]
-}
-```
-* Create a JSON object as shown above. Left side is the 'stragety name' that will show in dropdown and right side is list of trades.
-* Click on Tempermonkey icon -> then click on 'Option Strategies'.
-* Copy paste your JSON object in the prompt.
-* Page will refresh, now click on 'Positions(x)' text. You will see your custom strategies in the dropdown
-* See below on how to get position ids. The image also shows how to quickly check P&L
-* ![copypaste](https://dl.dropbox.com/s/nkfaa2mrtfu8jvz/copyPastingPosId.gif?dl=0)
+* Please see the animated gif below
+![addingDeletingStrategies](https://www.dropbox.com/s/23mec9h3zd8iolw/AddingDeletingStrategy.gif?dl=0)
+(if you can't see the image above see this video: https://dl.dropbox.com/s/iay4ld2ibdx3t91/AddingDeletingStrategy.mp4?dl=0)
 
 TODOs
 * Instructions for [Violentmonkey](https://openuserjs.org/about/Violentmonkey-for-Chrome)
