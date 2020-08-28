@@ -10,6 +10,7 @@
 // @grant        GM_registerMenuCommand
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
 // @require      https://github.com/amit0rana/betterOptionsTrading/raw/master/common.js
+// @require      https://raw.githubusercontent.com/amit0rana/betterOptionsTrading/master/minimalGA.js
 // @downloadURL  https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js
 // @updateURL    https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.meta.js
 // ==/UserScript==
@@ -135,11 +136,11 @@ function initPositions() {
         }
 
         msg = 'Please tell your strategy name:\n\nNOTE: (1) If there is an existing strategy with same name then we will add selected position to same strategy. \n(2)If there is no strategy with this name then we will create a new one.\n\nYour existing strategies are: '+keys.toString();
-        
+
         var strategyName = prompt(msg);
         if (strategyName == null) return;
         strategyName = strategyName.toUpperCase();
-        
+
 
         var positionArray = [];
         selectedPositions.each(function(rowIndex) {
@@ -443,7 +444,7 @@ function createPositionsDropdown() {
             var stocksInList = [];
             var misCount = 0;
 
-            
+
                 //logic to hide the rows in positions table not in our list
                 var countPositionsDisplaying = 0;
                 allPositionsRow.addClass("allHiddenRows");
@@ -646,7 +647,7 @@ function showPositionDropdown(retry = true) {
     allPositionsRow.each(function(rowIndex) {
 
         var tradingSymbol = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
-        
+
         //creating auto generated script wise grouping
         var ts = tradingSymbol.split(" ")[0];
         if (!arrForUnique.includes(ts)) {
@@ -911,10 +912,12 @@ function main() {
     GM_registerMenuCommand("Reset Data (WARNING) "+version, function() {
         if (confirm('Are you sure you want to reset all tag data?')) {
             if (confirm('I am checking with you one last time, are you sure?')) {
+                tEv("kite","menu","reset","");
+
                 GM_setValue(GMHoldingsName,{});
                 GM_setValue(GMPositionsName,{});
                 GM_setValue(GMRefTradeName,{});
-    
+
                 window.location.reload();
             }
         }
@@ -923,6 +926,7 @@ function main() {
 
     //click of mis filter
     jQ(document).on('click',"#misFilterId", function(){
+        tEv("kite","misfilter","click","");
         var filterValue = this.value;
         showOnlyMISPositions = this.checked;
 
@@ -932,6 +936,7 @@ function main() {
 
     //click of watchlist filter
     jQ(document).on('click',"#watchlistFilterId", function(){
+        tEv("kite","watchlistfilter","click","");
         var h = prompt("Provide filter text. Press Esc or Click cancel to reset filter.", filterText);
         if (h == null || h == "") {
             filterText = "";
@@ -947,6 +952,7 @@ function main() {
 
     //on click of + to assign tag to holdings
     jQ(document).on('click', "#tagAddIcon", function () {
+        tEv("kite","holdingsaddtag","click","");
         var stock = jQ(this).attr('value');
         var tagName = prompt('Which group do you want to put '+ stock +' in?');
 
@@ -964,12 +970,14 @@ function main() {
         }
 
         GM_setValue(GMHoldingsName,holdings);
+        tEv("kite","positionaddtag","add","");
         debug(holdings);
         window.location.reload();
     });
 
     //on click of a holding tag. ask user if they want to remove the tag
     jQ(document).on('click', "#idForTagDeleteAction", function () {
+        tEv("kite","holdingsdeletetag","main","");
         var stock = jQ(this).attr('stock');
         var tagName = jQ(this).attr('tag');
 
@@ -984,6 +992,7 @@ function main() {
 
 
             GM_setValue(GMHoldingsName,holdings);
+            tEv("kite","holdingsdeletetag","delete","");
             debug(holdings);
             window.location.reload();
         }
@@ -991,6 +1000,7 @@ function main() {
 
     //on click of + to assign tag to positions
     jQ(document).on('click', "#positionTagAddIcon", function () {
+        tEv("kite","positionsaddtag","click","");
         var position = jQ(this).attr('value');
         var tagName = prompt('Please provide tag name and color. For eg: MT.red or RT.blue or BS.green');
 
@@ -1007,12 +1017,14 @@ function main() {
         }
 
         GM_setValue(GMRefTradeName,referenceTrades);
+        tEv("kite","positionsaddtag","add","");
 
         window.location.reload();
     });
 
     //on click of a position tag. ask user if they want to remove the tag
     jQ(document).on('click', "#idForPositionTagDeleteAction", function () {
+        tEv("kite","positionsdeletetag","click","");
         var position = jQ(this).attr('position');
         var tagName = jQ(this).attr('tag');
 
@@ -1027,6 +1039,7 @@ function main() {
 
 
             GM_setValue(GMRefTradeName,referenceTrades);
+            tEv("kite","positionsdeletetag","delete","");
 
             window.location.reload();
         }
@@ -1034,6 +1047,7 @@ function main() {
 
     //click of positions header
     jQ(document).on('click', allDOMPaths.positionHeader, function () {
+        tEv("kite","positions","toggle","");
         var currentUrl = window.location.pathname;
         if (currentUrl.includes('positions')) {
             debug('click on positions header.');
@@ -1049,6 +1063,7 @@ function main() {
 
     //click of Holdings header
     jQ(document).on('click', allDOMPaths.domPathMainInitiatorLabel, function () {
+        tEv("kite","holdings","toggle","");
         var currentUrl = window.location.pathname;
         if (currentUrl.includes('holdings')) {
             debug('click on holdings header.');
@@ -1072,7 +1087,7 @@ function main() {
 
     //whenever selection in position row changes.
     jQ(document).on('change', "input.su-checkbox", function () {
-
+        tEv("kite","positionscheckbox","click","");
         var selectedRows = jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr.selected");
 
         var pnl = 0;
@@ -1161,3 +1176,5 @@ function main() {
 jQ.fn.exists = function () {
     return this.length !== 0;
 }
+
+tEv("kite","visit","main","");
