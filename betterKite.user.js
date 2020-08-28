@@ -121,6 +121,12 @@ function initPositions() {
         var selectedPositions = jQ(allDOMPaths.PathForPositions).filter(':has(:checkbox:checked)');
         info("selected ps "+ selectedPositions.length);
 
+        var storedStrategies = GM_getValue(GMPositionsName,defaultPositions);
+        var keys = [];
+        for (var k in storedStrategies) {
+            keys.push(k);
+        }
+
         var msg = '';
         if (selectedPositions.length <= 0) {
             alert('Please select atleast one position to be added to a strategy');
@@ -128,16 +134,12 @@ function initPositions() {
             //msg = 'You have selected '+selectedPositions.length+' positions. Please provide name of the strategy. \n\nNOTE: (1) If strategy name exists then position will be added to the group. \n(2) If this is new name then new strategy will be created.';
         }
 
-        msg = 'Please tell your strategy name:\n\nNOTE: (1) If there is an existing strategy with same name then we will add selected position to same strategy. \n(2)If there is no strategy with this name then we will create a new one.';
+        msg = 'Please tell your strategy name:\n\nNOTE: (1) If there is an existing strategy with same name then we will add selected position to same strategy. \n(2)If there is no strategy with this name then we will create a new one.\n\nYour existing strategies are: '+keys.toString();
         
         var strategyName = prompt(msg);
         if (strategyName == null) return;
         strategyName = strategyName.toUpperCase();
-        var storedStrategies = GM_getValue(GMPositionsName,defaultPositions);
-        var keys = [];
-        for (var k in storedStrategies) {
-            keys.push(k);
-        }
+        
 
         var positionArray = [];
         selectedPositions.each(function(rowIndex) {
