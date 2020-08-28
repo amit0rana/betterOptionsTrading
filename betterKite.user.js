@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.02
+// @version      2.03
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -17,7 +17,7 @@
 var context=window,options="{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}";const hhistory=context.history,doc=document,nav=navigator||{},storage=localStorage,encode=encodeURIComponent,pushState=hhistory.pushState,typeException="exception",generateId=()=>Math.random().toString(36),getId=()=>(storage.cid||(storage.cid=generateId()),storage.cid),serialize=e=>{var t=[];for(var o in e)e.hasOwnProperty(o)&&void 0!==e[o]&&t.push(encode(o)+"="+encode(e[o]));return t.join("&")},track=(e,t,o,n,i,a,r)=>{const c="https://www.google-analytics.com/collect",s=serialize({v:"1",ds:"web",aip:options.anonymizeIp?1:void 0,tid:"UA-176741575-1",cid:getId(),t:e||"pageview",sd:options.colorDepth&&screen.colorDepth?`${screen.colorDepth}-bits`:void 0,dr:doc.referrer||void 0,dt:doc.title,dl:doc.location.origin+doc.location.pathname+doc.location.search,ul:options.language?(nav.language||"").toLowerCase():void 0,de:options.characterSet?doc.characterSet:void 0,sr:options.screenSize?`${(context.screen||{}).width}x${(context.screen||{}).height}`:void 0,vp:options.screenSize&&context.visualViewport?`${(context.visualViewport||{}).width}x${(context.visualViewport||{}).height}`:void 0,ec:t||void 0,ea:o||void 0,el:n||void 0,ev:i||void 0,exd:a||void 0,exf:void 0!==r&&!1==!!r?0:void 0});if(nav.sendBeacon)nav.sendBeacon(c,s);else{var d=new XMLHttpRequest;d.open("POST",c,!0),d.send(s)}},tEv=(e,t,o,n)=>track("event",e,t,o,n),tEx=(e,t)=>track(typeException,null,null,null,null,e,t);hhistory.pushState=function(e){return"function"==typeof history.onpushstate&&hhistory.onpushstate({state:e}),setTimeout(track,options.delay||10),pushState.apply(hhistory,arguments)},track(),context.ma={tEv:tEv,tEx:tEx};
 
 window.jQ=jQuery.noConflict(true);
-const version = "v2.02";
+const version = "v2.03";
 const PRO_MODE = false;
 const GMHoldingsName = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
@@ -42,6 +42,7 @@ const allDOMPaths = {
     domPathMainInitiatorLabel : "h3.page-title.small > span",
     domPathTabToChangeWatchlist : "ul.marketwatch-selector.list-flat > li",
     PathForPositions : "div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr",
+    domPathForPositionsDayHistory : "div.positions > section.day-positions.table-wrapper > div > div > table > tbody > tr",
     positionHeader: "header.row.data-table-header > h3"
 };
 
@@ -142,6 +143,13 @@ function initPositions() {
         if (strategyName == null) return;
         strategyName = strategyName.toUpperCase();
 
+        if(keys.includes(strategyName)) {
+            var confirmAdd = confirm("This message is to confirm that there was no typo in strategy name.\n\nYou are adding to an **EXISTING** strategy.");
+            if (confirmAdd == false) return;
+        } else {
+            var confirmAdd = confirm("This message is to confirm that there was no typo in strategy name.\n\nYou are adding to a **NEW** strategy.");
+            if (confirmAdd == false) return;
+        }
 
         var positionArray = [];
         selectedPositions.each(function(rowIndex) {
@@ -443,10 +451,8 @@ function createPositionsDropdown() {
 
             assignPositionTags();
 
-            var allPositionOnKite = [];
             var stocksInList = [];
             var misCount = 0;
-
 
                 //logic to hide the rows in positions table not in our list
                 var countPositionsDisplaying = 0;
@@ -458,7 +464,6 @@ function createPositionsDropdown() {
                 allPositionsRow.each(function(rowIndex) {
                     var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
                     var p = dataUidInTR.split(".")[1];
-                    allPositionOnKite.push(p);
 
                     var matchFound = false;
                     var tradingSymbolText = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
@@ -514,40 +519,51 @@ function createPositionsDropdown() {
                     } else {
                         jQ(this).hide();
                     }
+                    //END work on Positions AREA
                 });
 
-                jQ("#misCoundId").text("("+misCount+")");
+                var allPositionsDayHistoryDomTRs = jQ(allDOMPaths.domPathForPositionsDayHistory);
+                allPositionsDayHistoryDomTRs.each(function(rowIndex) {
+                    var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+                    var p = dataUidInTR.split(".")[1];
 
-                var textDisplay = "("+countPositionsDisplaying+") " + formatter.format(pnl);
+                    var matchFound = false;
+                    var tradingSymbolText = jQ(this).find("td.instrument > span.tradingsymbol").text();
+                    var productType = jQ(this).find("td.product > span").text().trim();
 
-                jQ("#stocksInTagCount").text(textDisplay);
+                    if (selectedGroup.includes("SPECIAL")) {
+                        var lengthOfSpecial = 7;
+                        var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL")+lengthOfSpecial);
+                        var ts = tradingSymbolText.split(" ")[0];
+                        if (ts == s) {
+                            matchFound = true;
+                        } else if (tradingSymbolText.includes(" " + s + " ")) {
+                            matchFound = true;
+                        }
+                    }  else if (selectedGroup === "All") {
+                        matchFound = true;
+                    } else {
+                        matchFound = selectedPositions.includes(p);
+                    }
 
-                jQ("#stocksInTagCount").removeClass("text-green");
-                jQ("#stocksInTagCount").removeClass("text-red");
-                jQ("#stocksInTagCount").removeClass("text-black");
-                if(pnl>0) {
-                    jQ("#stocksInTagCount").addClass("text-green");
-                } else if (pnl<0) {
-                    jQ("#stocksInTagCount").addClass("text-red");
-                } else {
-                    jQ("#stocksInTagCount").addClass("text-black");
-                }
+                    if(showOnlyMISPositions) {
+                        if (productType == "MIS") {
+                            //let filter decision pass
+                        } else {
+                            //overide filter decision and hide.
+                            matchFound = false;
+                        }
+                    }
 
-            debug(stocksInList);
-            filterWatchlist(stocksInList, selectedGroup);
+                    if (matchFound) {
+                        //dont do anything, let the row be shown.
+                    } else {
+                        jQ(this).hide();
+                    }
 
-            //marking positions part of a group
-            debug('missing positions are: ');
-            var arrPositionsInOurArray = [];
-            for(var strategies in positions){
-                arrPositionsInOurArray.push(...positions[strategies]);
-            };
-            var t = allPositionOnKite.filter(function(x) {
-                return !arrPositionsInOurArray.includes(x);
-            })
-            debug(t);
-
-            //END work on Positions AREA
+                    //END work on Positions Day history AREA
+                });
+                
         }
 
         return this;
@@ -583,11 +599,14 @@ function createMisFilter() {
     return s;
 }
 
+var observer;
+
 function hideDropdown() {
     jQ(".randomClassToHelpHide").remove();
     jQ(".allHiddenRows").show();
 
     dropdownDisplay = DD_NONE;
+    if (observer) observer.disconnect();
 }
 
 
@@ -636,15 +655,6 @@ function showPositionDropdown(retry = true) {
     optGrpExpiry.label = "---EXPIRY WISE---";
     optGrpExpiry.id = "randomForDeleteOptGroupE";
 
-    //var optGrpMis = document.createElement("optgroup");
-    //optGrpMis.text = "---MIS Positions---";
-    //optGrpMis.label = "---MIS Positins---";
-    //optGrpMis.id = "randomForDeleteOptGroupM";
-
-    //var optionTmp = document.createElement("option");
-    //optionTmp.text = "All MIS Only";
-    //optionTmp.value = "MISONLY";
-
     var arrForUnique = [];
     var uniqueExpiryArray = [];
     allPositionsRow.each(function(rowIndex) {
@@ -684,9 +694,6 @@ function showPositionDropdown(retry = true) {
 
     positionGroupdropdown.add(optGrp);
     positionGroupdropdown.add(optGrpExpiry);
-    //jQ(optGrpMis).append(optionTmp);
-    //positionGroupdropdown.add(optGrpMis);
-
 
     jQ("a.logo")[0].after(positionGroupdropdown);
 
@@ -701,6 +708,32 @@ function showPositionDropdown(retry = true) {
     dropdownDisplay = DD_POSITONS;
     addWatchlistFilter();
     simulateSelectBoxEvent();
+
+    // The node to be monitored
+    var target = jQ( "div.positions > section.open-positions.table-wrapper > div > div > table > tbody")[0];
+
+    // Create an observer instance
+    observer = new MutationObserver(function( mutations ) {
+        var st = null;
+    mutations.forEach(function( mutation ) {
+        var newNodes = mutation.addedNodes; // DOM NodeList
+        if( newNodes !== null ) { // If there are new nodes added
+            if (st != null) {
+                clearTimeout(st);
+            }
+            st = setTimeout(function(){simulateSelectBoxEvent();},2000);
+        }
+    });    
+    });
+
+    // Configuration of the observer:
+    var config = {
+        childList: true, 
+        characterData: true 
+    };
+    
+    // Pass in the target node, as well as the observer options
+    observer.observe(target, config);
 }
 
 function showHoldingDropdown() {
