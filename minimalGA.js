@@ -1,5 +1,4 @@
 var context = window;
-var trackingId = "UA-176741575-1";
 var options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}";
 
 const hhistory = context.history;
@@ -41,7 +40,7 @@ const track = (
         v: '1',
         ds: 'web',
         aip: options.anonymizeIp ? 1 : undefined,
-        tid: trackingId,
+        tid: "UA-176741575-1",
         cid: getId(),
         t: type || 'pageview',
         sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : undefined,
@@ -82,3 +81,5 @@ context.ma = {
     tEv,
     tEx
 }
+
+//https://support.google.com/analytics/answer/1033068?hl=en
