@@ -454,119 +454,138 @@ function createPositionsDropdown() {
             var stocksInList = [];
             var misCount = 0;
 
-                //logic to hide the rows in positions table not in our list
-                var countPositionsDisplaying = 0;
-                allPositionsRow.addClass("allHiddenRows");
+            //logic to hide the rows in positions table not in our list
+            var countPositionsDisplaying = 0;
+            allPositionsRow.addClass("allHiddenRows");
 
-                var pnl = 0;
-                misCount = 0;
+            var pnl = 0;
+            misCount = 0;
 
-                allPositionsRow.each(function(rowIndex) {
-                    var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
-                    var p = dataUidInTR.split(".")[1];
+            allPositionsRow.each(function(rowIndex) {
+                var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+                var p = dataUidInTR.split(".")[1];
 
-                    var matchFound = false;
-                    var tradingSymbolText = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
-                    var productType = jQ(this).find("td.open.product > span").text().trim();
+                var matchFound = false;
+                var tradingSymbolText = jQ(this).find("td.instrument > span.tradingsymbol").text();
+                var productType = jQ(this).find("td.product > span").text().trim();
 
-                    if (selectedGroup.includes("SPECIAL")) {
-                        var lengthOfSpecial = 7;
-                        var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL")+lengthOfSpecial);
-                        var ts = tradingSymbolText.split(" ")[0];
-                        if (ts == s) {
-                            matchFound = true;
-                        } else if (tradingSymbolText.includes(" " + s + " ")) {
-                            matchFound = true;
-                        }
-                        if (matchFound) {
-                            if (!stocksInList.includes(ts)) {
-                                if (ts == 'BANKNIFTY') {
-                                    stocksInList.push('NIFTY BANK');
-                                } else if(ts == 'NIFTY') {
-                                    stocksInList.push('NIFTY 50');
-                                } else {
-                                    stocksInList.push(ts);
-                                }
+                if (selectedGroup.includes("SPECIAL")) {
+                    var lengthOfSpecial = 7;
+                    var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL")+lengthOfSpecial);
+                    var ts = tradingSymbolText.split(" ")[0];
+                    if (ts == s) {
+                        matchFound = true;
+                    } else if (tradingSymbolText.includes(" " + s + " ")) {
+                        matchFound = true;
+                    }
+                    if (matchFound) {
+                        if (!stocksInList.includes(ts)) {
+                            if (ts == 'BANKNIFTY') {
+                                stocksInList.push('NIFTY BANK');
+                            } else if(ts == 'NIFTY') {
+                                stocksInList.push('NIFTY 50');
+                            } else {
+                                stocksInList.push(ts);
                             }
                         }
-                    }  else if (selectedGroup === "All") {
+                    }
+                }  else if (selectedGroup === "All") {
+                    matchFound = true;
+                } else {
+                    matchFound = selectedPositions.includes(p);
+                }
+
+                if(showOnlyMISPositions) {
+                    if (productType == "MIS") {
+                        //let filter decision pass
+                    } else {
+                        //overide filter decision and hide.
+                        matchFound = false;
+                    }
+                }
+
+                if (matchFound) {
+                    //dont do anything, let the row be shown.
+                    countPositionsDisplaying++;
+                    var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
+
+                    pnl += parseFloat(v);
+                    if (!stocksInList.includes(tradingSymbolText)) {
+                        stocksInList.push(tradingSymbolText);
+                    }
+                    if (productType == "MIS") {
+                        misCount++;
+                    }
+                } else {
+                    jQ(this).hide();
+                }
+                //END work on Positions AREA
+            });
+
+            var allPositionsDayHistoryDomTRs = jQ(allDOMPaths.domPathForPositionsDayHistory);
+            allPositionsDayHistoryDomTRs.show();
+            allPositionsDayHistoryDomTRs.addClass("allHiddenRows");
+
+            allPositionsDayHistoryDomTRs.each(function(rowIndex) {
+                var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+                var p = dataUidInTR.split(".")[1];
+
+                var matchFound = false;
+                var tradingSymbolText = jQ(this).find("td.instrument > span.tradingsymbol").text();
+                var productType = jQ(this).find("td.product > span").text().trim();
+
+                if (selectedGroup.includes("SPECIAL")) {
+                    var lengthOfSpecial = 7;
+                    var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL")+lengthOfSpecial);
+                    var ts = tradingSymbolText.split(" ")[0];
+                    if (ts == s) {
                         matchFound = true;
-                    } else {
-                        matchFound = selectedPositions.includes(p);
-                    }
-
-                    if(showOnlyMISPositions) {
-                        if (productType == "MIS") {
-                            //let filter decision pass
-                        } else {
-                            //overide filter decision and hide.
-                            matchFound = false;
-                        }
-                    }
-
-                    if (matchFound) {
-                        //dont do anything, let the row be shown.
-                        countPositionsDisplaying++;
-                        var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
-
-                        pnl += parseFloat(v);
-                        if (!stocksInList.includes(tradingSymbolText)) {
-                            stocksInList.push(tradingSymbolText);
-                        }
-                        if (productType == "MIS") {
-                            misCount++;
-                        }
-                    } else {
-                        jQ(this).hide();
-                    }
-                    //END work on Positions AREA
-                });
-
-                var allPositionsDayHistoryDomTRs = jQ(allDOMPaths.domPathForPositionsDayHistory);
-                allPositionsDayHistoryDomTRs.show();
-                allPositionsDayHistoryDomTRs.addClass("allHiddenRows");
-
-                allPositionsDayHistoryDomTRs.each(function(rowIndex) {
-                    var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
-                    var p = dataUidInTR.split(".")[1];
-
-                    var matchFound = false;
-                    var tradingSymbolText = jQ(this).find("td.instrument > span.tradingsymbol").text();
-                    var productType = jQ(this).find("td.product > span").text().trim();
-
-                    if (selectedGroup.includes("SPECIAL")) {
-                        var lengthOfSpecial = 7;
-                        var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL")+lengthOfSpecial);
-                        var ts = tradingSymbolText.split(" ")[0];
-                        if (ts == s) {
-                            matchFound = true;
-                        } else if (tradingSymbolText.includes(" " + s + " ")) {
-                            matchFound = true;
-                        }
-                    }  else if (selectedGroup === "All") {
+                    } else if (tradingSymbolText.includes(" " + s + " ")) {
                         matchFound = true;
+                    }
+                }  else if (selectedGroup === "All") {
+                    matchFound = true;
+                } else {
+                    matchFound = selectedPositions.includes(p);
+                }
+
+                if(showOnlyMISPositions) {
+                    if (productType == "MIS") {
+                        //let filter decision pass
                     } else {
-                        matchFound = selectedPositions.includes(p);
+                        //overide filter decision and hide.
+                        matchFound = false;
                     }
+                }
 
-                    if(showOnlyMISPositions) {
-                        if (productType == "MIS") {
-                            //let filter decision pass
-                        } else {
-                            //overide filter decision and hide.
-                            matchFound = false;
-                        }
-                    }
+                if (matchFound) {
+                    //dont do anything, let the row be shown.
+                } else {
+                    jQ(this).hide();
+                }
 
-                    if (matchFound) {
-                        //dont do anything, let the row be shown.
-                    } else {
-                        jQ(this).hide();
-                    }
+                //END work on Positions Day history AREA
+            });
+            
+            jQ("#misCoundId").text("("+misCount+")");
 
-                    //END work on Positions Day history AREA
-                });
-                
+            var textDisplay = "("+countPositionsDisplaying+") " + formatter.format(pnl);
+
+            jQ("#stocksInTagCount").text(textDisplay);
+
+            jQ("#stocksInTagCount").removeClass("text-green");
+            jQ("#stocksInTagCount").removeClass("text-red");
+            jQ("#stocksInTagCount").removeClass("text-black");
+            if(pnl>0) {
+                jQ("#stocksInTagCount").addClass("text-green");
+            } else if (pnl<0) {
+                jQ("#stocksInTagCount").addClass("text-red");
+            } else {
+                jQ("#stocksInTagCount").addClass("text-black");
+            }
+
+            debug(stocksInList);
+            filterWatchlist(stocksInList, selectedGroup);
         }
 
         return this;
@@ -585,6 +604,7 @@ function createPositionsDropdown() {
 }
 
 function createMisFilter() {
+    debug('createMisFilter');
     var s = jQ("<span id='misNotificationId' class='randomClassToHelpHide' style='font-size: 10px;margin: 0px 10px; border-left: 1px solid rgb(224, 224, 224); padding: 10px 10px;'>Show <span  class='text-label red randomClassToHelpHide'>MIS</span> Only</span>");
 
     var i = document.createElement("INPUT");
@@ -615,8 +635,8 @@ function hideDropdown() {
 
 function showPositionDropdown(retry = true) {
     jQ("#misNotificationId").remove();
-    jQ(jQ("h3.page-title.small")[0]).after(createMisFilter());
-
+    jQ("div.positions > section.open-positions.table-wrapper > header > h3").after(createMisFilter());
+    
     debug('showPositionDropdown');
 
     var allPositionsRow = jQ(allDOMPaths.PathForPositions);
@@ -662,7 +682,7 @@ function showPositionDropdown(retry = true) {
     var uniqueExpiryArray = [];
     allPositionsRow.each(function(rowIndex) {
 
-        var tradingSymbol = jQ(this).find("td.open.instrument > span.tradingsymbol").text();
+        var tradingSymbol = jQ(this).find("td.instrument > span.tradingsymbol").text();
 
         //creating auto generated script wise grouping
         var ts = tradingSymbol.split(" ")[0];
