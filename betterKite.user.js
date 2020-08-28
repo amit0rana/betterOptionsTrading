@@ -311,6 +311,7 @@ function createHoldingsDropdown() {
     option.value= "All";
     selectBox.add(option);
     selectBox.addEventListener("change", function() {
+        tEv("kite","holdings","filter","");
         var selectedCat = this.value;
 
         info("Tag selected: " + selectedCat);
@@ -426,6 +427,7 @@ function createPositionsDropdown() {
     userGeneratedGroups.label = "---USER GROUPS---";
 
     selectBox.addEventListener("change", function() {
+        tEv("kite","position","filter","");
         var selectedGroup = this.value;
 
         info("Group selected: " + selectedGroup);

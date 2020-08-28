@@ -70,3 +70,13 @@ Follow below mentioned steps
 TODOs
 * Instructions for [Violentmonkey](https://openuserjs.org/about/Violentmonkey-for-Chrome)
 * Bug. selection doesn't reflect on order screen in one situation.
+* Let users disable analytics
+
+Note
+This script tracks following events for analytics. No data is passed/stored/tracked. This only tells that action was taken.
+* Script loaded
+* Script enabled/disabled
+* Watchlist filter used
+* Tag added
+* Tag deleted
+* Filter applied
