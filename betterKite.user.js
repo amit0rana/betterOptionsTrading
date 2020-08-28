@@ -523,6 +523,9 @@ function createPositionsDropdown() {
                 });
 
                 var allPositionsDayHistoryDomTRs = jQ(allDOMPaths.domPathForPositionsDayHistory);
+                allPositionsDayHistoryDomTRs.show();
+                allPositionsDayHistoryDomTRs.addClass("allHiddenRows");
+
                 allPositionsDayHistoryDomTRs.each(function(rowIndex) {
                     var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
                     var p = dataUidInTR.split(".")[1];
@@ -715,15 +718,15 @@ function showPositionDropdown(retry = true) {
     // Create an observer instance
     observer = new MutationObserver(function( mutations ) {
         var st = null;
-    mutations.forEach(function( mutation ) {
-        var newNodes = mutation.addedNodes; // DOM NodeList
-        if( newNodes !== null ) { // If there are new nodes added
-            if (st != null) {
-                clearTimeout(st);
+        mutations.forEach(function( mutation ) {
+            var newNodes = mutation.addedNodes; // DOM NodeList
+            if( newNodes !== null ) { // If there are new nodes added
+                if (st != null) {
+                    clearTimeout(st);
+                }
+                st = setTimeout(function(){simulateSelectBoxEvent();},2000);
             }
-            st = setTimeout(function(){simulateSelectBoxEvent();},2000);
-        }
-    });    
+        });    
     });
 
     // Configuration of the observer:
