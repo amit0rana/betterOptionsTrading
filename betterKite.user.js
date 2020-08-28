@@ -435,7 +435,7 @@ function createPositionsDropdown() {
     userGeneratedGroups.label = "---USER GROUPS---";
 
     selectBox.addEventListener("change", function() {
-        tEv("kite","position","filter","");
+        tEv("kite","positions","filter","");
         var selectedGroup = this.value;
 
         info("Group selected: " + selectedGroup);
@@ -1038,7 +1038,7 @@ function main() {
 
     //on click of a holding tag. ask user if they want to remove the tag
     jQ(document).on('click', "#idForTagDeleteAction", function () {
-        tEv("kite","holdingsdeletetag","main","");
+        tEv("kite","holdingsdeletetag","click","");
         var stock = jQ(this).attr('stock');
         var tagName = jQ(this).attr('tag');
 
