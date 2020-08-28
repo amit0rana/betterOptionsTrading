@@ -6,7 +6,7 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 * Strategies are grouped in 3 ways.
   * (1) Strategies are auto grouped by script name. So all INFY strategies will be auto grouped under 'INFY'
   * (2) Strategies are auto grouped by expiry.
-  * (3) Manual groups can be created by modifying 'positions array'.
+  * (3) Manual / custom strategies.
 * Once you select a strategy from the dropdown, only relevant positions will be shown.
 ![strategies](https://dl.dropbox.com/s/414mh3oqvx4ppf2/strategies.png?dl=0)
 
@@ -17,6 +17,7 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 * Quickly see total P&L of 'selected' positions.
 ![addPositions](https://dl.dropbox.com/s/mvavj8njmt2xvtp/pnlAddition.png?dl=0)
 * "Filter" button is added next to 1,2,3,4,5 watchlist. You can use this to filter your watchlist.
+![watchlistFilter](https://dl.dropbox.com/s/5gf2paw5pk9you6/watchlistFilter.png?dl=0)
 
 # https://kite.zerodha.com/holdings page
 * Group your holdings in 'categories' or 'tags'
@@ -53,16 +54,17 @@ Follow below mentioned steps
 
 # Steps for grouping your Holdings
 * Refer to images below on how to use.
-* Go to holdings section
-* click on + icon next to the stock name to add tags, click on tag to remove it, use the dropdown for filtering.
+* Adding tag : Go to holdings section, click on + icon next to the stock name to add tags.
+* Removing tag: Click on tag to remove it.
+* Filtering stocks: Use the dropdown for filtering.
 * ![how to use](https://dl.dropbox.com/s/tllta7nzcfl145a/holdingsHowToUse.gif?dl=0)
 * ![add remove tags](https://dl.dropbox.com/s/nbjuxiu7yh9p51i/addingRemovingTags.gif?dl=0)
 
 # Steps for marking trades as reference trades or base trade or martingales
-* Process is same as taging holdings, important thing to keep in mind is the format of the tag.
+* On the positions screen, each position has a + button, click on the button to add a tag. Important thing to keep in mind is the format of the tag.
 * Tag should be formated as tagName.color for example: RT.red or BS.blue etc. 
 
-# Steps for custom Positions. You don't need below step if auto grouping by script name works for you
+# Steps for custom strategies.
 * Please see the animated gif below
 ![addingDeletingStrategies](https://dl.dropbox.com/s/23mec9h3zd8iolw/AddingDeletingStrategy.gif?dl=0)
 (if you can't see the image above see this video: https://dl.dropbox.com/s/iay4ld2ibdx3t91/AddingDeletingStrategy.mp4?dl=0)
