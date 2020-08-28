@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         betterKite
-// @namespace    https://github.com/amit0rana/betterOptionsTrading/betterKite
+// @namespace    https://github.com/amit0rana/betterKite
 // @version      2.01
 // @description  Introduces small features on top of kite app
 // @author       Amit
