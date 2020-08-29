@@ -1,15 +1,17 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.04
+// @version      2.05
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
 // @require      https://github.com/amit0rana/betterOptionsTrading/raw/master/common.js
+// @require      https://raw.githubusercontent.com/amit0rana/MonkeyConfig/master/monkeyconfig.js
 // @downloadURL  https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js
 // @updateURL    https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.meta.js
 // ==/UserScript==
@@ -17,9 +19,9 @@
 var context=window,options="{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}";const hhistory=context.history,doc=document,nav=navigator||{},storage=localStorage,encode=encodeURIComponent,pushState=hhistory.pushState,typeException="exception",generateId=()=>Math.random().toString(36),getId=()=>(storage.cid||(storage.cid=generateId()),storage.cid),serialize=e=>{var t=[];for(var o in e)e.hasOwnProperty(o)&&void 0!==e[o]&&t.push(encode(o)+"="+encode(e[o]));return t.join("&")},track=(e,t,o,n,i,a,r)=>{const c="https://www.google-analytics.com/collect",s=serialize({v:"1",ds:"web",aip:options.anonymizeIp?1:void 0,tid:"UA-176741575-1",cid:getId(),t:e||"pageview",sd:options.colorDepth&&screen.colorDepth?`${screen.colorDepth}-bits`:void 0,dr:doc.referrer||void 0,dt:doc.title,dl:doc.location.origin+doc.location.pathname+doc.location.search,ul:options.language?(nav.language||"").toLowerCase():void 0,de:options.characterSet?doc.characterSet:void 0,sr:options.screenSize?`${(context.screen||{}).width}x${(context.screen||{}).height}`:void 0,vp:options.screenSize&&context.visualViewport?`${(context.visualViewport||{}).width}x${(context.visualViewport||{}).height}`:void 0,ec:t||void 0,ea:o||void 0,el:n||void 0,ev:i||void 0,exd:a||void 0,exf:void 0!==r&&!1==!!r?0:void 0});if(nav.sendBeacon)nav.sendBeacon(c,s);else{var d=new XMLHttpRequest;d.open("POST",c,!0),d.send(s)}},tEv=(e,t,o,n)=>track("event",e,t,o,n),tEx=(e,t)=>track(typeException,null,null,null,null,e,t);hhistory.pushState=function(e){return"function"==typeof history.onpushstate&&hhistory.onpushstate({state:e}),setTimeout(track,options.delay||10),pushState.apply(hhistory,arguments)},track(),context.ma={tEv:tEv,tEx:tEx};
 
 window.jQ=jQuery.noConflict(true);
-const version = "v2.04";
+const VERSION = "v2.05";
 const PRO_MODE = false;
-const GMHoldingsName = "BK_HOLDINGS";
+const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
 
@@ -27,9 +29,29 @@ const D_LEVEL = D_LEVEL_INFO;
 const DD_NONE = '';
 const DD_HOLDINGS = 'H';
 const DD_POSITONS = 'P';
-var dropdownDisplay = DD_NONE;
-var showOnlyMISPositions = false;
+var g_dropdownDisplay = DD_NONE;
+var g_showOnlyMISPositions = false;
 
+const reloadPage = function() {
+    window.location.reload();
+}
+
+const g_config = new MonkeyConfig({
+    title: 'betterKite Settings',
+    menuCommand: true,
+    onSave: reloadPage,
+    params: {
+        // font_size: {
+        //     type: 'select',
+        //     choices: [ 'Small', 'Medium', 'Large' ],
+        //     default: 'Medium'
+        // },
+        auto_refresh_PnL: {
+            type: 'checkbox',
+            default: true
+        }
+    }
+});
 
 const allDOMPaths = {
     rowsFromHoldingsTable : "div.holdings > section > div > div > table > tbody > tr",
@@ -75,16 +97,16 @@ function initHoldings() {
       "Wealth Creators" : ["WHIRLPOOL","ICICIBANK",],
       "Sell On profit" : ["LUMAXIND","RADICO","M&amp;M"]
     };
-    var holdings = GM_getValue(GMHoldingsName,defaultHoldings);
+    var holdings = GM_getValue(GM_HOLDINGS_NAME,defaultHoldings);
 
     if (PRO_MODE) {
         GM_registerMenuCommand("Set Holdings", function() {
-            var h = GM_getValue(GMHoldingsName,defaultHoldings);
+            var h = GM_getValue(GM_HOLDINGS_NAME,defaultHoldings);
             h = prompt("Provide Holdings object. Eg: {\"groupName 1\":[\"INFY\",\"RELIANCE\"],\"groupName 2\":[\"M&amp;M\",\"ICICIBANK\"]}", JSON.stringify(h));
             if (h == null) return;
             try {
                 holdings = JSON.parse(h);
-                GM_setValue(GMHoldingsName,holdings);
+                GM_setValue(GM_HOLDINGS_NAME,holdings);
             }
             catch(err) {
                 alert("There was error in your input");
@@ -495,7 +517,7 @@ function createPositionsDropdown() {
                     matchFound = selectedPositions.includes(p);
                 }
 
-                if(showOnlyMISPositions) {
+                if(g_showOnlyMISPositions) {
                     if (productType == "MIS") {
                         //let filter decision pass
                     } else {
@@ -549,7 +571,7 @@ function createPositionsDropdown() {
                     matchFound = selectedPositions.includes(p);
                 }
 
-                if(showOnlyMISPositions) {
+                if(g_showOnlyMISPositions) {
                     if (productType == "MIS") {
                         //let filter decision pass
                     } else {
@@ -617,7 +639,7 @@ function createMisFilter() {
     i.id = "misFilterId";
     i.name='misFilter';
     i.value='SHOWMISONLY';
-    i.checked = showOnlyMISPositions;
+    i.checked = g_showOnlyMISPositions;
 
     jQ(s).append(i);
 
@@ -626,16 +648,16 @@ function createMisFilter() {
     return s;
 }
 
-var observer;
-var positionsPnlObserver;
+var g_observer;
+var g_positionsPnlObserver;
 
 function hideDropdown() {
     jQ(".randomClassToHelpHide").remove();
     jQ(".allHiddenRows").show();
 
-    dropdownDisplay = DD_NONE;
-    if (observer) observer.disconnect();
-    if (positionsPnlObserver) positionsPnlObserver.disconnect();
+    g_dropdownDisplay = DD_NONE;
+    if (g_observer) g_observer.disconnect();
+    if (g_positionsPnlObserver) g_positionsPnlObserver.disconnect();
 }
 
 
@@ -734,7 +756,7 @@ function showPositionDropdown(retry = true) {
     spanForCount.id ='stocksInTagCount';
     jQ(positionGroupdropdown).after(spanForCount);
 
-    dropdownDisplay = DD_POSITONS;
+    g_dropdownDisplay = DD_POSITONS;
     addWatchlistFilter();
     simulateSelectBoxEvent();
 
@@ -742,7 +764,7 @@ function showPositionDropdown(retry = true) {
     var target = jQ( "div.positions > section.open-positions.table-wrapper > div > div > table > tbody")[0];
 
     // Create an observer instance
-    observer = new MutationObserver(function( mutations ) {
+    g_observer = new MutationObserver(function( mutations ) {
         var st = null;
         mutations.forEach(function( mutation ) {
             var newNodes = mutation.addedNodes; // DOM NodeList
@@ -762,44 +784,47 @@ function showPositionDropdown(retry = true) {
     };
     
     // Pass in the target node, as well as the observer options
-    observer.observe(target, config);
+    g_observer.observe(target, config);
 
-    target = jQ( "div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td.text-right")[0];
+    if (g_config.get('auto_refresh_PnL')===true) {
+        debug('going to observe pnl change');
+        target = jQ( "div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td.text-right")[0];
 
-    positionsPnlObserver = new MutationObserver(function( mutations ) {
-        var st = null;
-        mutations.forEach(function( mutation ) {
-            if( mutation.type == "characterData" ) { // If there are new nodes added
-                debug("pnl changed");
+        g_positionsPnlObserver = new MutationObserver(function( mutations ) {
+            var st = null;
+            mutations.forEach(function( mutation ) {
+                if( mutation.type == "characterData" ) { // If there are new nodes added
+                    debug("pnl changed");
+                    
+                    var allVisiblePositionsRow = jQ(allDOMPaths.PathForPositions).is(":visible");
+                    debug('found visible positions row: ' + allVisiblePositionsRow.length);
+                    
+                    var pnl = 0;
+                    
+                    allVisiblePositionsRow.each(function(rowIndex) {
+                        var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
+                        pnl += parseFloat(v);
+                    });
                 
-                var allVisiblePositionsRow = jQ(allDOMPaths.PathForPositions).is(":visible");
-                debug('found visible positions row: ' + allVisiblePositionsRow.length);
-                
-                var pnl = 0;
-                
-                allVisiblePositionsRow.each(function(rowIndex) {
-                    var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
-                    pnl += parseFloat(v);
-                });
-            
-                if (allVisiblePositionsRow.length>0) {
-                    updatePositionInfo(allVisiblePositionsRow.length, pnl);
+                    if (allVisiblePositionsRow.length>0) {
+                        updatePositionInfo(allVisiblePositionsRow.length, pnl);
+                    }
                 }
-            }
-        });    
-    });
-
-    // Configuration of the observer:
-    config = {
-        characterData: true 
-    };
+            });    
+        });
     
-    // Pass in the target node, as well as the observer options
-    positionsPnlObserver.observe(target, config);
+        // Configuration of the observer:
+        config = {
+            characterData: true 
+        };
+        
+        // Pass in the target node, as well as the observer options
+        g_positionsPnlObserver.observe(target, config);
+    }
 }
 
 function showHoldingDropdown() {
-    dropdownDisplay = DD_HOLDINGS;
+    g_dropdownDisplay = DD_HOLDINGS;
     //crete the dropdown to filter stocks.
     var dropdown = createHoldingsDropdown();
 
@@ -821,7 +846,7 @@ function showHoldingDropdown() {
 function toggleDropdown(currentUrl) {
     debug('toggleDropdown');
     if (currentUrl.includes('positions')) {
-        switch(dropdownDisplay) {
+        switch(g_dropdownDisplay) {
             case DD_NONE:
                 // show positions dropdown
                 showPositionDropdown();
@@ -838,7 +863,7 @@ function toggleDropdown(currentUrl) {
                 showPositionDropdown();
         }
     } else if (currentUrl.includes('holdings')) {
-        switch(dropdownDisplay) {
+        switch(g_dropdownDisplay) {
             case DD_NONE:
                 // show holdings dropdown
                 showHoldingDropdown();
@@ -1008,12 +1033,12 @@ function addWatchlistFilter() {
 
 // all behavior related actions go here.
 function main() {
-    GM_registerMenuCommand("Reset Data (WARNING) "+version, function() {
+    GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
         if (confirm('Are you sure you want to reset all tag data?')) {
             if (confirm('I am checking with you one last time, are you sure?')) {
                 tEv("kite","menu","reset","");
 
-                GM_setValue(GMHoldingsName,{});
+                GM_setValue(GM_HOLDINGS_NAME,{});
                 GM_setValue(GMPositionsName,{});
                 GM_setValue(GMRefTradeName,{});
 
@@ -1027,9 +1052,9 @@ function main() {
     jQ(document).on('click',"#misFilterId", function(){
         tEv("kite","misfilter","click","");
         var filterValue = this.value;
-        showOnlyMISPositions = this.checked;
+        g_showOnlyMISPositions = this.checked;
 
-        info(filterValue + showOnlyMISPositions);
+        info(filterValue + g_showOnlyMISPositions);
         simulateSelectBoxEvent();
     });
 
@@ -1068,7 +1093,7 @@ function main() {
             holdings[tagName] = [stock];
         }
 
-        GM_setValue(GMHoldingsName,holdings);
+        GM_setValue(GM_HOLDINGS_NAME,holdings);
         tEv("kite","positionaddtag","add","");
         debug(holdings);
         window.location.reload();
@@ -1090,7 +1115,7 @@ function main() {
             }
 
 
-            GM_setValue(GMHoldingsName,holdings);
+            GM_setValue(GM_HOLDINGS_NAME,holdings);
             tEv("kite","holdingsdeletetag","delete","");
             debug(holdings);
             window.location.reload();
