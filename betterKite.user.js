@@ -569,20 +569,7 @@ function createPositionsDropdown() {
             
             jQ("#misCoundId").text("("+misCount+")");
 
-            var textDisplay = "("+countPositionsDisplaying+") " + formatter.format(pnl);
-
-            jQ("#stocksInTagCount").text(textDisplay);
-
-            jQ("#stocksInTagCount").removeClass("text-green");
-            jQ("#stocksInTagCount").removeClass("text-red");
-            jQ("#stocksInTagCount").removeClass("text-black");
-            if(pnl>0) {
-                jQ("#stocksInTagCount").addClass("text-green");
-            } else if (pnl<0) {
-                jQ("#stocksInTagCount").addClass("text-red");
-            } else {
-                jQ("#stocksInTagCount").addClass("text-black");
-            }
+            updatePositionInfo(countPositionsDisplaying, pnl);
 
             debug(stocksInList);
             filterWatchlist(stocksInList, selectedGroup);
@@ -601,6 +588,23 @@ function createPositionsDropdown() {
 
     selectBox.add(userGeneratedGroups);
     return selectBox;
+}
+
+function updatePositionInfo(countPositionsDisplaying, pnl) {
+    var textDisplay = "("+countPositionsDisplaying+") " + formatter.format(pnl);
+
+    jQ("#stocksInTagCount").text(textDisplay);
+
+    jQ("#stocksInTagCount").removeClass("text-green");
+    jQ("#stocksInTagCount").removeClass("text-red");
+    jQ("#stocksInTagCount").removeClass("text-black");
+    if(pnl>0) {
+        jQ("#stocksInTagCount").addClass("text-green");
+    } else if (pnl<0) {
+        jQ("#stocksInTagCount").addClass("text-red");
+    } else {
+        jQ("#stocksInTagCount").addClass("text-black");
+    }
 }
 
 function createMisFilter() {
@@ -623,6 +627,7 @@ function createMisFilter() {
 }
 
 var observer;
+var positionsPnlObserver;
 
 function hideDropdown() {
     jQ(".randomClassToHelpHide").remove();
@@ -630,6 +635,7 @@ function hideDropdown() {
 
     dropdownDisplay = DD_NONE;
     if (observer) observer.disconnect();
+    if (positionsPnlObserver) positionsPnlObserver.disconnect();
 }
 
 
@@ -757,6 +763,39 @@ function showPositionDropdown(retry = true) {
     
     // Pass in the target node, as well as the observer options
     observer.observe(target, config);
+
+    target = jQ( "div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td.text-right")[0];
+
+    positionsPnlObserver = new MutationObserver(function( mutations ) {
+        var st = null;
+        mutations.forEach(function( mutation ) {
+            if( mutation.type == "characterData" ) { // If there are new nodes added
+                debug("pnl changed");
+                
+                var allVisiblePositionsRow = jQ(allDOMPaths.PathForPositions).is(":visible");
+                debug('found visible positions row: ' + allVisiblePositionsRow.length);
+                
+                var pnl = 0;
+                
+                allVisiblePositionsRow.each(function(rowIndex) {
+                    var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
+                    pnl += parseFloat(v);
+                });
+            
+                if (allVisiblePositionsRow.length>0) {
+                    updatePositionInfo(allVisiblePositionsRow.length, pnl);
+                }
+            }
+        });    
+    });
+
+    // Configuration of the observer:
+    config = {
+        characterData: true 
+    };
+    
+    // Pass in the target node, as well as the observer options
+    positionsPnlObserver.observe(target, config);
 }
 
 function showHoldingDropdown() {
@@ -850,7 +889,6 @@ function simulateSelectBoxEvent() {
             } else {
                 debug('sleeping as couldnt find positions');
                 setTimeout(function(){ simulateSelectBoxEvent(); }, 2000);
-                //setTimeout(function(){tagSelectorP.dispatchEvent(new Event("change")); }, 2000);
             }
         }
     }
