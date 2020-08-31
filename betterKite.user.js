@@ -32,7 +32,7 @@ const DD_POSITONS = 'P';
 var g_dropdownDisplay = DD_NONE;
 var g_showOnlyMISPositions = false;
 
-const reloadPage = function() {
+const reloadPage = function(values) {
     window.location.reload();
 }
 
@@ -788,34 +788,35 @@ function showPositionDropdown(retry = true) {
 
     if (g_config.get('auto_refresh_PnL')===true) {
         debug('going to observe pnl change');
-        target = jQ( "div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td.text-right")[0];
-
+        target = jQ( "div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[3];
+        debug("**********"+jQ(target).text());
         g_positionsPnlObserver = new MutationObserver(function( mutations ) {
             var st = null;
             mutations.forEach(function( mutation ) {
-                if( mutation.type == "characterData" ) { // If there are new nodes added
+                if( mutation.type == "characterData" ) {
                     debug("pnl changed");
-                    
-                    var allVisiblePositionsRow = jQ(allDOMPaths.PathForPositions).is(":visible");
+
+                    var allVisiblePositionsRow = jQ(allDOMPaths.PathForPositions+":visible");
                     debug('found visible positions row: ' + allVisiblePositionsRow.length);
-                    
+
                     var pnl = 0;
-                    
+
                     allVisiblePositionsRow.each(function(rowIndex) {
                         var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
                         pnl += parseFloat(v);
                     });
-                
+
                     if (allVisiblePositionsRow.length>0) {
                         updatePositionInfo(allVisiblePositionsRow.length, pnl);
                     }
                 }
-            });    
+            });
         });
     
         // Configuration of the observer:
         config = {
-            characterData: true 
+            characterData: true,
+            subtree: true
         };
         
         // Pass in the target node, as well as the observer options
