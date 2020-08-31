@@ -48,7 +48,7 @@ const g_config = new MonkeyConfig({
         // },
         auto_refresh_PnL: {
             type: 'checkbox',
-            default: true
+            default: false
         }
     }
 });

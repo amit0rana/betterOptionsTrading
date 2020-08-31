@@ -71,7 +71,7 @@ Follow below mentioned steps
 
 TODOs
 * Instructions for [Violentmonkey](https://openuserjs.org/about/Violentmonkey-for-Chrome)
-* Bug. selection doesn't reflect on order screen in one situation.
+* Filtering on order page
 * Let users disable analytics
 
 Note
