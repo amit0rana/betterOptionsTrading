@@ -25,7 +25,6 @@ const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
 
-const D_LEVEL = D_LEVEL_INFO;
 const DD_NONE = '';
 const DD_HOLDINGS = 'H';
 const DD_POSITONS = 'P';
@@ -41,17 +40,19 @@ const g_config = new MonkeyConfig({
     menuCommand: true,
     onSave: reloadPage,
     params: {
-        // font_size: {
-        //     type: 'select',
-        //     choices: [ 'Small', 'Medium', 'Large' ],
-        //     default: 'Medium'
-        // },
         auto_refresh_PnL: {
             type: 'checkbox',
             default: false
+        },
+        logging: {
+            type: 'select',
+            choices: [ 'Info','Debug'],
+            values: [D_LEVEL_INFO, D_LEVEL_DEBUG],
+            default: D_LEVEL_INFO
         }
     }
 });
+const D_LEVEL = g_config.get('logging');
 
 const allDOMPaths = {
     rowsFromHoldingsTable : "div.holdings > section > div > div > table > tbody > tr",
@@ -754,6 +755,7 @@ function showPositionDropdown(retry = true) {
     spanForCount.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
 
     spanForCount.id ='stocksInTagCount';
+    spanForCount.addEventListener("click", ()=>updatePnl(true));
     jQ(positionGroupdropdown).after(spanForCount);
 
     g_dropdownDisplay = DD_POSITONS;
@@ -795,20 +797,7 @@ function showPositionDropdown(retry = true) {
             mutations.forEach(function( mutation ) {
                 if( mutation.type == "characterData" ) {
                     debug("pnl changed");
-
-                    var allVisiblePositionsRow = jQ(allDOMPaths.PathForPositions+":visible");
-                    debug('found visible positions row: ' + allVisiblePositionsRow.length);
-
-                    var pnl = 0;
-
-                    allVisiblePositionsRow.each(function(rowIndex) {
-                        var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
-                        pnl += parseFloat(v);
-                    });
-
-                    if (allVisiblePositionsRow.length>0) {
-                        updatePositionInfo(allVisiblePositionsRow.length, pnl);
-                    }
+                    updatePnl(true);
                 }
             });
         });
@@ -821,6 +810,31 @@ function showPositionDropdown(retry = true) {
         
         // Pass in the target node, as well as the observer options
         g_positionsPnlObserver.observe(target, config);
+    }
+}
+
+function updatePnl(forPositions = true) {
+    var allVisibleRows;
+    var pnlCol;
+    if (forPositions) {
+        allVisibleRows = jQ(allDOMPaths.PathForPositions+":visible");
+        pnlCol = 6;
+    } else {
+        pnlCol = 5;
+        allVisibleRows = jQ(allDOMPaths.rowsFromHoldingsTable+":visible");
+    }
+
+    debug('found visible rows: ' + allVisibleRows.length);
+
+    var pnl = 0;
+
+    allVisibleRows.each(function(rowIndex) {
+        var v = jQ(jQ(this).find("td")[pnlCol]).text().split(",").join("");
+        pnl += parseFloat(v);
+    });
+
+    if (allVisibleRows.length>0) {
+        updatePositionInfo(allVisibleRows.length, pnl);
     }
 }
 
@@ -838,6 +852,7 @@ function showHoldingDropdown() {
     spanForCount.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
 
     spanForCount.id ='stocksInTagCount';
+    spanForCount.addEventListener("click", ()=>updatePnl(false));
     jQ(dropdown).after(spanForCount);
 
     addWatchlistFilter();
@@ -1179,7 +1194,6 @@ function main() {
             if (jQ('#tagSelectorP').is(":visible")) {
                 hideDropdown();
             } else {
-                //toggleDropdown();
                 showPositionDropdown();
             }
         }
@@ -1191,7 +1205,11 @@ function main() {
         var currentUrl = window.location.pathname;
         if (currentUrl.includes('holdings')) {
             debug('click on holdings header.');
-            toggleDropdown(currentUrl);
+            if (jQ('#tagSelectorH').is(":visible")) {
+                hideDropdown();
+            } else {
+                showPositionDropdown();
+            }
         }
     });
 
