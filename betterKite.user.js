@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.05
+// @version      2.06
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -632,7 +632,7 @@ function updatePositionInfo(countPositionsDisplaying, pnl) {
 
 function createMisFilter() {
     debug('createMisFilter');
-    var s = jQ("<span id='misNotificationId' class='randomClassToHelpHide' style='font-size: 10px;margin: 0px 10px; border-left: 1px solid rgb(224, 224, 224); padding: 10px 10px;'>Show <span  class='text-label red randomClassToHelpHide'>MIS</span> Only</span>");
+    var s = jQ("<span id='misNotificationId' class='randomClassToHelpHide' style='font-size: 10px;margin: 0px 10px; border-left: 1px solid rgb(224, 224, 224); padding: 10px 10px;'>Show only <span  class='text-label red randomClassToHelpHide'>MIS</span></span>");
 
     var i = document.createElement("INPUT");
     i.style = 'margin: 5px';
@@ -1233,10 +1233,16 @@ function main() {
         var selectedRows = jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr.selected");
 
         var pnl = 0;
+        var maxPnl = 0;
         selectedRows.each(function(rowIndex) {
             var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
 
             pnl += parseFloat(v);
+
+            var q = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
+            var avgPrice = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
+            var value = q * avgPrice;
+            maxPnl = maxPnl - value;
         });
 
         var pnlTag = jQ("span[random-att='temppnl']");
@@ -1245,11 +1251,13 @@ function main() {
         }
         if (selectedRows.length>0) {
             if (pnl > 0) {
-                jQ("div.positions > section.open-positions.table-wrapper > div > div > table > thead > tr > th.select > div > label").append(
-                    "<span random-att='temppnl' class='text-label green randomClassToHelpHide'>&nbsp;"+formatter.format(pnl)+"</span>");
+                //jQ("div.positions > section.open-positions.table-wrapper > div > div > table > thead > tr > th.select > div > label").append(
+                //jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[1]).append(
+                jQ("div.positions > section.open-positions.table-wrapper > header").append(
+                    "<span random-att='temppnl' class='text-green open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl)+"<span class='text-label randomClassToHelpHide'>Max: "+formatter.format(maxPnl)+"</span></span>");
             } else {
-                jQ("div.positions > section.open-positions.table-wrapper > div > div > table > thead > tr > th.select > div > label").append(
-                    "<span random-att='temppnl' class='text-label red randomClassToHelpHide'>&nbsp;"+formatter.format(pnl)+"</span>");
+                jQ("div.positions > section.open-positions.table-wrapper > header").append(
+                    "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl)+"<span class='text-label randomClassToHelpHide'>Max: "+formatter.format(maxPnl)+"</span></span>");
             }
         }
 
