@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.06
+// @version      2.07
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -19,7 +19,7 @@
 var context=window,options="{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}";const hhistory=context.history,doc=document,nav=navigator||{},storage=localStorage,encode=encodeURIComponent,pushState=hhistory.pushState,typeException="exception",generateId=()=>Math.random().toString(36),getId=()=>(storage.cid||(storage.cid=generateId()),storage.cid),serialize=e=>{var t=[];for(var o in e)e.hasOwnProperty(o)&&void 0!==e[o]&&t.push(encode(o)+"="+encode(e[o]));return t.join("&")},track=(e,t,o,n,i,a,r)=>{const c="https://www.google-analytics.com/collect",s=serialize({v:"1",ds:"web",aip:options.anonymizeIp?1:void 0,tid:"UA-176741575-1",cid:getId(),t:e||"pageview",sd:options.colorDepth&&screen.colorDepth?`${screen.colorDepth}-bits`:void 0,dr:doc.referrer||void 0,dt:doc.title,dl:doc.location.origin+doc.location.pathname+doc.location.search,ul:options.language?(nav.language||"").toLowerCase():void 0,de:options.characterSet?doc.characterSet:void 0,sr:options.screenSize?`${(context.screen||{}).width}x${(context.screen||{}).height}`:void 0,vp:options.screenSize&&context.visualViewport?`${(context.visualViewport||{}).width}x${(context.visualViewport||{}).height}`:void 0,ec:t||void 0,ea:o||void 0,el:n||void 0,ev:i||void 0,exd:a||void 0,exf:void 0!==r&&!1==!!r?0:void 0});if(nav.sendBeacon)nav.sendBeacon(c,s);else{var d=new XMLHttpRequest;d.open("POST",c,!0),d.send(s)}},tEv=(e,t,o,n)=>track("event",e,t,o,n),tEx=(e,t)=>track(typeException,null,null,null,null,e,t);hhistory.pushState=function(e){return"function"==typeof history.onpushstate&&hhistory.onpushstate({state:e}),setTimeout(track,options.delay||10),pushState.apply(hhistory,arguments)},track(),context.ma={tEv:tEv,tEx:tEx};
 
 window.jQ=jQuery.noConflict(true);
-const VERSION = "v2.05";
+const VERSION = "v2.07";
 const PRO_MODE = false;
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
@@ -34,6 +34,8 @@ var g_showOnlyMISPositions = false;
 const reloadPage = function(values) {
     window.location.reload();
 }
+
+var g_color = ( (jQ('html').attr('data-theme') == 'dark') ? '#191919' : 'white' );
 
 const g_config = new MonkeyConfig({
     title: 'betterKite Settings',
@@ -335,7 +337,7 @@ function createHoldingsDropdown() {
     var selectBox = document.createElement("SELECT");
     selectBox.id = "tagSelectorH";
     selectBox.classList.add("randomClassToHelpHide");
-    selectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;"
+    selectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px; background-color: var(--color-bg-default)"
 
     var option = document.createElement("option");
     option.text = "All Holdings";
@@ -589,7 +591,7 @@ function createPositionsDropdown() {
 
                 //END work on Positions Day history AREA
             });
-            
+
             jQ("#misCoundId").text("("+misCount+")");
 
             updatePositionInfo(countPositionsDisplaying, pnl);
@@ -665,7 +667,7 @@ function hideDropdown() {
 function showPositionDropdown(retry = true) {
     jQ("#misNotificationId").remove();
     jQ("div.positions > section.open-positions.table-wrapper > header > h3").after(createMisFilter());
-    
+
     debug('showPositionDropdown');
 
     var allPositionsRow = jQ(allDOMPaths.PathForPositions);
@@ -776,15 +778,15 @@ function showPositionDropdown(retry = true) {
                 }
                 st = setTimeout(function(){simulateSelectBoxEvent();},2000);
             }
-        });    
+        });
     });
 
     // Configuration of the observer:
     var config = {
-        childList: true, 
-        characterData: true 
+        childList: true,
+        characterData: true
     };
-    
+
     // Pass in the target node, as well as the observer options
     g_observer.observe(target, config);
 
@@ -801,13 +803,13 @@ function showPositionDropdown(retry = true) {
                 }
             });
         });
-    
+
         // Configuration of the observer:
         config = {
             characterData: true,
             subtree: true
         };
-        
+
         // Pass in the target node, as well as the observer options
         g_positionsPnlObserver.observe(target, config);
     }
@@ -1208,7 +1210,7 @@ function main() {
             if (jQ('#tagSelectorH').is(":visible")) {
                 hideDropdown();
             } else {
-                showPositionDropdown();
+                showHoldingDropdown();
             }
         }
     });
@@ -1234,12 +1236,22 @@ function main() {
 
         var pnl = 0;
         var maxPnl = 0;
+        var peQ = 0;
+        var ceQ = 0;
         selectedRows.each(function(rowIndex) {
             var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
 
             pnl += parseFloat(v);
 
+            var instrument = jQ(jQ(this).find("td")[2]).text();
+            debug(instrument);
             var q = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
+            if (instrument.includes(' CE')) {
+                ceQ = ceQ + q;
+            } else if (instrument.includes(' PE')) {
+                peQ = peQ + q;
+            }
+
             var avgPrice = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
             var value = q * avgPrice;
             maxPnl = maxPnl - value;
@@ -1250,6 +1262,12 @@ function main() {
             pnlTag.remove();
         }
         if (selectedRows.length>0) {
+            if (ceQ > peQ) {
+
+            } else if (peQ > ceQ) {
+
+            }
+            var t = ceQ+"CE & "+peQ+"PE";
             if (pnl > 0) {
                 //jQ("div.positions > section.open-positions.table-wrapper > div > div > table > thead > tr > th.select > div > label").append(
                 //jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[1]).append(
@@ -1259,6 +1277,12 @@ function main() {
                 jQ("div.positions > section.open-positions.table-wrapper > header").append(
                     "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl)+"<span class='text-label randomClassToHelpHide'>Max: "+formatter.format(maxPnl)+"</span></span>");
             }
+
+            var mTag = jQ("span[random-att='marginsave']");
+            if (mTag.length > 0) {
+                mTag.remove();
+            }
+            jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[1]).append("<span random-att='marginsave' class='pnl randomClassToHelpHide'>"+t+"</span>");
         }
 
     });
@@ -1317,7 +1341,7 @@ function main() {
             var w = jQ(window);
             w.scrollTop( holdingStockTR.offset().top - (w.height()/2) );
             jQ(holdingStockTR).css("background-color", 'lightGray');
-            setTimeout(function(){ jQ(holdingStockTR).css("background-color", 'white'); }, 4000);
+            setTimeout(function(){ jQ(holdingStockTR).css("background-color", 'var(--color-bg-default)'); }, 4000);
         }
     });
 
