@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterUpstox
 // @namespace    https://github.com/amit0rana/betterUpstox
-// @version      0.01
+// @version      0.02
 // @description  Introduces small features on top of pro.upstox app
 // @author       Amit
 // @match        https://pro.upstox.com/*
@@ -23,13 +23,16 @@ waitForKeyElements ("div._headerLinks_12987", main);
 //main();
 
 function init() {
+    debug('initialising');
     var toggleLink = document.createElement("a");
     toggleLink.classList.add("randomClassToDelete");
     toggleLink.classList.add("_link_12987");
     toggleLink.id = "toggleLinkId";
 
     toggleLink.innerText = "Filter";
-    var tag = $("#root > div._layout_f8605 > div > div._header_12987 > div._headerLinks_12987");
+    var tag = $("#root > div > div > div._header_12987 > div._headerLinks_12987");
+    debug(tag);
+
     tag.append(toggleLink);
 
     var spanForCount = document.createElement("span");
@@ -57,12 +60,15 @@ function main() {
     init();
 
     $(document).on('click', "#toggleLinkId", function () {
+        debug('click');
         $(".allHiddenRows").show();
         if (filterActive) {
+            debug('deactivating filter');
             toggleFilter();
             //jQ(".randomClassToDelete").remove();
             $("#positionText").text("");
         } else {
+            debug('activating filter');
             var watchlistRowsDom = $("#watchlistTestId > div > div");
             debug("number " + watchlistRowsDom.length);
             if (watchlistRowsDom.length > 0) {
@@ -79,7 +85,7 @@ function main() {
                 });
 
                 var pnl = 0;
-                var positionRowsDom = $("#books > div > div > div > div > div._tabContent_eca05 > div > div > table > tbody > tr");
+                var positionRowsDom = $("#books > div > div > div > div > div > div > div > table > tbody > tr");
                 debug("number " + positionRowsDom.length);
                 if (positionRowsDom.length > 0) {
                     positionRowsDom.addClass("allHiddenRows");

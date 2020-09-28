@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterUpstox
 // @namespace    https://github.com/amit0rana/betterUpstox
-// @version      0.01
+// @version      0.02
 // @description  Introduces small features on top of pro.upstox app
 // @author       Amit
 // @match        https://pro.upstox.com/*
