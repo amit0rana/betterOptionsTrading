@@ -32,7 +32,7 @@ const g_config = new MonkeyConfig({
     menuCommand: true,
     onSave: reloadPage,
     params: {
-        ogging: {
+        logging: {
             type: 'select',
             choices: [ 'Info','Debug'],
             values: [D_LEVEL_INFO, D_LEVEL_DEBUG],
