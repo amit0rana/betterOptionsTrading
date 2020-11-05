@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterSensibull
 // @namespace    https://github.com/amit0rana/betterSensibull
-// @version      0.01
+// @version      0.02
 // @description  Introduces small features on top of sensibull
 // @author       Amit
 // @match        https://web.sensibull.com/*
@@ -43,14 +43,15 @@ const g_config = new MonkeyConfig({
 const D_LEVEL = g_config.get('logging');
 
 const allDOMPaths = {
-    domForPlacingToggleSelectBox : "#app > div > div.page-sidebar-is-open.sn-page--builder.style__AppWrapper-djPJnZ.gvrWYn > div.sn-l__app-content.style__AppContent-haAgYm.korEfl > div > div > div.style__BuilderWrapper-hHFjHn.jYmpkV > div.style__BuilderColLeft-kWLfnH.gNfiQY > div.style__TradeViewWrapper-evUGWc.hUZMSW > div.style__HeaderText-fcSeJa.ndmlh",
-    domForPositionsRows : '#app > div > div.page-sidebar-is-open.sn-page--builder.style__AppWrapper-djPJnZ.gvrWYn > div.sn-l__app-content.style__AppContent-haAgYm.korEfl > div > div > div.style__BuilderWrapper-hHFjHn.jYmpkV > div.style__BuilderColLeft-kWLfnH.gNfiQY > div.style__TradeViewWrapper-evUGWc.hUZMSW > div',
+    domForPlacingToggleSelectBox : "#app > div > div.page-sidebar-is-open.sn-page--builder.style__AppWrapper-djPJnZ.gvrWYn > div.sn-l__app-content.style__AppContent-haAgYm.korEfl > div.style__ContainerSpacing-kZpkBx.kJeLXd > div > div.style__BuilderWrapper-hHFjHn.nAQhs > div.style__BuilderColLeft-kWLfnH.gNfiQY > div.style__TradeViewWrapper-evUGWc.iufYvd > div.style__HeaderText-fcSeJa.dmFDbN > div:nth-child(2)",
+    domForPositionsRows : '#app > div > div.page-sidebar-is-open.sn-page--builder.style__AppWrapper-djPJnZ.gvrWYn > div.sn-l__app-content.style__AppContent-haAgYm.korEfl > div.style__ContainerSpacing-kZpkBx.kJeLXd > div > div.style__BuilderWrapper-hHFjHn.nAQhs > div.style__BuilderColLeft-kWLfnH.gNfiQY > div.style__TradeViewWrapper-evUGWc.iufYvd > div',
     domForPositionExpiry : 'div > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1)',
-    domForStrategySuggestions : '#app > div > div.page-sidebar-is-open.sn-page--builder.style__AppWrapper-djPJnZ.gvrWYn > div.sn-l__app-content.style__AppContent-haAgYm.korEfl > div > div > div.style__BuilderWrapper-hHFjHn.jYmpkV > div.style__BuilderColRight-jAAkJD.hbmLzB > div.style__BuilderPresetStrategiesWrapper-iJakRq.hLlFnF',
+    domForStrategySuggestions : '#app > div > div.page-sidebar-is-open.sn-page--builder.style__AppWrapper-djPJnZ.gvrWYn > div.sn-l__app-content.style__AppContent-haAgYm.korEfl > div.style__ContainerSpacing-kZpkBx.kJeLXd > div > div.style__BuilderWrapper-hHFjHn.nAQhs > div.style__BuilderColRight-jAAkJD.hbmLzB > div.style__BuilderPresetStrategiesWrapper-iJakRq.jDHsHZ',
     domForCheckbox : 'span > span:nth-child(1) > input'
 };
 
-waitForKeyElements ("div.style__BuilderPresetStrategiesWrapper-iJakRq.hLlFnF", main);
+//div holding ready-made strategies.
+waitForKeyElements ("div.style__BuilderPresetStrategiesWrapper-iJakRq.jDHsHZ", main);
 
 //main();
 
@@ -87,7 +88,7 @@ function main() {
 
     $('.jss1557').click();
 
-    $(allDOMPaths.domForPlacingToggleSelectBox).append(selectBox);
+    $(allDOMPaths.domForPlacingToggleSelectBox).after(selectBox);
 
     selectBox.addEventListener("change", function() {
         console.log(this.value);
