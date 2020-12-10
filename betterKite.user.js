@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.09
+// @version      2.10
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -30,6 +30,8 @@ const DD_HOLDINGS = 'H';
 const DD_POSITONS = 'P';
 var g_dropdownDisplay = DD_NONE;
 var g_showOnlyMISPositions = false;
+var g_showOnlyPEPositions = false;
+var g_showOnlyCEPositions = false;
 
 const reloadPage = function(values) {
     window.location.reload();
@@ -478,6 +480,8 @@ function createPositionsDropdown() {
 
             var stocksInList = [];
             var misCount = 0;
+            var ceCount = 0;
+            var peCount = 0;
 
             //logic to hide the rows in positions table not in our list
             var countPositionsDisplaying = 0;
@@ -485,6 +489,8 @@ function createPositionsDropdown() {
 
             var pnl = 0;
             misCount = 0;
+            ceCount = 0;
+            peCount = 0;
 
             allPositionsRow.each(function(rowIndex) {
                 var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
@@ -493,6 +499,11 @@ function createPositionsDropdown() {
                 var matchFound = false;
                 var tradingSymbolText = jQ(this).find("td.instrument > span.tradingsymbol").text();
                 var productType = jQ(this).find("td.product > span").text().trim();
+                var instrument = jQ(jQ(this).find("td")[2]).text();
+                
+                debug("INSTRUMENT : " + instrument);
+            
+            //if (instrument.includes(' CE')) {
 
                 if (selectedGroup.includes("SPECIAL")) {
                     var lengthOfSpecial = 7;
@@ -528,6 +539,22 @@ function createPositionsDropdown() {
                         matchFound = false;
                     }
                 }
+                if(g_showOnlyCEPositions) {
+                    if (instrument.includes(' CE')) {
+                        //let filter decision pass
+                    } else {
+                        //overide filter decision and hide.
+                        matchFound = false;
+                    }
+                }
+                if(g_showOnlyPEPositions) {
+                    if (instrument.includes(' PE')) {
+                        //let filter decision pass
+                    } else {
+                        //overide filter decision and hide.
+                        matchFound = false;
+                    }
+                }
 
                 if (matchFound) {
                     //dont do anything, let the row be shown.
@@ -540,6 +567,12 @@ function createPositionsDropdown() {
                     }
                     if (productType == "MIS") {
                         misCount++;
+                    }
+                    if (instrument.includes(' CE')) {
+                        ceCount++;
+                    }
+                    if (instrument.includes(' PE')) {
+                        peCount++;
                     }
                 } else {
                     jQ(this).hide();
@@ -593,6 +626,8 @@ function createPositionsDropdown() {
             });
 
             jQ("#misCoundId").text("("+misCount+")");
+            jQ("#peCountId").text("("+peCount+")");
+            jQ("#ceCountId").text("("+ceCount+")");
 
             updatePositionInfo(countPositionsDisplaying, pnl);
 
@@ -647,6 +682,36 @@ function createMisFilter() {
     jQ(s).append(i);
 
     jQ(s).append("<span id='misCoundId'></span>");
+
+    //PE only
+    var t = jQ("<span id='peNotificationId' class='text-label red randomClassToHelpHide'>PE</span>");
+    i = document.createElement("INPUT");
+    i.style = 'margin: 5px';
+    i.type = 'checkbox';
+    i.id = "peFilterId";
+    i.name='peFilter';
+    i.value='SHOWPEONLY';
+    i.checked = g_showOnlyPEPositions;
+
+    jQ(t).append(i);
+
+    jQ(t).append("<span id='peCountId'></span>");
+    jQ(s).append(t);
+
+    //CE only
+    t = jQ("<span id='peNotificationId' class='text-label red randomClassToHelpHide'>CE</span>");
+    i = document.createElement("INPUT");
+    i.style = 'margin: 5px';
+    i.type = 'checkbox';
+    i.id = "ceFilterId";
+    i.name='ceFilter';
+    i.value='SHOWCEONLY';
+    i.checked = g_showOnlyCEPositions;
+
+    jQ(t).append(i);
+
+    jQ(t).append("<span id='ceCountId'></span>");
+    jQ(s).append(t);
 
     return s;
 }
@@ -1073,6 +1138,26 @@ function main() {
         g_showOnlyMISPositions = this.checked;
 
         info(filterValue + g_showOnlyMISPositions);
+        simulateSelectBoxEvent();
+    });
+
+    //click of CE filter
+    jQ(document).on('click',"#ceFilterId", function(){
+        tEv("kite","cefilter","click","");
+        var filterValue = this.value;
+        g_showOnlyCEPositions = this.checked;
+
+        info(filterValue + g_showOnlyCEPositions);
+        simulateSelectBoxEvent();
+    });
+
+    //click of PE filter
+    jQ(document).on('click',"#peFilterId", function(){
+        tEv("kite","pefilter","click","");
+        var filterValue = this.value;
+        g_showOnlyPEPositions = this.checked;
+
+        info(filterValue + g_showOnlyPEPositions);
         simulateSelectBoxEvent();
     });
 
