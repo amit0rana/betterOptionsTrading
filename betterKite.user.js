@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.14
+// @version      2.15
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -57,8 +57,8 @@ const g_config = new MonkeyConfig({
         logging: {
             type: 'select',
             choices: [ 'Info','Debug'],
-            values: [D_LEVEL_INFO, D_LEVEL_DEBUG],
-            default: D_LEVEL_INFO
+            values: [2, 1],
+            default: 2
         }
     }
 });
@@ -73,7 +73,7 @@ const debug = function(logInfo) {
     log( D_LEVEL_DEBUG , logInfo);
 }
 const info = function(logInfo) {
-    log( D_LEVEL_INFO , logInfo);
+    log( 2 , logInfo);
 }
 
 const allDOMPaths = {
