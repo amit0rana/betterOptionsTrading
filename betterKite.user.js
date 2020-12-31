@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.12
+// @version      2.13
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -20,23 +20,12 @@ var context=window,options="{    anonymizeIp: true,    colorDepth: true,    char
 const D_LEVEL_INFO = 2;
 const D_LEVEL_DEBUG = 1;
 
-const log = function(level, logInfo) {
-    if (level >= D_LEVEL) {
-        console.log(logInfo);
-    }
-}
-const debug = function(logInfo) {
-    log( D_LEVEL_DEBUG , logInfo);
-}
-const info = function(logInfo) {
-    log( D_LEVEL_INFO , logInfo);
-}
 const formatter = Intl.NumberFormat('en-IN', { 
     style: 'currency', currency: 'INR'
 });
 
 window.jQ=jQuery.noConflict(true);
-const VERSION = "v2.11";
+const VERSION = "v2.13";
 const PRO_MODE = false;
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
@@ -74,6 +63,18 @@ const g_config = new MonkeyConfig({
     }
 });
 const D_LEVEL = g_config.get('logging');
+
+const log = function(level, logInfo) {
+    if (level >= D_LEVEL) {
+        console.log(logInfo);
+    }
+}
+const debug = function(logInfo) {
+    log( D_LEVEL_DEBUG , logInfo);
+}
+const info = function(logInfo) {
+    log( D_LEVEL_INFO , logInfo);
+}
 
 const allDOMPaths = {
     rowsFromHoldingsTable : "div.holdings > section > div > div > table > tbody > tr",
@@ -124,7 +125,7 @@ function initHoldings() {
     if (PRO_MODE) {
         GM_registerMenuCommand("Set Holdings", function() {
             var h = GM_getValue(GM_HOLDINGS_NAME,defaultHoldings);
-            h = prompt("Provide Holdings object. Eg: {\"groupName 1\":[\"INFY\",\"RELIANCE\"],\"groupName 2\":[\"M&amp;M\",\"ICICIBANK\"]}", JSON.stringify(h));
+            h = prompt("Provide Holdings object. Eg: {'groupName 1':['INFY','RELIANCE'],'groupName 2':['M&amp;M','ICICIBANK']}", JSON.stringify(h));
             if (h == null) return;
             try {
                 holdings = JSON.parse(h);
@@ -151,7 +152,7 @@ function initPositions() {
     if (PRO_MODE) {
         GM_registerMenuCommand("Option Strategies", function() {
             var p = GM_getValue(GMPositionsName,defaultPositions);
-            p = prompt("Provide Positions object. Eg: {\"strategy 1\":[\"12304386\",\"12311298\"],\"strategy 2\":[\"12431106\"]}", JSON.stringify(p));
+            p = prompt("Provide Positions object. Eg: {'strategy 1':['12304386','12311298'],'strategy 2':['12431106']}", JSON.stringify(p));
             if (p == null) return;
             try {
                 positions = JSON.parse(p);
@@ -256,7 +257,7 @@ function initReferenceTrades() {
     if (PRO_MODE) {
         GM_registerMenuCommand("Reference Trades & Martingales", function() {
             var rt = GM_getValue(GMRefTradeName,defaultRefTrades);
-            rt = prompt("Provide trades object. Eg: {\"RF.blue\":[\"12304386\",\"12311298\"],\"MT.red\":[\"12431106\"]}", JSON.stringify(rt));
+            rt = prompt("Provide trades object. Eg: {'RF.blue':['12304386','12311298'],'MT.red':['12431106']}", JSON.stringify(rt));
             if (rt == null) return;
             try {
                 referenceTrades = JSON.parse(rt);
