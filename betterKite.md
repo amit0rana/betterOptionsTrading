@@ -28,7 +28,7 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 * One stock can be in multiple categories.
 * When you click on a stock in watchlist, if same stock is present in 'holdings', screen will be scrolled automatically bringing the stock in the middle and it will be highlighted for a few seconds.
 
-# [Please see here to learn how to use the tool to copy orders from one account to another.](https://github.com/amit0rana/betterOptionsTrading/blob/master/betterKiteCopyOrders.md)
+# [Click on this link to learn how to use the tool to copy orders from one zerodha account to another.](https://github.com/amit0rana/betterOptionsTrading/blob/master/betterKiteCopyOrders.md)
 
 # How to use
 * Once installation is done, go to 'holdings' page and you will see a dropdown next to the logo listing all your groups.

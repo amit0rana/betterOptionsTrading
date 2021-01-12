@@ -8,7 +8,7 @@ Steps:
 ![1. OpenBothAccounts](https://dl.dropbox.com/s/smt2ipq4k8otbke/1.%20OpenBothAccounts.png?dl=0)
 
 
-* Goto order screen and click on 'executed orders'. In order to copy orders its assumed that you have already executed orders in one account.
+* Goto order screen and click on 'executed orders'. Make sure you click on 'executed order' on both the winows. You should be seeing 'Send Order' button on top before proceeding. In order to copy orders its assumed that you have already executed orders in one account.
 ![2. ClickOnExecuteOrder](https://dl.dropbox.com/s/o239lgh97wz4bgr/2.%20ClickOnExecuteOrder.png?dl=0)
 
 * Click on order info, as shown in the image.
