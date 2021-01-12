@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.15
+// @version      2.16
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -19,15 +19,14 @@ var context=window,options="{    anonymizeIp: true,    colorDepth: true,    char
 
 const D_LEVEL_DEBUG = 1;
 
-const formatter = Intl.NumberFormat('en-IN', { 
+const formatter = Intl.NumberFormat('en-IN', {
     style: 'currency', currency: 'INR'
 });
 
 window.jQ=jQuery.noConflict(true);
-const VERSION = "v2.14";
-const PRO_MODE = false;
+const VERSION = "v2.16";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
-const GMPositionsName = "BK_POSITIONS"; 
+const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
 
 const DD_NONE = '';
@@ -58,10 +57,15 @@ const g_config = new MonkeyConfig({
             choices: [ 'Info','Debug'],
             values: [2, 1],
             default: 2
-        }
+        },
+        pro_mode: {
+            type: 'checkbox',
+            default: false
+        },
     }
 });
 const D_LEVEL = g_config.get('logging');
+const PRO_MODE = g_config.get('pro_mode');
 
 const log = function(level, logInfo) {
     if (level >= D_LEVEL) {
@@ -517,9 +521,9 @@ function createPositionsDropdown() {
                 var tradingSymbolText = jQ(this).find("td.instrument > span.tradingsymbol").text();
                 var productType = jQ(this).find("td.product > span").text().trim();
                 var instrument = jQ(jQ(this).find("td")[2]).text();
-                
+
                 debug("INSTRUMENT : " + instrument);
-            
+
             //if (instrument.includes(' CE')) {
 
                 if (selectedGroup.includes("SPECIAL")) {
@@ -945,6 +949,11 @@ function showHoldingDropdown() {
 
 function toggleDropdown(currentUrl) {
     debug('toggleDropdown');
+
+    if (jQ('#bo_basket-form').length > 0) {
+        jQ('#bo_basket-form').remove();
+    }
+
     if (currentUrl.includes('positions')) {
         switch(g_dropdownDisplay) {
             case DD_NONE:
@@ -979,6 +988,8 @@ function toggleDropdown(currentUrl) {
                 //hideDropdown();
                 simulateSelectBoxEvent();
         }
+    } else if (currentUrl.includes('orders')) {
+        showSendOrderButton();
     }
 }
 
@@ -1039,7 +1050,7 @@ function simulateSelectBoxEvent() {
     */
 }
 
-function filterOrders() {
+function filterOrders() { //notused
     debug('filter orders');
     //there are 3 sections
     //Open or pending orders
@@ -1317,6 +1328,7 @@ function main() {
         }
     });
 
+
     //click of Positions row to copy pos id
     jQ(document).on('click',allDOMPaths.PathForPositions, function() {
         var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
@@ -1407,11 +1419,7 @@ function main() {
         pushState.apply(history, arguments);
         debug('pushstate call toggle');
         var currentUrl = window.location.pathname;
-        if (currentUrl.includes('orders')) {
-            filterOrders();
-        } else {
-            toggleDropdown(currentUrl);
-        }
+        toggleDropdown(currentUrl);
     };
 
     //on click of watchlist tab (1-5)
@@ -1460,6 +1468,231 @@ function main() {
     });
 
 }
+
+function waitForKeyElements (
+    selectorTxt,    /* Required: The jQuery selector string that
+                        specifies the desired element(s).
+                    */
+    actionFunction, /* Required: The code to run when elements are
+                        found. It is passed a jNode to the matched
+                        element.
+                    */
+    bWaitOnce,      /* Optional: If false, will continue to scan for
+                        new elements even after the first match is
+                        found.
+                    */
+    iframeSelector  /* Optional: If set, identifies the iframe to
+                        search.
+                    */
+) {
+    var targetNodes, btargetsFound;
+
+    if (typeof iframeSelector == "undefined")
+        targetNodes     = jQ(selectorTxt);
+    else
+        targetNodes     = jQ(iframeSelector).contents ()
+                                           .find (selectorTxt);
+
+    if (targetNodes  &&  targetNodes.length > 0) {
+        btargetsFound   = true;
+        /*--- Found target node(s).  Go through each and act if they
+            are new.
+        */
+        targetNodes.each ( function () {
+            var jThis        = jQ(this);
+            var alreadyFound = jThis.data ('alreadyFound')  ||  false;
+
+            if (!alreadyFound) {
+                //--- Call the payload function.
+                var cancelFound     = actionFunction (jThis);
+                if (cancelFound)
+                    btargetsFound   = false;
+                else
+                    jThis.data ('alreadyFound', true);
+            }
+        } );
+    }
+    else {
+        btargetsFound   = false;
+    }
+
+    //--- Get the timer-control variable for this selector.
+    var controlObj      = waitForKeyElements.controlObj  ||  {};
+    var controlKey      = selectorTxt.replace (/[^\w]/g, "_");
+    var timeControl     = controlObj [controlKey];
+
+    //--- Now set or clear the timer as appropriate.
+    if (btargetsFound  &&  bWaitOnce  &&  timeControl) {
+        //--- The only condition where we need to clear the timer.
+        clearInterval (timeControl);
+        delete controlObj [controlKey]
+    }
+    else {
+        //--- Set a timer, if needed.
+        if ( ! timeControl) {
+            timeControl = setInterval ( function () {
+                    waitForKeyElements (    selectorTxt,
+                                            actionFunction,
+                                            bWaitOnce,
+                                            iframeSelector
+                                        );
+                },
+                300
+            );
+            controlObj [controlKey] = timeControl;
+        }
+    }
+    waitForKeyElements.controlObj   = controlObj;
+}
+
+const BASE_ORDERINFO_DOM = "div.modal-mask.order-info-modal > div.modal-wrapper > div.modal-container.layer-2";
+var g_tradingBasket = new Array();
+
+function orderInfo() {
+    debug('orderInfo');
+
+    var i = document.createElement("INPUT");
+    i.type = 'button';
+    i.name='copyOrder';
+    i.value='Copy Order';
+    i.id='copyOrder';
+    i.classList.add('button');
+    i.classList.add('button-outline');
+    i.onclick = function () {
+        var ts = jQ(BASE_ORDERINFO_DOM +" > div > div > div > h3.tradingsymbol").text().trim().split(' ');
+        var tradingsymbol = ts[0];
+        debug(tradingsymbol);
+        var exchange = ts[1];
+        debug(exchange);
+
+        var transactionType = jQ(BASE_ORDERINFO_DOM + " > div.modal-header > div > div.eight.columns.tradingsymbol-wrapper > span").text().trim();
+        debug(transactionType);
+
+        var orderType = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(5) > div.six.columns.text-right > div.order-type").text().trim();
+        debug(orderType);
+
+        var product = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(6) > div.six.columns.text-right > div.order-type").text().trim();
+        debug(product);
+        
+        var quantity = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(1) > div.six.columns.text-right > div").text().trim().split('/')[0];
+        
+        var price = jQ(BASE_ORDERINFO_DOM+" > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(3) > div.six.columns.text-right > div").text().trim();
+        debug(price);
+
+        if (!JSON.stringify(g_tradingBasket).includes("\""+tradingsymbol+"\"")) {
+            g_tradingBasket.push({"product": product,"variety": "regular","tradingsymbol": tradingsymbol , "exchange": exchange,"transaction_type": transactionType,"order_type": orderType,"price": parseFloat(price),"quantity": parseInt(quantity) ,"readonly": false});
+            
+            navigator.clipboard.writeText(JSON.stringify(g_tradingBasket));
+            
+        
+            jQ("#sendOrder").val('Send Order ('+ g_tradingBasket.length +')');
+        }
+
+        var buttons = jQ("#app > div.container.wrapper > div.container-right > div.page-content.orders > div > div > div > div > div.modal-footer > div > button")
+        buttons[buttons.length-1].click();
+    };
+
+    //#app > div.container.wrapper > div.container-right > div.page-content.orders > div > div > div > div > div.modal-footer > div > button.button.button-orange.button-outline
+   
+    jQ(BASE_ORDERINFO_DOM + " > div > div > button")[0].before(i);
+}
+
+//copy orders (not used)
+jQ(document).on('click', 'section.completed-orders-wrap.table-wrapper > div > div > table > tbody > tr', function () {
+
+    //[{"variety": "regular","tradingsymbol": "INFY","exchange": "NSE","transaction_type": "BUY","order_type": "MARKET","quantity": 1,"readonly": false}]
+
+    var variety = jQ(this).find("td.product").html().trim();
+    debug(variety);
+    var tradingsymbol = jQ(this).find("td.instrument > span.tradingsymbol").text().trim();
+    debug(tradingsymbol);
+    var exchange = jQ(this).find("td.instrument > span.exchange").html().trim();
+    debug(exchange);
+    var transactionType = jQ(this).find("td.transaction-type").text().trim();
+    debug(transactionType);
+    var quantity = jQ(this).find("td.quantity.right").html().trim().split('/')[0];
+    var price = jQ(this).find("td.average-price.right").text().trim();
+    debug(price);
+
+});
+
+function showSendOrderButton() {
+    var form = document.createElement("FORM");
+    form.method = 'post';
+    form.id = 'bo_basket-form';
+    form.action = "https://kite.zerodha.com/connect/basket";
+    form.classList.add("randomClassToHelpHide");
+
+    var i = document.createElement("INPUT");
+    //i.style = 'margin: 5px';
+    i.type = 'hidden';
+    i.name='api_key';
+    i.value='4s0c0wfr478wne1s';
+    i.classList.add("randomClassToHelpHide");
+
+    jQ(form).append(i);
+
+    i = document.createElement("INPUT");
+    //i.style = 'margin: 5px';
+    i.type = 'hidden';
+    i.name='data';
+    i.id = 'bobasket';
+    i.classList.add("randomClassToHelpHide");
+    //i.value='[{"variety": "regular","tradingsymbol": "INFY","exchange": "NSE","transaction_type": "BUY","order_type": "MARKET","quantity": 1,"readonly": false}]';
+
+    jQ(form).append(i);
+
+    i = document.createElement("INPUT");
+    //i.style = 'margin: 5px';
+    i.type = 'button';
+    i.name='sendOrder';
+    i.value='Send Order';
+    i.classList.add("randomClassToHelpHide");
+    i.classList.add('button');
+    i.classList.add('button-outline');
+    i.id='sendOrder';
+    i.style="margin: 25px 5px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 5px;"
+
+    jQ(form).append(i);
+
+    jQ("a.logo")[0].after(form);
+
+    jQ(document).on('click',"#sendOrder", async function() {
+    //jQ('#sendOrder').onclick(async function() {
+        const t = await navigator.clipboard.readText();
+
+        //navigator.clipboard.readText().then(
+         // clipText => document.getElementById("bobasket").value = clipText
+          //);
+        
+        jQ('#bobasket').val(t);
+        //document.getElementById("bobasket").value = t;
+        g_tradingBasket = new Array();
+        navigator.clipboard.writeText("");
+        jQ("#bo_basket-form").submit();
+    });
+}
+
+//click on order header
+var orderHeader = 'section.completed-orders-wrap.table-wrapper > header';
+jQ(document).on('click', orderHeader, function () {
+    tEv("kite","order","toggle","");
+    jQ(".randomClassToHelpHide").remove();
+    if (jQ('#sendOrder').is(":visible")) {
+        //do nothing
+        
+        g_tradingBasket = new Array();
+    } else {
+        showSendOrderButton();
+        
+    }
+    
+});
+
+//div holding ready-made strategies.
+//div.modal-mask.positios-info-container.positions-info-modal > div.modal-wrapper > div.modal-container.layer-2
+waitForKeyElements (BASE_ORDERINFO_DOM, orderInfo);
+
 
 jQ.fn.exists = function () {
     return this.length !== 0;
