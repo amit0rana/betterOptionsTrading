@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.16
+// @version      2.17
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -24,7 +24,7 @@ const formatter = Intl.NumberFormat('en-IN', {
 });
 
 window.jQ=jQuery.noConflict(true);
-const VERSION = "v2.16";
+const VERSION = "v2.17";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -952,6 +952,8 @@ function toggleDropdown(currentUrl) {
 
     if (jQ('#bo_basket-form').length > 0) {
         jQ('#bo_basket-form').remove();
+        g_tradingBasket.splice(0, g_tradingBasket.length);
+        navigator.clipboard.writeText("");
     }
 
     if (currentUrl.includes('positions')) {
@@ -1551,47 +1553,62 @@ var g_tradingBasket = new Array();
 function orderInfo() {
     debug('orderInfo');
 
+    var ts = jQ(BASE_ORDERINFO_DOM +" > div > div > div > h3.tradingsymbol").text().trim().split(' ');
+    var tradingsymbol = ts[0];
+
     var i = document.createElement("INPUT");
     i.type = 'button';
     i.name='copyOrder';
-    i.value='Copy Order';
+    i.value='Copy Order ('+ g_tradingBasket.length +')'
     i.id='copyOrder';
     i.classList.add('button');
     i.classList.add('button-outline');
-    i.onclick = function () {
-        var ts = jQ(BASE_ORDERINFO_DOM +" > div > div > div > h3.tradingsymbol").text().trim().split(' ');
-        var tradingsymbol = ts[0];
-        debug(tradingsymbol);
-        var exchange = ts[1];
-        debug(exchange);
 
-        var transactionType = jQ(BASE_ORDERINFO_DOM + " > div.modal-header > div > div.eight.columns.tradingsymbol-wrapper > span").text().trim();
-        debug(transactionType);
+    if (JSON.stringify(g_tradingBasket).includes("\""+tradingsymbol+"\"")) {
+        i.value='Already Copied. Close';
+        i.onclick = function () {
+            var buttons = jQ("#app > div.container.wrapper > div.container-right > div > div > div > div > div > div.modal-footer > div > button");
+            buttons[buttons.length-1].click();
+        };
+    } else {
+        i.onclick = function () {
+            var ts = jQ(BASE_ORDERINFO_DOM +" > div > div > div > h3.tradingsymbol").text().trim().split(' ');
+            var tradingsymbol = ts[0];
+            debug(tradingsymbol);
+            var exchange = ts[1];
+            debug(exchange);
 
-        var orderType = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(5) > div.six.columns.text-right > div.order-type").text().trim();
-        debug(orderType);
+            var transactionType = jQ(BASE_ORDERINFO_DOM + " > div.modal-header > div > div.eight.columns.tradingsymbol-wrapper > span").text().trim();
+            debug(transactionType);
 
-        var product = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(6) > div.six.columns.text-right > div.order-type").text().trim();
-        debug(product);
-        
-        var quantity = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(1) > div.six.columns.text-right > div").text().trim().split('/')[0];
-        
-        var price = jQ(BASE_ORDERINFO_DOM+" > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(3) > div.six.columns.text-right > div").text().trim();
-        debug(price);
+            var orderType = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(5) > div.six.columns.text-right > div.order-type").text().trim();
+            debug(orderType);
 
-        if (!JSON.stringify(g_tradingBasket).includes("\""+tradingsymbol+"\"")) {
-            g_tradingBasket.push({"product": product,"variety": "regular","tradingsymbol": tradingsymbol , "exchange": exchange,"transaction_type": transactionType,"order_type": orderType,"price": parseFloat(price),"quantity": parseInt(quantity) ,"readonly": false});
+            var product = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(6) > div.six.columns.text-right > div.product").text().trim();
+            debug(product);
             
-            navigator.clipboard.writeText(JSON.stringify(g_tradingBasket));
+            var quantity = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(1) > div.six.columns.text-right > div").text().trim().split('/')[0];
             
-        
-            jQ("#sendOrder").val('Send Order ('+ g_tradingBasket.length +')');
-            tEv("kite","order","copyOrder","");
-        }
+            var price = jQ(BASE_ORDERINFO_DOM+" > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(3) > div.six.columns.text-right > div").text().trim();
+            debug(price);
 
-        var buttons = jQ("#app > div.container.wrapper > div.container-right > div.page-content.orders > div > div > div > div > div.modal-footer > div > button")
-        buttons[buttons.length-1].click();
-    };
+            if (!JSON.stringify(g_tradingBasket).includes("\""+tradingsymbol+"\"")) {
+                g_tradingBasket.push({"product": product,"variety": "regular","tradingsymbol": tradingsymbol , "exchange": exchange,"transaction_type": transactionType,"order_type": orderType,"price": parseFloat(price),"quantity": parseInt(quantity) ,"readonly": false});
+                
+                navigator.clipboard.writeText(JSON.stringify(g_tradingBasket));
+                
+            
+                jQ("#sendOrder").val('Send Order ('+ g_tradingBasket.length +')');
+                tEv("kite","order","copyOrder","");
+            } else {
+                debug('not adding order to basket');
+                debug(JSON.stringify(g_tradingBasket));
+            }
+
+            var buttons = jQ("#app > div.container.wrapper > div.container-right > div > div > div > div > div > div.modal-footer > div > button");
+            buttons[buttons.length-1].click();
+        };
+    }
 
     //#app > div.container.wrapper > div.container-right > div.page-content.orders > div > div > div > div > div.modal-footer > div > button.button.button-orange.button-outline
    
@@ -1668,7 +1685,8 @@ function showSendOrderButton() {
         
         jQ('#bobasket').val(t);
         //document.getElementById("bobasket").value = t;
-        g_tradingBasket = new Array();
+        //g_tradingBasket = new Array();
+        g_tradingBasket.splice(0, g_tradingBasket.length);
         navigator.clipboard.writeText("");
         jQ("#bo_basket-form").submit();
         tEv("kite","order","sendOrder","");
@@ -1679,11 +1697,15 @@ function showSendOrderButton() {
 var orderHeader = 'section.completed-orders-wrap.table-wrapper > header';
 jQ(document).on('click', orderHeader, function () {
     tEv("kite","order","toggle","");
-    jQ(".randomClassToHelpHide").remove();
+    
     if (jQ('#sendOrder').is(":visible")) {
         //do nothing
         
-        g_tradingBasket = new Array();
+        //g_tradingBasket = new Array();
+        g_tradingBasket.splice(0, g_tradingBasket.length);
+        navigator.clipboard.writeText("");
+        //jQ(".randomClassToHelpHide").remove();
+        jQ("#bo_basket-form").remove();
     } else {
         showSendOrderButton();
         
