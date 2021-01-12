@@ -1586,6 +1586,7 @@ function orderInfo() {
             
         
             jQ("#sendOrder").val('Send Order ('+ g_tradingBasket.length +')');
+            tEv("kite","order","copyOrder","");
         }
 
         var buttons = jQ("#app > div.container.wrapper > div.container-right > div.page-content.orders > div > div > div > div > div.modal-footer > div > button")
@@ -1670,6 +1671,7 @@ function showSendOrderButton() {
         g_tradingBasket = new Array();
         navigator.clipboard.writeText("");
         jQ("#bo_basket-form").submit();
+        tEv("kite","order","sendOrder","");
     });
 }
 
