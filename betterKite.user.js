@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.17
+// @version      2.18
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -24,7 +24,7 @@ const formatter = Intl.NumberFormat('en-IN', {
 });
 
 window.jQ=jQuery.noConflict(true);
-const VERSION = "v2.17";
+const VERSION = "v2.18";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -950,12 +950,6 @@ function showHoldingDropdown() {
 function toggleDropdown(currentUrl) {
     debug('toggleDropdown');
 
-    if (jQ('#bo_basket-form').length > 0) {
-        jQ('#bo_basket-form').remove();
-        g_tradingBasket.splice(0, g_tradingBasket.length);
-        navigator.clipboard.writeText("");
-    }
-
     if (currentUrl.includes('positions')) {
         switch(g_dropdownDisplay) {
             case DD_NONE:
@@ -991,7 +985,16 @@ function toggleDropdown(currentUrl) {
                 simulateSelectBoxEvent();
         }
     } else if (currentUrl.includes('orders')) {
-        showSendOrderButton();
+        if (jQ('#bo_basket-form').length > 0) {
+            debug('found send order form');
+            //jQ('#bo_basket-form').remove();
+            //g_tradingBasket.splice(0, g_tradingBasket.length);
+            //navigator.clipboard.writeText("");
+            updateOrderButtons();
+        } else {
+            debug('showing send order form');
+            showSendOrderButton();
+        }
     }
 }
 
@@ -1598,7 +1601,7 @@ function orderInfo() {
                 navigator.clipboard.writeText(JSON.stringify(g_tradingBasket));
                 
             
-                jQ("#sendOrder").val('Send Order ('+ g_tradingBasket.length +')');
+                updateOrderButtons();
                 tEv("kite","order","copyOrder","");
             } else {
                 debug('not adding order to basket');
@@ -1635,6 +1638,9 @@ jQ(document).on('click', 'section.completed-orders-wrap.table-wrapper > div > di
 });
 
 function showSendOrderButton() {
+    var div = document.createElement("DIV");
+    div.style = 'float:right';
+
     var form = document.createElement("FORM");
     form.method = 'post';
     form.id = 'bo_basket-form';
@@ -1642,7 +1648,6 @@ function showSendOrderButton() {
     form.classList.add("randomClassToHelpHide");
 
     var i = document.createElement("INPUT");
-    //i.style = 'margin: 5px';
     i.type = 'hidden';
     i.name='api_key';
     i.value='4s0c0wfr478wne1s';
@@ -1651,17 +1656,14 @@ function showSendOrderButton() {
     jQ(form).append(i);
 
     i = document.createElement("INPUT");
-    //i.style = 'margin: 5px';
     i.type = 'hidden';
     i.name='data';
     i.id = 'bobasket';
     i.classList.add("randomClassToHelpHide");
-    //i.value='[{"variety": "regular","tradingsymbol": "INFY","exchange": "NSE","transaction_type": "BUY","order_type": "MARKET","quantity": 1,"readonly": false}]';
-
+    
     jQ(form).append(i);
 
     i = document.createElement("INPUT");
-    //i.style = 'margin: 5px';
     i.type = 'button';
     i.name='sendOrder';
     i.value='Send Order';
@@ -1669,49 +1671,87 @@ function showSendOrderButton() {
     i.classList.add('button');
     i.classList.add('button-outline');
     i.id='sendOrder';
-    i.style="margin: 25px 5px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 5px;"
 
     jQ(form).append(i);
 
-    jQ("a.logo")[0].after(form);
+    i = document.createElement("INPUT");
+    i.type = 'button';
+    i.name='resetOrder';
+    i.value='Reset Order';
+    i.classList.add("randomClassToHelpHide");
+    i.classList.add('button');
+    i.classList.add('button-outline');
+    i.id='resetOrder';
+    
+    jQ(form).append(i);
 
+    jQ(div).append(form);
+    
     jQ(document).on('click',"#sendOrder", async function() {
-    //jQ('#sendOrder').onclick(async function() {
+        debug('submiting send ordre');
         const t = await navigator.clipboard.readText();
-
-        //navigator.clipboard.readText().then(
-         // clipText => document.getElementById("bobasket").value = clipText
-          //);
-        
         jQ('#bobasket').val(t);
-        //document.getElementById("bobasket").value = t;
-        //g_tradingBasket = new Array();
-        g_tradingBasket.splice(0, g_tradingBasket.length);
-        navigator.clipboard.writeText("");
+        
+        //g_tradingBasket.splice(0, g_tradingBasket.length);
+        //navigator.clipboard.writeText("");
         jQ("#bo_basket-form").submit();
         tEv("kite","order","sendOrder","");
     });
+
+    jQ(document).on('mouseenter',"#sendOrder", async function() {
+        debug('refreshing mouse enter');
+
+        updateOrderButtons();
+        
+        tEv("kite","order","sendOrder","");
+    });
+
+    jQ(document).on('click',"#resetOrder", async function() {
+        debug('reset order');
+        navigator.clipboard.writeText("");
+        updateOrderButtons();
+        tEv("kite","order","resetOrder","");
+    });
+    if (jQ("div.container.wrapper > div.container-right > div.page-nav").length < 1) {
+        debug('sleeping as couldnt find order div');
+
+        setTimeout(function(){ jQ("div.container.wrapper > div.container-right > div.page-nav").append(div); }, 1100);
+        return;
+    }
+    
+}
+
+async function updateOrderButtons() {
+    const t = await navigator.clipboard.readText();
+
+    try {
+        g_tradingBasket = JSON.parse(t);
+    } catch(err) {
+        g_tradingBasket.splice(0, g_tradingBasket.length);
+        debug("There was error in parsing order");
+    }
+    jQ("#sendOrder").val('Send Order ('+ g_tradingBasket.length +')');
 }
 
 //click on order header
-var orderHeader = 'section.completed-orders-wrap.table-wrapper > header';
-jQ(document).on('click', orderHeader, function () {
-    tEv("kite","order","toggle","");
+// var orderHeader = 'section.completed-orders-wrap.table-wrapper > header';
+// jQ(document).on('click', orderHeader, function () {
+//     tEv("kite","order","toggle","");
     
-    if (jQ('#sendOrder').is(":visible")) {
-        //do nothing
+//     if (jQ('#sendOrder').is(":visible")) {
+//         //do nothing
         
-        //g_tradingBasket = new Array();
-        g_tradingBasket.splice(0, g_tradingBasket.length);
-        navigator.clipboard.writeText("");
-        //jQ(".randomClassToHelpHide").remove();
-        jQ("#bo_basket-form").remove();
-    } else {
-        showSendOrderButton();
+//         //g_tradingBasket = new Array();
+//         g_tradingBasket.splice(0, g_tradingBasket.length);
+//         navigator.clipboard.writeText("");
+//         //jQ(".randomClassToHelpHide").remove();
+//         jQ("#bo_basket-form").remove();
+//     } else {
+//         showSendOrderButton();
         
-    }
+//     }
     
-});
+// });
 
 //div holding ready-made strategies.
 //div.modal-mask.positios-info-container.positions-info-modal > div.modal-wrapper > div.modal-container.layer-2

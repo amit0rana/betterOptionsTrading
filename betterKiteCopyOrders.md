@@ -1,9 +1,10 @@
 Please look at all the images below to understand the process.
 
 * Please note, the plugin doesn't automatically execute any order, so its safe.
+* Button location has changed but I haven't updated the screenshots
 * Plugin will just create a basket for you. You can edit/review the basket and then place order.
 * Plugin does not read any confidential information. Basket is made and executed on zerodha website.
-* On order screen, click on 'executed order' to 'hide or show' the 'Send Order' button. Anytime to reset or cancel already copied orders, simply click on 'executed orders' to hide the button.
+* Anytime to reset or cancel already copied orders, simply click on 'reset orders'.
 
 Steps:
 * Open both accounts in different windows. In my example, I am copying order from left window to right window.
