@@ -147,8 +147,6 @@ function initHoldings() {
 
 function initPositions() {
     var defaultPositions = {
-      "BajajFinance" : ["12304386","12311298"],
-      "Bata": ["12431106"]
     };
     var positions = GM_getValue(GMPositionsName,defaultPositions);
 

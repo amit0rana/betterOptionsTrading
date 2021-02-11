@@ -27,8 +27,8 @@ function changeButtonName() {
         $(btn).val('Divide 75');
         isMultiply = false;
     } else {
-        $(btn).val('Multiply 75');
         isMultiply = true;
+        $(btn).val('Multiply 75');
     }
 }
 
@@ -48,7 +48,7 @@ function main() {
     i.classList.add("randomClassToHelpHide");
     i.id='addLot';
 
-    $('#optionchain_equity_sp > div > div > div.row.my-2 > div.row.col-12 > div.col-md-7.mb-1').append(i);
+    $('#main_navbar').append(i); 
 
     $(document).on('click',"#addLot",  function() {
         var allRows = $('#optionChainTable-indices > tbody > tr');
@@ -80,6 +80,11 @@ function main() {
                 $(col).text(getNumber(txt));
             }
         });
+        changeButtonName();
+    });
+
+    $(document).on('change',"#expirySelect",  function() {
+        isMultiply = false;
         changeButtonName();
     });
 }
