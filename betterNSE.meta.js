@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         betterNSE
 // @namespace    https://github.com/amit0rana/betterNSE
-// @version      0.01
+// @version      0.02
 // @description  Introduces small features on top of nse website
 // @author       Amit
 // @match        https://www.nseindia.com/*

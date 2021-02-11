@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         betterNSE
 // @namespace    https://github.com/amit0rana/betterNSE
-// @version      0.01
+// @version      0.02
 // @description  Introduces small features on top of nse website
 // @author       Amit
 // @match        https://www.nseindia.com/*
@@ -40,15 +40,15 @@ function getNumber(n) {
     }
 }
 
-function main() {
-    var i = document.createElement("INPUT");
-    i.type = 'button';
-    i.name='addLot';
-    i.value='Multiply 75';
-    i.classList.add("randomClassToHelpHide");
-    i.id='addLot';
+var i = document.createElement("INPUT");
+i.type = 'button';
+i.name='addLot';
+i.value='Multiply 75';
+i.classList.add("randomClassToHelpHide");
+i.id='addLot';
 
-    $('#main_navbar').append(i); 
+function main() {
+    $('#main_navbar').append(i);
 
     $(document).on('click',"#addLot",  function() {
         var allRows = $('#optionChainTable-indices > tbody > tr');
@@ -86,6 +86,14 @@ function main() {
     $(document).on('change',"#expirySelect",  function() {
         isMultiply = false;
         changeButtonName();
+    });
+    $(document).on('click',".fullViewBtn",  function() {
+        $(".randomClassToHelpHide").remove();
+        $('#goBackSite').before(i);
+    });
+    $(document).on('click',"#goBackSite",  function() {
+        $(".randomClassToHelpHide").remove();
+        $('#main_navbar').append(i);
     });
 }
 
