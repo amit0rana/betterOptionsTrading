@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.18
+// @version      2.19
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
+// @match        https://console.zerodha.com/*
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_addStyle
@@ -99,6 +100,10 @@ const holdings = initHoldings();
 const positions = initPositions();
 
 const referenceTrades = initReferenceTrades();
+
+const BASE_ORDERINFO_DOM = "div.modal-mask.order-info-modal > div.modal-wrapper > div.modal-container.layer-2";
+var g_tradingBasket = new Array();
+const BASE_PNL_REPORT = "#app > div.wrapper > div > div > h1";
 
 main();
 
@@ -1548,9 +1553,6 @@ function waitForKeyElements (
     waitForKeyElements.controlObj   = controlObj;
 }
 
-const BASE_ORDERINFO_DOM = "div.modal-mask.order-info-modal > div.modal-wrapper > div.modal-container.layer-2";
-var g_tradingBasket = new Array();
-
 function orderInfo() {
     debug('orderInfo');
 
@@ -1755,6 +1757,43 @@ async function updateOrderButtons() {
 //div.modal-mask.positios-info-container.positions-info-modal > div.modal-wrapper > div.modal-container.layer-2
 waitForKeyElements (BASE_ORDERINFO_DOM, orderInfo);
 
+function changePnLFilter() {
+    debug('changePnLFilter');
+    document.getElementsByTagName('select')[0].selectedIndex = 2; //FO
+    document.querySelector("input[name='date']").click();
+
+    var today = new Date();
+    var mm = today.getMonth()+1; 
+    var yyyy = today.getFullYear();
+
+    if(mm<10) 
+    {
+        mm='0'+mm;
+    } 
+    var monthStart = yyyy + '-'+ mm + '-01';
+
+    document.querySelector("td[title='"+monthStart+"']").click();
+    document.querySelector('#app > div.wrapper > div > div > div > form > div > div.one.columns > button').click()
+    //2021-02-03 ~ 2021-03-01
+}
+
+function introducePnlFilter() {
+    debug('introducePnlFilter');
+    var spanForFilter = document.createElement("span");
+    spanForFilter.classList.add("randomClassToHelpHide");
+    //spanForFilter.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
+    spanForFilter.textContent = 'F&O This Month';
+    spanForFilter.id ='customFilter';
+    spanForFilter.addEventListener("click", ()=>changePnLFilter());
+
+    jQ(BASE_PNL_REPORT).after(spanForFilter);
+
+    // jQ(document).on('click', "#customPnlFilter", function () {
+    // }
+
+}
+
+waitForKeyElements (BASE_PNL_REPORT, introducePnlFilter);
 
 jQ.fn.exists = function () {
     return this.length !== 0;
