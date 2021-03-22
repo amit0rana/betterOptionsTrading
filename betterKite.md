@@ -2,6 +2,7 @@
 
 Very simple "userscript" which adds following features to kite.zerodha.com ui
 
+(------)
 # https://kite.zerodha.com/positions page
 * Strategies are grouped in 3 ways.
   * (1) Strategies are auto grouped by script name. So all INFY strategies will be auto grouped under 'INFY'
@@ -19,6 +20,7 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 * "Filter" button is added next to 1,2,3,4,5 watchlist. You can use this to filter your watchlist.
 ![watchlistFilter](https://dl.dropbox.com/s/5gf2paw5pk9you6/watchlistFilter.png?dl=0)
 
+(------)
 # https://kite.zerodha.com/holdings page
 * Group your holdings in 'categories' or 'tags'
 * Small tag is shown next to your stock name indicating which category it belongs to.
@@ -28,12 +30,15 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 * One stock can be in multiple categories.
 * When you click on a stock in watchlist, if same stock is present in 'holdings', screen will be scrolled automatically bringing the stock in the middle and it will be highlighted for a few seconds.
 
+(------)
 # [Click on this link to learn how to use the tool to copy orders from one zerodha account to another.](https://github.com/amit0rana/betterOptionsTrading/blob/master/betterKiteCopyOrders.md)
 
+(------)
 # https://console.zerodha.com/reports/pnl page
 Introduces a convenence link to see "current month's" F&O P&L
 ![usage](https://dl.dropbox.com/s/vhrh6qqf775kg9y/foThisMonth.png?dl=0)
 
+(------)
 # How to use
 * Once installation is done, go to 'holdings' page and you will see a dropdown next to the logo listing all your groups.
   * On holding pages, dropdown will show all the groups under which you want to keep your holding stocks
@@ -42,6 +47,7 @@ Introduces a convenence link to see "current month's" F&O P&L
 * When you click on watchlist row, if same stock is present in your holdings list, it will be highlighted and brought to focus.
 * You can enabled/disable the filter dropdown by clicking on 'Position()' or 'Holdings()' heading.
 
+(------)
 # Installation
 
 Follow below mentioned steps
@@ -56,6 +62,7 @@ Follow below mentioned steps
 * Now just go to <https://kite.zerodha.com> (refresh the page if its already open) and start using.
 * Verify that your version should be more than v2.00. Click on Tempermonkey icon, you will see version in the 'Reset Data (WARNING) menu item.
 
+(------)
 # Steps for grouping your Holdings
 * Refer to images below on how to use.
 * Adding tag : Go to holdings section, click on + icon next to the stock name to add tags.
@@ -64,15 +71,18 @@ Follow below mentioned steps
 * ![how to use](https://dl.dropbox.com/s/tllta7nzcfl145a/holdingsHowToUse.gif?dl=0)
 * ![add remove tags](https://dl.dropbox.com/s/nbjuxiu7yh9p51i/addingRemovingTags.gif?dl=0)
 
+(------)
 # Steps for marking trades as reference trades or base trade or martingales
 * On the positions screen, each position has a + button, click on the button to add a tag. Important thing to keep in mind is the format of the tag.
 * Tag should be formated as tagName.color for example: RT.red or BS.blue etc. 
 
+(------)
 # Steps for custom strategies.
 * Please see the animated gif below
 ![addingDeletingStrategies](https://dl.dropbox.com/s/23mec9h3zd8iolw/AddingDeletingStrategy.gif?dl=0)
 (if you can't see the image above see this video: https://dl.dropbox.com/s/iay4ld2ibdx3t91/AddingDeletingStrategy.mp4?dl=0)
 
+(------)
 TODOs
 * Instructions for [Violentmonkey](https://openuserjs.org/about/Violentmonkey-for-Chrome)
 * Filtering on order page
