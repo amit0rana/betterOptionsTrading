@@ -30,6 +30,10 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 
 # [Click on this link to learn how to use the tool to copy orders from one zerodha account to another.](https://github.com/amit0rana/betterOptionsTrading/blob/master/betterKiteCopyOrders.md)
 
+# https://console.zerodha.com/reports/pnl page
+Introduces a convenence link to see "current month's" F&O P&L
+![usage](https://dl.dropbox.com/s/vhrh6qqf775kg9y/foThisMonth.png?dl=0)
+
 # How to use
 * Once installation is done, go to 'holdings' page and you will see a dropdown next to the logo listing all your groups.
   * On holding pages, dropdown will show all the groups under which you want to keep your holding stocks
