@@ -39,15 +39,6 @@ Introduces a convenence link to see "current month's" F&O P&L
 ![usage](https://dl.dropbox.com/s/vhrh6qqf775kg9y/foThisMonth.png?dl=0)
 
 ------
-# How to use
-* Once installation is done, go to 'holdings' page and you will see a dropdown next to the logo listing all your groups.
-  * On holding pages, dropdown will show all the groups under which you want to keep your holding stocks
-  * On Positions page, dropdown will show all the strategies.
-* you can now filter 'positions' screen and 'holdings' screen based on your selection. Watchlist will also be filtered. 
-* When you click on watchlist row, if same stock is present in your holdings list, it will be highlighted and brought to focus.
-* You can enabled/disable the filter dropdown by clicking on 'Position()' or 'Holdings()' heading.
-
-------
 # Installation
 
 Follow below mentioned steps
@@ -61,6 +52,15 @@ Follow below mentioned steps
 * ![dashboard sample](https://dl.dropbox.com/s/blv2j9t8e6iohkt/dashboardSample.png?dl=0)
 * Now just go to <https://kite.zerodha.com> (refresh the page if its already open) and start using.
 * Verify that your version should be more than v2.00. Click on Tempermonkey icon, you will see version in the 'Reset Data (WARNING) menu item.
+
+------
+# How to use
+* Once installation is done, go to 'holdings' page and you will see a dropdown next to the logo listing all your groups.
+  * On holding pages, dropdown will show all the groups under which you want to keep your holding stocks
+  * On Positions page, dropdown will show all the strategies.
+* you can now filter 'positions' screen and 'holdings' screen based on your selection. Watchlist will also be filtered. 
+* When you click on watchlist row, if same stock is present in your holdings list, it will be highlighted and brought to focus.
+* You can enabled/disable the filter dropdown by clicking on 'Position()' or 'Holdings()' heading.
 
 ------
 # Steps for grouping your Holdings
