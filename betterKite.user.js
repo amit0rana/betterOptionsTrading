@@ -1824,7 +1824,7 @@ function introducePnlFilter() {
 
 }
 
-waitForKeyElements (BASE_PNL_REPORT, introducePnlFilter);
+//NOT WORKING waitForKeyElements (BASE_PNL_REPORT, introducePnlFilter);
 
 jQ.fn.exists = function () {
     return this.length !== 0;
