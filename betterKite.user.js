@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.20
+// @version      2.21
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -12,6 +12,10 @@
 // @grant        GM_registerMenuCommand
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
 // @require      https://raw.githubusercontent.com/amit0rana/MonkeyConfig/master/monkeyconfig.js
+// @require      https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js
+// @require      https://raw.githubusercontent.com/kawanet/qs-lite/master/dist/qs-lite.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js
 // @downloadURL  https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js
 // @updateURL    https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.meta.js
 // ==/UserScript==
@@ -1138,6 +1142,34 @@ function filterOrders() { //notused
     //Trades
 }
 
+const calculateMargins = async (selection) => {
+    let margin = 0
+    var payload = qs.stringify({
+        'action': 'calculate'
+    });
+    selection.forEach(data => {
+        var d = qs.stringify({
+            'exchange[]': data.exchange,
+            'product[]': data.product,
+            'scrip[]': data.scrip,
+            'option_type[]': `${data.type}`,
+            'strike_price[]': `${data.strike}`,
+            'qty[]': `${data.quantity}`,
+            'trade[]': data.trade
+        });
+        payload = `${payload}&${d}`
+    });
+
+    var config = {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+    };
+    let response = await axios.post("https://zerodha.com/margin-calculator/SPAN/", payload, config);
+    margin = response.data.total!=null && response.data.total!==undefined?response.data.total.total:0;
+    return margin;
+}
+
 var filterText = "";
 function addWatchlistFilter() {
     //jQ("#watchlistFilterId").remove();
@@ -1361,6 +1393,7 @@ function main() {
         var peQ = 0;
         var ceQ = 0;
         var points = 0;
+        var selection = [];
         selectedRows.each(function(rowIndex) {
             var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
 
@@ -1384,6 +1417,17 @@ function main() {
             } else {
                 points = points - avgPrice;
             }
+            // frame payload for SPAN calculation
+            var tokens=instrument.split(" ");
+            var data = {};
+            data.exchange=tokens[2]==="FUT"?`${tokens[3].substring(0, 3)}`:`${tokens[4].substring(0, 3)}`;
+            data.product=tokens[2]==="FUT"?'FUT':'OPT';
+            data.scrip=tokens[2]==="FUT"?`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}`:`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}`;
+            data.type=tokens[2]==="FUT"?'CE':`${tokens[3]}`;
+            data.strike=tokens[2]==="FUT"?'100':`${tokens[2]}`;
+            data.quantity=q>0?q:q*-1;
+            data.trade=q>0?'buy':'sell';
+            selection.push(data);
         });
 
         var tag = jQ("span[random-att='temppnl']");
@@ -1395,29 +1439,42 @@ function main() {
             tag.remove();
         }
 
-        if (selectedRows.length>0) {
-            if (ceQ > peQ) {
+        calculateMargins(selection).then(margin=>{
+            if (selectedRows.length>0) {
+                if (ceQ > peQ) {
 
-            } else if (peQ > ceQ) {
+                } else if (peQ > ceQ) {
 
-            }
-            var t = ceQ+"CE & "+peQ+"PE";
-            var pnlText = "";
-            if (pnl > 0) {
-                //jQ("div.positions > section.open-positions.table-wrapper > header").append(
-                pnlText = "<span random-att='temppnl' class='text-green open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl)+"<span class='text-label randomClassToHelpHide'>Max: "+formatter.format(maxPnl)+"</span></span>";
-            } else {
-                //jQ("div.positions > section.open-positions.table-wrapper > header").append(
-                pnlText = "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl)+"<span class='text-label randomClassToHelpHide'>Max: "+formatter.format(maxPnl)+"</span></span>";
-            }
+                }
+                var t = ceQ+"CE & "+peQ+"PE";
+                var pnlText = "";
+                if (pnl > 0) {
+                    //jQ("div.positions > section.open-positions.table-wrapper > header").append(
+                    pnlText = "<span random-att='temppnl' class='text-green open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl);
+                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Max: "+formatter.format(maxPnl)+"</span>";
+                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Percentage: "+(pnl/maxPnl*100).toFixed(2)+"% </span>";
+                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Margin: "+formatter.format(margin)+"</span>";
+                    pnlText += "<br><span class='text-label randomClassToHelpHide'>ROI: "+(pnl/margin*100).toFixed(2)+"% </span>";
+                    pnlText += `<br><button type="button" class="button-small button-red" onclick="alert('hey')">Update positions</button>`;
+                    pnlText += "</span>";
+                } else {
+                    //jQ("div.positions > section.open-positions.table-wrapper > header").append(
+                    pnlText = "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl);
+                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Max: "+formatter.format(maxPnl)+"</span>";
+                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Percentage: "+(pnl/maxPnl*100).toFixed(2)+"% </span>";
+                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Margin: "+formatter.format(margin)+"</span>";
+                    pnlText += "<br><span class='text-label randomClassToHelpHide'>ROI: "+(pnl/margin*100).toFixed(2)+"% </span>";
+                    pnlText += "</span>";
+                }
 
-            var mTag = jQ("span[random-att='marginsave']");
-            if (mTag.length > 0) {
-                mTag.remove();
+                var mTag = jQ("span[random-att='marginsave']");
+                if (mTag.length > 0) {
+                    mTag.remove();
+                }
+                jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append("<span random-att='marginsave' class='pnl randomClassToHelpHide'> "+t+" (Points: "+formatter.format(points)+")</span>");
+                jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append(pnlText);
             }
-            jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append("<span random-att='marginsave' class='pnl randomClassToHelpHide'> "+t+" (Points: "+formatter.format(points)+")</span>");
-            jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append(pnlText);
-        }
+        });
 
     });
 
