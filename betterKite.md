@@ -41,6 +41,7 @@ Introduces a convenence link to see "current month's" F&O P&L
 ------
 # https://kite.zerodha.com/funds page
 Introduced help text on each row explaining what different rows mean.
+![usage](https://dl.dropbox.com/s/cjo8y462vxpp7iw/usageFundsHelpText.png?dl=0)
 
 ------
 # Installation
