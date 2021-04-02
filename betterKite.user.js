@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.19
+// @version      2.20
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -1428,6 +1428,10 @@ function main() {
         debug('pushstate call toggle');
         var currentUrl = window.location.pathname;
         toggleDropdown(currentUrl);
+
+        if (currentUrl.includes('funds')) {
+            waitForKeyElements ("#app > div.container.wrapper > div.container-right > div > div.margins > div.row > div:nth-child(1) > div > table > tbody > tr:nth-child(1)", showFundsHelp);
+        }
     };
 
     //on click of watchlist tab (1-5)
@@ -1473,6 +1477,33 @@ function main() {
             jQ(holdingStockTR).css("background-color", 'lightGray');
             setTimeout(function(){ jQ(holdingStockTR).css("background-color", 'var(--color-bg-default)'); }, 4000);
         }
+    });
+
+}
+
+function showFundsHelp() {
+    debug('showFundsHelp');
+
+    var helpText = ["You can use this amount to place new trades. The available margin includes the benefit of pledging collateral, the premium received from shorting options, funds added during the day, the effect of realised profits & losses, and unrealised losses.",
+"You have used this amount towards trades during the day. The used margin can be negative if you have generated some funds by selling your holdings, closing F&O positions, or making intraday gains.",
+"This is the current cash balance in your account. If your available cash balance is negative, you will be charged interest.",
+"This is the cash available in your trading account at the beginning of the day.",
+"The funds you add to your trading account during the day reflect as the payin balance.",
+"This is a part of the amount blocked for your F&O trades. You can also check SPAN on our margin calculator. ",
+"This is the margin blocked when you sell securities (20% of the value of stocks sold) from your demat or T1 holdings. As per the peak margin norms, only 80% of credit from selling your holdings will be available for new trades. The funds blocked under this field will be available from the next trading day. The delivery margin also includes additional margin blocked if you have any F&O positions due for physical delivery. ",
+"This is a part of the amount blocked for your F&O trades. You can also check the exposure margin here.",
+"The total amount you have paid to purchase options. This value will be negative if you have received funds for shorting/writing options.",
+"This amount is made available for trading against Liquidbees ETFs or liquid mutual funds you have pledged.",
+"This amount is made available for trading against stocks/ETFs you have pledged.",
+"This is the sum total of liquid funds and equity collateral."];
+
+    var allRows = jQ("#app > div.container.wrapper > div.container-right > div > div.margins > div.row > div:nth-child(1) > div > table > tbody > tr");
+    debug(allRows.length);
+    allRows.each(function(rowIndex) {
+        var stock = jQ(this).attr('title',helpText[rowIndex]);
+        debug(jQ(this));
+        debug(stock);
+        debug(helpText[rowIndex]);
     });
 
 }
@@ -1589,18 +1620,18 @@ function orderInfo() {
 
             var product = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(6) > div.six.columns.text-right > div.product").text().trim();
             debug(product);
-            
+
             var quantity = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(1) > div.six.columns.text-right > div").text().trim().split('/')[0];
-            
+
             var price = jQ(BASE_ORDERINFO_DOM+" > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(3) > div.six.columns.text-right > div").text().trim();
             debug(price);
 
             if (!JSON.stringify(g_tradingBasket).includes("\""+tradingsymbol+"\"")) {
                 g_tradingBasket.push({"product": product,"variety": "regular","tradingsymbol": tradingsymbol , "exchange": exchange,"transaction_type": transactionType,"order_type": orderType,"price": parseFloat(price),"quantity": parseInt(quantity) ,"readonly": false});
-                
+
                 navigator.clipboard.writeText(JSON.stringify(g_tradingBasket));
-                
-            
+
+
                 updateOrderButtons();
                 tEv("kite","order","copyOrder","");
             } else {
@@ -1614,7 +1645,7 @@ function orderInfo() {
     }
 
     //#app > div.container.wrapper > div.container-right > div.page-content.orders > div > div > div > div > div.modal-footer > div > button.button.button-orange.button-outline
-   
+
     jQ(BASE_ORDERINFO_DOM + " > div > div > button")[0].before(i);
 }
 
@@ -1660,7 +1691,7 @@ function showSendOrderButton() {
     i.name='data';
     i.id = 'bobasket';
     i.classList.add("randomClassToHelpHide");
-    
+
     jQ(form).append(i);
 
     i = document.createElement("INPUT");
@@ -1682,16 +1713,16 @@ function showSendOrderButton() {
     i.classList.add('button');
     i.classList.add('button-outline');
     i.id='resetOrder';
-    
+
     jQ(form).append(i);
 
     jQ(div).append(form);
-    
+
     jQ(document).on('click',"#sendOrder", async function() {
         debug('submiting send ordre');
         const t = await navigator.clipboard.readText();
         jQ('#bobasket').val(t);
-        
+
         //g_tradingBasket.splice(0, g_tradingBasket.length);
         //navigator.clipboard.writeText("");
         jQ("#bo_basket-form").submit();
@@ -1702,7 +1733,7 @@ function showSendOrderButton() {
         debug('refreshing mouse enter');
 
         updateOrderButtons();
-        
+
         tEv("kite","order","sendOrder","");
     });
 
@@ -1718,7 +1749,7 @@ function showSendOrderButton() {
         setTimeout(function(){ jQ("div.container.wrapper > div.container-right > div.page-nav").append(div); }, 1100);
         return;
     }
-    
+
 }
 
 async function updateOrderButtons() {
@@ -1737,10 +1768,10 @@ async function updateOrderButtons() {
 // var orderHeader = 'section.completed-orders-wrap.table-wrapper > header';
 // jQ(document).on('click', orderHeader, function () {
 //     tEv("kite","order","toggle","");
-    
+
 //     if (jQ('#sendOrder').is(":visible")) {
 //         //do nothing
-        
+
 //         //g_tradingBasket = new Array();
 //         g_tradingBasket.splice(0, g_tradingBasket.length);
 //         navigator.clipboard.writeText("");
@@ -1748,9 +1779,9 @@ async function updateOrderButtons() {
 //         jQ("#bo_basket-form").remove();
 //     } else {
 //         showSendOrderButton();
-        
+
 //     }
-    
+
 // });
 
 //div holding ready-made strategies.
@@ -1763,13 +1794,13 @@ function changePnLFilter() {
     document.querySelector("input[name='date']").click();
 
     var today = new Date();
-    var mm = today.getMonth()+1; 
+    var mm = today.getMonth()+1;
     var yyyy = today.getFullYear();
 
-    if(mm<10) 
+    if(mm<10)
     {
         mm='0'+mm;
-    } 
+    }
     var monthStart = yyyy + '-'+ mm + '-01';
 
     document.querySelector("td[title='"+monthStart+"']").click();
