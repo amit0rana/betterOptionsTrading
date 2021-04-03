@@ -13,6 +13,9 @@ Very simple "userscript" which adds following features to kite.zerodha.com ui
 
 * ![strategies2](https://dl.dropbox.com/s/qjyok361dk9jo6c/strategies2.png?dl=0)
 * You can also see strategy's P&L on the right side of dropdown.
+* You can see MARGIN required for the 'group of positions' along with P&L on top.
+* You can also see margin required for individual position at the bottom of the table.
+* ![marginUsage](https://dl.dropbox.com/s/8cii9hr27ctqebc/marginCalculationUsage.png?dl=0)
 * Tag your reference trades and martingales for easier identification. You can give custom name and color for easy identification
 ![referenceTags](https://dl.dropbox.com/s/i18bklcdebtagia/referenceTags.png?dl=0)
 * Quickly see total P&L of 'selected' positions.
