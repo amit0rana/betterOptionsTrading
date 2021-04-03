@@ -520,6 +520,8 @@ function createPositionsDropdown() {
             ceCount = 0;
             peCount = 0;
 
+            var selection = [];
+
             allPositionsRow.each(function(rowIndex) {
                 var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
                 var p = dataUidInTR.split(".")[1];
@@ -528,6 +530,7 @@ function createPositionsDropdown() {
                 var tradingSymbolText = jQ(this).find("td.instrument > span.tradingsymbol").text();
                 var productType = jQ(this).find("td.product > span").text().trim();
                 var instrument = jQ(jQ(this).find("td")[2]).text();
+                var qty = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
 
                 debug("INSTRUMENT : " + instrument);
 
@@ -602,6 +605,9 @@ function createPositionsDropdown() {
                     if (instrument.includes(' PE')) {
                         peCount++;
                     }
+
+                    var data = createMarginCalculatinData(instrument, qty);
+                    selection.push(data);
                 } else {
                     jQ(this).hide();
                 }
@@ -657,7 +663,10 @@ function createPositionsDropdown() {
             jQ("#peCountId").text("("+peCount+")");
             jQ("#ceCountId").text("("+ceCount+")");
 
-            updatePositionInfo(countPositionsDisplaying, pnl);
+            calculateMargins(selection).then(margin=>{
+                updatePositionInfo(countPositionsDisplaying, pnl, margin);
+            });
+
 
             debug(stocksInList);
             filterWatchlist(stocksInList, selectedGroup);
@@ -678,8 +687,8 @@ function createPositionsDropdown() {
     return selectBox;
 }
 
-function updatePositionInfo(countPositionsDisplaying, pnl) {
-    var textDisplay = "("+countPositionsDisplaying+") " + formatter.format(pnl);
+function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
+    var textDisplay = "("+countPositionsDisplaying+") P&L: " + formatter.format(pnl);
 
     jQ("#stocksInTagCount").text(textDisplay);
 
@@ -692,6 +701,12 @@ function updatePositionInfo(countPositionsDisplaying, pnl) {
         jQ("#stocksInTagCount").addClass("text-red");
     } else {
         jQ("#stocksInTagCount").addClass("text-black");
+    }
+
+    if (margin < 0 ) {
+        jQ("#marginDiv").text('enable CORS');
+    } else {
+        jQ("#marginDiv").text("M: " + formatter.format(margin));
     }
 }
 
@@ -844,14 +859,24 @@ function showPositionDropdown(retry = true) {
 
     jQ("a.logo")[0].after(positionGroupdropdown);
 
-    var spanForCount = document.createElement("span");
+    var div1 = document.createElement("div");
+    div1.style = "line-height:20%;text-align:right;";
+    var spanForCount = document.createElement("div");
     spanForCount.classList.add("randomClassToHelpHide");
     spanForCount.classList.add("tagSelectorStyle");
-    spanForCount.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
-
+    spanForCount.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 0px;"
     spanForCount.id ='stocksInTagCount';
     spanForCount.addEventListener("click", ()=>updatePnl(true));
-    jQ(positionGroupdropdown).after(spanForCount);
+
+    var divForMargin = document.createElement("div");
+    divForMargin.classList.add("randomClassToHelpHide");
+    divForMargin.classList.add("tagSelectorStyle");
+    //divForMargin.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
+    divForMargin.id ='marginDiv';
+
+    div1.appendChild(spanForCount);
+    div1.appendChild(divForMargin);
+    jQ(positionGroupdropdown).after(div1);
 
     g_dropdownDisplay = DD_POSITONS;
     addWatchlistFilter();
@@ -923,13 +948,22 @@ function updatePnl(forPositions = true) {
 
     var pnl = 0;
 
+    var selection = [];
     allVisibleRows.each(function(rowIndex) {
         var v = jQ(jQ(this).find("td")[pnlCol]).text().split(",").join("");
         pnl += parseFloat(v);
+
+        if (forPositions) {
+            var qty = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
+            var data = createMarginCalculatinData(instrument, qty);
+            selection.push(data);
+        }
     });
 
     if (allVisibleRows.length>0) {
-        updatePositionInfo(allVisibleRows.length, pnl);
+        calculateMargins(selection).then(margin=>{
+            updatePositionInfo(allVisibleRows.length, pnl, margin);
+        });
     }
 }
 
@@ -1165,9 +1199,30 @@ const calculateMargins = async (selection) => {
             'Content-Type': 'application/x-www-form-urlencoded',
         }
     };
-    let response = await axios.post("https://zerodha.com/margin-calculator/SPAN/", payload, config);
-    margin = response.data.total!=null && response.data.total!==undefined?response.data.total.total:0;
-    return margin;
+    return await axios.post("https://zerodha.com/margin-calculator/SPAN/", payload, config)
+        .then(function (response) {
+            debug(response);
+            margin = response.data.total!=null && response.data.total!==undefined?response.data.total.total:0;
+            return margin;}
+            )
+        .catch(function (error) {
+            debug(error);return -1;}
+            );
+
+}
+
+function createMarginCalculatinData(instrument, q) {
+    // frame payload for SPAN calculation
+    var tokens=instrument.split(" ");
+    var data = {};
+    data.exchange=tokens[2]==="FUT"?`${tokens[3].substring(0, 3)}`:`${tokens[4].substring(0, 3)}`;
+    data.product=tokens[2]==="FUT"?'FUT':'OPT';
+    data.scrip=tokens[2]==="FUT"?`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}`:`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}`;
+    data.type=tokens[2]==="FUT"?'CE':`${tokens[3]}`;
+    data.strike=tokens[2]==="FUT"?'100':`${tokens[2]}`;
+    data.quantity=q>0?q:q*-1;
+    data.trade=q>0?'buy':'sell';
+    return data;
 }
 
 var filterText = "";
@@ -1417,16 +1472,8 @@ function main() {
             } else {
                 points = points - avgPrice;
             }
-            // frame payload for SPAN calculation
-            var tokens=instrument.split(" ");
-            var data = {};
-            data.exchange=tokens[2]==="FUT"?`${tokens[3].substring(0, 3)}`:`${tokens[4].substring(0, 3)}`;
-            data.product=tokens[2]==="FUT"?'FUT':'OPT';
-            data.scrip=tokens[2]==="FUT"?`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}`:`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}`;
-            data.type=tokens[2]==="FUT"?'CE':`${tokens[3]}`;
-            data.strike=tokens[2]==="FUT"?'100':`${tokens[2]}`;
-            data.quantity=q>0?q:q*-1;
-            data.trade=q>0?'buy':'sell';
+
+            var data = createMarginCalculatinData(instrument, q);
             selection.push(data);
         });
 
@@ -1439,42 +1486,39 @@ function main() {
             tag.remove();
         }
 
-        calculateMargins(selection).then(margin=>{
-            if (selectedRows.length>0) {
-                if (ceQ > peQ) {
+        if (selectedRows.length > 0 ) {
+            calculateMargins(selection).then(margin=>{
+                if (selectedRows.length>0) {
+                    if (ceQ > peQ) {
 
-                } else if (peQ > ceQ) {
+                    } else if (peQ > ceQ) {
 
-                }
-                var t = ceQ+"CE & "+peQ+"PE";
-                var pnlText = "";
-                if (pnl > 0) {
-                    //jQ("div.positions > section.open-positions.table-wrapper > header").append(
-                    pnlText = "<span random-att='temppnl' class='text-green open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl);
-                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Max: "+formatter.format(maxPnl)+"</span>";
-                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Percentage: "+(pnl/maxPnl*100).toFixed(2)+"% </span>";
-                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Margin: "+formatter.format(margin)+"</span>";
-                    pnlText += "<br><span class='text-label randomClassToHelpHide'>ROI: "+(pnl/margin*100).toFixed(2)+"% </span>";
-                    pnlText += `<br><button type="button" class="button-small button-red" onclick="alert('hey')">Update positions</button>`;
+                    }
+                    var t = ceQ+"CE & "+peQ+"PE";
+                    var pnlText = "";
+                    if (pnl > 0) {
+                        pnlText = "<span random-att='temppnl' class='text-green open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl);
+                    } else {
+                        pnlText = "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl);
+
+                    }
+                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Max Profit: "+formatter.format(maxPnl)+"</span>";
+                    pnlText += "<br><span class='text-label randomClassToHelpHide'>% Profit achieved: "+(pnl/maxPnl*100).toFixed(2)+"% </span>";
+                    if (margin >= 0) {
+                        pnlText += "<br><span class='text-label randomClassToHelpHide'>Margin: "+formatter.format(margin)+"</span>";
+                        pnlText += "<br><span class='text-label randomClassToHelpHide'>Current ROI: "+(pnl/margin*100).toFixed(2)+"% </span>";
+                    }
                     pnlText += "</span>";
-                } else {
-                    //jQ("div.positions > section.open-positions.table-wrapper > header").append(
-                    pnlText = "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl);
-                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Max: "+formatter.format(maxPnl)+"</span>";
-                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Percentage: "+(pnl/maxPnl*100).toFixed(2)+"% </span>";
-                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Margin: "+formatter.format(margin)+"</span>";
-                    pnlText += "<br><span class='text-label randomClassToHelpHide'>ROI: "+(pnl/margin*100).toFixed(2)+"% </span>";
-                    pnlText += "</span>";
-                }
 
-                var mTag = jQ("span[random-att='marginsave']");
-                if (mTag.length > 0) {
-                    mTag.remove();
+                    var mTag = jQ("span[random-att='marginsave']");
+                    if (mTag.length > 0) {
+                        mTag.remove();
+                    }
+                    jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append("<span random-att='marginsave' class='pnl randomClassToHelpHide'> "+t+" (Points: "+formatter.format(points)+")</span>");
+                    jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append(pnlText);
                 }
-                jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append("<span random-att='marginsave' class='pnl randomClassToHelpHide'> "+t+" (Points: "+formatter.format(points)+")</span>");
-                jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append(pnlText);
-            }
-        });
+            });
+        }
 
     });
 
