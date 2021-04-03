@@ -3,6 +3,11 @@
 Very simple "userscript" which adds following features to kite.zerodha.com ui
 
 ------
+Contributors
+- Amit
+- Yuva (@rbcdev)
+
+------
 # https://kite.zerodha.com/positions page
 * Strategies are grouped in 3 ways.
   * (1) Strategies are auto grouped by script name. So all INFY strategies will be auto grouped under 'INFY'
