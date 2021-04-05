@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.21
+// @version      2.22
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -530,6 +530,7 @@ function createPositionsDropdown() {
                 var tradingSymbolText = jQ(this).find("td.instrument > span.tradingsymbol").text();
                 var productType = jQ(this).find("td.product > span").text().trim();
                 var instrument = jQ(jQ(this).find("td")[2]).text();
+                var product = jQ(jQ(this).find("td")[1]).text();
                 var qty = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
 
                 debug("INSTRUMENT : " + instrument);
@@ -606,7 +607,7 @@ function createPositionsDropdown() {
                         peCount++;
                     }
 
-                    var data = createMarginCalculatinData(instrument, qty);
+                    var data = getMarginCalculationData(instrument, product, qty);
                     selection.push(data);
                 } else {
                     jQ(this).hide();
@@ -663,7 +664,7 @@ function createPositionsDropdown() {
             jQ("#peCountId").text("("+peCount+")");
             jQ("#ceCountId").text("("+ceCount+")");
 
-            calculateMargins(selection).then(margin=>{
+            calculateMargin(selection).then(margin=>{
                 updatePositionInfo(countPositionsDisplaying, pnl, margin);
             });
 
@@ -688,7 +689,7 @@ function createPositionsDropdown() {
 }
 
 function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
-    var textDisplay = "("+countPositionsDisplaying+") P&L: " + formatter.format(pnl);
+    var textDisplay = `(${countPositionsDisplaying}) P&L: ${formatter.format(pnl)}(${(pnl/margin*100).toFixed(2)}%)`;
 
     jQ("#stocksInTagCount").text(textDisplay);
 
@@ -955,13 +956,14 @@ function updatePnl(forPositions = true) {
 
         if (forPositions) {
             var qty = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
-            var data = createMarginCalculatinData(instrument, qty);
+            var product = jQ(jQ(this).find("td")[1]).text();
+            var data = getMarginCalculationData(instrument, product, qty);
             selection.push(data);
         }
     });
 
     if (allVisibleRows.length>0) {
-        calculateMargins(selection).then(margin=>{
+        calculateMargin(selection).then(margin=>{
             updatePositionInfo(allVisibleRows.length, pnl, margin);
         });
     }
@@ -1176,33 +1178,36 @@ function filterOrders() { //notused
     //Trades
 }
 
-const calculateMargins = async (selection) => {
+const calculateMargin = async (selection) => {
     let margin = 0
-    var payload = qs.stringify({
-        'action': 'calculate'
-    });
+    var payload=[]
     selection.forEach(data => {
-        var d = qs.stringify({
-            'exchange[]': data.exchange,
-            'product[]': data.product,
-            'scrip[]': data.scrip,
-            'option_type[]': `${data.type}`,
-            'strike_price[]': `${data.strike}`,
-            'qty[]': `${data.quantity}`,
-            'trade[]': data.trade
-        });
-        payload = `${payload}&${d}`
+        var d = {
+            'exchange': data.exchange,
+            'order_type': 'MARKET',
+            'price': 0,            
+            'product': data.product,
+            'quantity': data.quantity,
+            'squareoff': 0,
+            'stoploss': 0,
+            'tradingsymbol': data.tradingsymbol,
+            'transaction_type': data.transaction_type,
+            'trigger_price': 0,
+            'variety': 'regular'
+        };
+        payload.push(d)
     });
 
     var config = {
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': 'application/json',
+            'Authorization': `enctoken ${Cookies.get('enctoken')}`
         }
     };
-    return await axios.post("https://zerodha.com/margin-calculator/SPAN/", payload, config)
+    console.log(`config: ${config} payload: ${payload}`)
+    return await axios.post("/oms/margins/basket?mode=compact", payload, config)
         .then(function (response) {
-            debug(response);
-            margin = response.data.total!=null && response.data.total!==undefined?response.data.total.total:0;
+            margin = response.data.data.final!=null && response.data.data.final!==undefined?response.data.data.final.total:0;
             return margin;}
             )
         .catch(function (error) {
@@ -1211,17 +1216,15 @@ const calculateMargins = async (selection) => {
 
 }
 
-function createMarginCalculatinData(instrument, q) {
+const getMarginCalculationData = (instrument, product, q) => {
     // frame payload for SPAN calculation
     var tokens=instrument.split(" ");
     var data = {};
     data.exchange=tokens[2]==="FUT"?`${tokens[3].substring(0, 3)}`:`${tokens[4].substring(0, 3)}`;
-    data.product=tokens[2]==="FUT"?'FUT':'OPT';
-    data.scrip=tokens[2]==="FUT"?`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}`:`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}`;
-    data.type=tokens[2]==="FUT"?'CE':`${tokens[3]}`;
-    data.strike=tokens[2]==="FUT"?'100':`${tokens[2]}`;
+    data.product=product.replace(/\n/g,'').replace(/\t/g,'');
+    data.tradingsymbol=tokens[2]==="FUT"?`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}FUT`:`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}${tokens[2]}${tokens[3]}`;
     data.quantity=q>0?q:q*-1;
-    data.trade=q>0?'buy':'sell';
+    data.transaction_type=q>0?'BUY':'SELL';
     return data;
 }
 
@@ -1455,6 +1458,7 @@ function main() {
             pnl += parseFloat(v);
 
             var instrument = jQ(jQ(this).find("td")[2]).text();
+            var product = jQ(jQ(this).find("td")[1]).text();
             debug(instrument);
             var q = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
             if (instrument.includes(' CE')) {
@@ -1473,7 +1477,7 @@ function main() {
                 points = points - avgPrice;
             }
 
-            var data = createMarginCalculatinData(instrument, q);
+            var data = getMarginCalculationData(instrument, product, q);
             selection.push(data);
         });
 
@@ -1487,7 +1491,7 @@ function main() {
         }
 
         if (selectedRows.length > 0 ) {
-            calculateMargins(selection).then(margin=>{
+            calculateMargin(selection).then(margin=>{
                 if (selectedRows.length>0) {
                     if (ceQ > peQ) {
 
