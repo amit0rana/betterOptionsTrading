@@ -20,10 +20,6 @@ Contributors
 * You can also see strategy's P&L on the right side of dropdown.
 * You can see MARGIN required for the 'group of positions' along with P&L on top.
 * You can also see margin required for individual position at the bottom of the table.
-* Required CORS plugin.
-  * Firefox: https://addons.mozilla.org/en-US/firefox/addon/access-control-allow-origin/
-  * Edge: https://microsoftedge.microsoft.com/addons/detail/allow-cors-accesscontro/bhjepjpgngghppolkjdhckmnfphffdag?hl=en-GB
-  * chrome: https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf 
 * ![marginUsage](https://dl.dropbox.com/s/8cii9hr27ctqebc/marginCalculationUsage.png?dl=0)
 * Make sure CORS is enabled:
 ![corsusage](https://dl.dropbox.com/s/mbktrw9dkqu4wl0/corsToggle.png?dl=0)
@@ -71,10 +67,6 @@ Follow below mentioned steps
 * ![dashboard sample](https://dl.dropbox.com/s/blv2j9t8e6iohkt/dashboardSample.png?dl=0)
 * Now just go to <https://kite.zerodha.com> (refresh the page if its already open) and start using.
 * Verify that your version should be more than v2.00. Click on Tempermonkey icon, you will see version in the 'Reset Data (WARNING) menu item.
-* Install CORS plugin for your browser.
-  * Firefox: https://addons.mozilla.org/en-US/firefox/addon/access-control-allow-origin/
-  * Edge: https://microsoftedge.microsoft.com/addons/detail/allow-cors-accesscontro/bhjepjpgngghppolkjdhckmnfphffdag?hl=en-GB
-  * chrome: https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf 
 
 ------
 # How to use

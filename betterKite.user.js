@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.22
+// @version      2.23
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -29,7 +29,7 @@
     });
 
     window.jQ=jQuery.noConflict(true);
-    const VERSION = "v2.18";
+    const VERSION = "v2.23";
     const GM_HOLDINGS_NAME = "BK_HOLDINGS";
     const GMPositionsName = "BK_POSITIONS";
     const GMRefTradeName = "BK_REF_TRADES";
@@ -1188,7 +1188,22 @@ const getMarginCalculationData = (instrument, product, q) => {
     var data = {};
     data.exchange=tokens[2]==="FUT"?`${tokens[3].substring(0, 3)}`:`${tokens[4].substring(0, 3)}`;
     data.product=product.replace(/\n/g,'').replace(/\t/g,'');
-    data.tradingsymbol=tokens[2]==="FUT"?`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}FUT`:`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}${tokens[2]}${tokens[3]}`;
+    if(tokens[2] === "FUT") {
+        //NIFTY APR FUT NFO
+        data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}FUT`;
+        data.exchange = `${tokens[3]}`;
+    } else {
+        if (tokens[2] === "w") {
+            //eg: NIFTY2140814200CE (NIFTY 8th w APR 14200 CE NFO) 
+            data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${moment(new Date()).format("M")}${tokens[1].match(/\d+/)[0].padStart(2,0)}${tokens[4]}${tokens[5]}`;
+            data.exchange = `${tokens[6]}`;
+        } else {
+            //eg: NIFTY21APR14200PE (NIFTY APR 14200 PE NFO)
+            data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}${tokens[2]}${tokens[3]}`;
+            data.exchange = `${tokens[4]}`;
+        }
+    }
+
     data.quantity=q>0?q:q*-1;
     data.transaction_type=q>0?'BUY':'SELL';
     return data;
