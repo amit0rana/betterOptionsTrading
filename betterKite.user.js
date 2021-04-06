@@ -1184,7 +1184,8 @@ const calculateMargin = async (selection) => {
 
 const getMarginCalculationData = (instrument, product, q) => {
     // frame payload for SPAN calculation
-    var tokens=instrument.split(" ");
+    var tokens=instrument.replace(/\s+/g, ' ').split(" ");
+    debug(tokens);
     var data = {};
     data.exchange=tokens[2]==="FUT"?`${tokens[3].substring(0, 3)}`:`${tokens[4].substring(0, 3)}`;
     data.product=product.replace(/\n/g,'').replace(/\t/g,'');
@@ -1194,11 +1195,11 @@ const getMarginCalculationData = (instrument, product, q) => {
         data.exchange = `${tokens[3]}`;
     } else {
         if (tokens[2] === "w") {
-            //eg: NIFTY2140814200CE (NIFTY 8th w APR 14200 CE NFO) 
+            //eg: NIFTY2140814200CE (NIFTY 8th w APR 14200 CE NFO LABELS) 
             data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${moment(new Date()).format("M")}${tokens[1].match(/\d+/)[0].padStart(2,0)}${tokens[4]}${tokens[5]}`;
             data.exchange = `${tokens[6]}`;
         } else {
-            //eg: NIFTY21APR14200PE (NIFTY APR 14200 PE NFO)
+            //eg: NIFTY21APR14200PE (NIFTY APR 14200 PE NFO LABELS)
             data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}${tokens[2]}${tokens[3]}`;
             data.exchange = `${tokens[4]}`;
         }
