@@ -1,24 +1,24 @@
-    // ==UserScript==
-    // @name         betterKite
-    // @namespace    https://github.com/amit0rana/betterKite
-    // @version      2.21
-    // @description  Introduces small features on top of kite app
-    // @author       Amit
-    // @match        https://kite.zerodha.com/*
-    // @match        https://console.zerodha.com/*
-    // @grant        GM_setValue
-    // @grant        GM_getValue
-    // @grant        GM_addStyle
-    // @grant        GM_registerMenuCommand
-    // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
-    // @require      https://raw.githubusercontent.com/amit0rana/MonkeyConfig/master/monkeyconfig.js
-    // @require      https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js
-    // @require      https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js
-    // @require      https://raw.githubusercontent.com/kawanet/qs-lite/master/dist/qs-lite.min.js
-    // @require      https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js
-    // @downloadURL  https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js
-    // @updateURL    https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.meta.js
-    // ==/UserScript==
+// ==UserScript==
+// @name         betterKite
+// @namespace    https://github.com/amit0rana/betterKite
+// @version      2.22
+// @description  Introduces small features on top of kite app
+// @author       Amit
+// @match        https://kite.zerodha.com/*
+// @match        https://console.zerodha.com/*
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_addStyle
+// @grant        GM_registerMenuCommand
+// @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
+// @require      https://raw.githubusercontent.com/amit0rana/MonkeyConfig/master/monkeyconfig.js
+// @require      https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js
+// @require      https://raw.githubusercontent.com/kawanet/qs-lite/master/dist/qs-lite.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js
+// @downloadURL  https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js
+// @updateURL    https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.meta.js
+// ==/UserScript==
 
     var context=window,options="{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}";const hhistory=context.history,doc=document,nav=navigator||{},storage=localStorage,encode=encodeURIComponent,pushState=hhistory.pushState,typeException="exception",generateId=()=>Math.random().toString(36),getId=()=>(storage.cid||(storage.cid=generateId()),storage.cid),serialize=e=>{var t=[];for(var o in e)e.hasOwnProperty(o)&&void 0!==e[o]&&t.push(encode(o)+"="+encode(e[o]));return t.join("&")},track=(e,t,o,n,i,a,r)=>{const c="https://www.google-analytics.com/collect",s=serialize({v:"1",ds:"web",aip:options.anonymizeIp?1:void 0,tid:"UA-176741575-1",cid:getId(),t:e||"pageview",sd:options.colorDepth&&screen.colorDepth?`${screen.colorDepth}-bits`:void 0,dr:doc.referrer||void 0,dt:doc.title,dl:doc.location.origin+doc.location.pathname+doc.location.search,ul:options.language?(nav.language||"").toLowerCase():void 0,de:options.characterSet?doc.characterSet:void 0,sr:options.screenSize?`${(context.screen||{}).width}x${(context.screen||{}).height}`:void 0,vp:options.screenSize&&context.visualViewport?`${(context.visualViewport||{}).width}x${(context.visualViewport||{}).height}`:void 0,ec:t||void 0,ea:o||void 0,el:n||void 0,ev:i||void 0,exd:a||void 0,exf:void 0!==r&&!1==!!r?0:void 0});if(nav.sendBeacon)nav.sendBeacon(c,s);else{var d=new XMLHttpRequest;d.open("POST",c,!0),d.send(s)}},tEv=(e,t,o,n)=>track("event",e,t,o,n),tEx=(e,t)=>track(typeException,null,null,null,null,e,t);hhistory.pushState=function(e){return"function"==typeof history.onpushstate&&hhistory.onpushstate({state:e}),setTimeout(track,options.delay||10),pushState.apply(hhistory,arguments)},track(),context.ma={tEv:tEv,tEx:tEx};
 
@@ -531,6 +531,7 @@
                     var tradingSymbolText = jQ(this).find("td.instrument > span.tradingsymbol").text();
                     var productType = jQ(this).find("td.product > span").text().trim();
                     var instrument = jQ(jQ(this).find("td")[2]).text();
+                    var product = jQ(jQ(this).find("td")[1]).text();
                     var qty = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
 
                     debug("INSTRUMENT : " + instrument);
@@ -607,13 +608,14 @@
                             peCount++;
                         }
 
-                        var data = createMarginCalculatinData(instrument, qty);
-                        selection.push(data);
-                    } else {
-                        jQ(this).hide();
-                    }
-                    //END work on Positions AREA
-                });
+                    var data = getMarginCalculationData(instrument, product, qty);
+                    selection.push(data);
+                } else {
+                    jQ(this).hide();
+                }
+                //END work on Positions AREA
+            });
+                        
 
                 var allPositionsDayHistoryDomTRs = jQ(allDOMPaths.domPathForPositionsDayHistory);
                 allPositionsDayHistoryDomTRs.show();
@@ -664,10 +666,9 @@
                 jQ("#peCountId").text("("+peCount+")");
                 jQ("#ceCountId").text("("+ceCount+")");
 
-                calculateMargins(selection).then(margin=>{
+                calculateMargin(selection).then(margin=>{
                     updatePositionInfo(countPositionsDisplaying, pnl, margin);
                 });
-
 
                 debug(stocksInList);
                 filterWatchlist(stocksInList, selectedGroup);
@@ -688,9 +689,9 @@
         return selectBox;
     }
 
-    function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
-        var textDisplay = "("+countPositionsDisplaying+") P&L: " + formatter.format(pnl);
-
+ function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
+        var textDisplay = `(${countPositionsDisplaying}) P&L: ${formatter.format(pnl)}(${(pnl/margin*100).toFixed(2)}%)`;
+        
         jQ("#stocksInTagCount").text(textDisplay);
 
         jQ("#stocksInTagCount").removeClass("text-green");
@@ -1143,68 +1144,69 @@
         //Trades
     }
 
-    const calculateMargins = async (selection) => {
-        let margin = 0
-        var payload = qs.stringify({
-            'action': 'calculate'
-        });
-        selection.forEach(data => {
-            var d = qs.stringify({
-                'exchange[]': data.exchange,
-                'product[]': data.product,
-                'scrip[]': data.scrip,
-                'option_type[]': `${data.type}`,
-                'strike_price[]': `${data.strike}`,
-                'qty[]': `${data.quantity}`,
-                'trade[]': data.trade
-            });
-            payload = `${payload}&${d}`
-        });
-
-        var config = {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            }
+const calculateMargin = async (selection) => {
+    let margin = 0
+    var payload=[]
+    selection.forEach(data => {
+        var d = {
+            'exchange': data.exchange,
+            'order_type': 'MARKET',
+            'price': 0,            
+            'product': data.product,
+            'quantity': data.quantity,
+            'squareoff': 0,
+            'stoploss': 0,
+            'tradingsymbol': data.tradingsymbol,
+            'transaction_type': data.transaction_type,
+            'trigger_price': 0,
+            'variety': 'regular'
         };
-        return await axios.post("https://zerodha.com/margin-calculator/SPAN/", payload, config)
-            .then(function (response) {
-                debug(response);
-                margin = response.data.total!=null && response.data.total!==undefined?response.data.total.total:0;
-                return margin;}
-                )
-            .catch(function (error) {
-                debug(error);return -1;}
-                );
+        payload.push(d)
+    });
 
-    }
+    var config = {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `enctoken ${Cookies.get('enctoken')}`
+        }
+    };
+    debug(`config: ${config} payload: ${payload}`)
+    return await axios.post("/oms/margins/basket?mode=compact", payload, config)
+        .then(function (response) {
+            margin = response.data.data.final!=null && response.data.data.final!==undefined?response.data.data.final.total:0;
+            return margin;}
+            )
+        .catch(function (error) {
+            debug(error);return -1;}
+            );
 
-    function createMarginCalculatinData(instrument, q) {
-        // frame payload for SPAN calculation
-        var tokens=instrument.split(" ");
-        var data = {};
-        data.exchange=tokens[2]==="FUT"?`${tokens[3].substring(0, 3)}`:`${tokens[4].substring(0, 3)}`;
-        data.product=tokens[2]==="FUT"?'FUT':'OPT';
-        data.scrip=tokens[2]==="FUT"?`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}`:`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}`;
-        data.type=tokens[2]==="FUT"?'CE':`${tokens[3]}`;
-        data.strike=tokens[2]==="FUT"?'100':`${tokens[2]}`;
-        data.quantity=q>0?q:q*-1;
-        data.trade=q>0?'buy':'sell';
-        return data;
-    }
+}
 
-    var filterText = "";
-    function addWatchlistFilter() {
-        //jQ("#watchlistFilterId").remove();
-        var wFilter = document.createElement("li");
-        wFilter.id = 'watchlistFilterId';
-        wFilter.classList.add("randomClassToHelpHide");
-        wFilter.classList.add("item");
-        wFilter.innerText = "Filter";
+const getMarginCalculationData = (instrument, product, q) => {
+    // frame payload for SPAN calculation
+    var tokens=instrument.split(" ");
+    var data = {};
+    data.exchange=tokens[2]==="FUT"?`${tokens[3].substring(0, 3)}`:`${tokens[4].substring(0, 3)}`;
+    data.product=product.replace(/\n/g,'').replace(/\t/g,'');
+    data.tradingsymbol=tokens[2]==="FUT"?`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}FUT`:`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}${tokens[2]}${tokens[3]}`;
+    data.quantity=q>0?q:q*-1;
+    data.transaction_type=q>0?'BUY':'SELL';
+    return data;
+}
 
-        jQ("div.marketwatch-sidebar.marketwatch-wrap > ul > li.settings").before(wFilter);
-    }
+var filterText = "";
+function addWatchlistFilter() {
+    //jQ("#watchlistFilterId").remove();
+    var wFilter = document.createElement("li");
+    wFilter.id = 'watchlistFilterId';
+    wFilter.classList.add("randomClassToHelpHide");
+    wFilter.classList.add("item");
+    wFilter.innerText = "Filter";
 
-    function updatePnl(forPositions = true) {
+    jQ("div.marketwatch-sidebar.marketwatch-wrap > ul > li.settings").before(wFilter);
+}
+
+function updatePnl(forPositions = true) {
         var allVisibleRows;
         var pnlCol;
         if (forPositions) {
@@ -1228,21 +1230,22 @@
                 var instrument = jQ(jQ(this).find("td")[2]).text();
 
                 var qty = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
-                var data = createMarginCalculatinData(instrument, qty);
+                var product = jQ(jQ(this).find("td")[1]).text();
+                var data = getMarginCalculationData(instrument, product, qty);
                 selection.push(data);
             }
         });
 
         if (allVisibleRows.length>0) {
-            calculateMargins(selection).then(margin=>{
+            calculateMargin(selection).then(margin=>{
                 updatePositionInfo(allVisibleRows.length, pnl, margin);
             });
         }
     }
 
-    // all behavior related actions go here.
-    function main() {
-        GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
+// all behavior related actions go here.
+function main() {
+    GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
             if (confirm('Are you sure you want to reset all tag data?')) {
                 if (confirm('I am checking with you one last time, are you sure?')) {
                     tEv("kite","menu","reset","");
@@ -1439,8 +1442,6 @@
             });
         });
 
-
-
         //whenever selection in position row changes.
         jQ(document).on('change', "input.su-checkbox", function () {
             tEv("kite","positionscheckbox","click","");
@@ -1476,7 +1477,8 @@
                     points = points - avgPrice;
                 }
 
-                var data = createMarginCalculatinData(instrument, q);
+                var product = jQ(jQ(this).find("td")[1]).text();
+                var data = getMarginCalculationData(instrument, product, q);
                 selection.push(data);
             });
 
@@ -1490,9 +1492,9 @@
             }
 
             if (selectedRows.length > 0 ) {
-                calculateMargins(selection).then(margin=>{
-                    if (selectedRows.length>0) {
-                        if (ceQ > peQ) {
+              calculateMargin(selection).then(margin=>{
+                  if (selectedRows.length>0) {
+                      if (ceQ > peQ) {
 
                         } else if (peQ > ceQ) {
 
