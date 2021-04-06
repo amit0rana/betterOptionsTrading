@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.23
+// @version      2.24
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -29,7 +29,7 @@
     });
 
     window.jQ=jQuery.noConflict(true);
-    const VERSION = "v2.23";
+    const VERSION = "v2.24";
     const GM_HOLDINGS_NAME = "BK_HOLDINGS";
     const GMPositionsName = "BK_POSITIONS";
     const GMRefTradeName = "BK_REF_TRADES";
