@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.24
+// @version      2.25
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -29,7 +29,7 @@
     });
 
     window.jQ=jQuery.noConflict(true);
-    const VERSION = "v2.24";
+    const VERSION = "v2.25";
     const GM_HOLDINGS_NAME = "BK_HOLDINGS";
     const GMPositionsName = "BK_POSITIONS";
     const GMRefTradeName = "BK_REF_TRADES";
@@ -690,19 +690,21 @@
     }
 
  function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
-        var textDisplay = `(${countPositionsDisplaying}) P&L: ${formatter.format(pnl)}(${(pnl/margin*100).toFixed(2)}%)`;
+        var textDisplay = `(${countPositionsDisplaying}) P&L: ${formatter.format(pnl)}`;
         
-        jQ("#stocksInTagCount").text(textDisplay);
-
-        jQ("#stocksInTagCount").removeClass("text-green");
-        jQ("#stocksInTagCount").removeClass("text-red");
-        jQ("#stocksInTagCount").removeClass("text-black");
+        var topDisplay = jQ("#stocksInTagCount");
+        topDisplay.text(textDisplay);
+        topDisplay.prop('title',`ROI: ${(pnl/margin*100).toFixed(2)}%`);
+        
+        topDisplay.removeClass("text-green");
+        topDisplay.removeClass("text-red");
+        topDisplay.removeClass("text-black");
         if(pnl>0) {
-            jQ("#stocksInTagCount").addClass("text-green");
+            topDisplay.addClass("text-green");
         } else if (pnl<0) {
-            jQ("#stocksInTagCount").addClass("text-red");
+            topDisplay.addClass("text-red");
         } else {
-            jQ("#stocksInTagCount").addClass("text-black");
+            topDisplay.addClass("text-black");
         }
 
         if (margin < 0 ) {
