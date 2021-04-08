@@ -708,10 +708,11 @@
         }
 
         if (margin < 0 ) {
-            jQ("#marginDiv").text('enable CORS');
+            jQ("#marginDiv").text('0');
         } else {
             jQ("#marginDiv").text("M: " + formatter.format(margin));
         }
+        jQ("#marginDiv").prop('title',`ROI: ${(pnl/margin*100).toFixed(2)}%`);
     }
 
     function createMisFilter() {
