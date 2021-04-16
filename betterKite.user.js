@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.23
+// @version      2.26
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -29,7 +29,7 @@
     });
 
     window.jQ=jQuery.noConflict(true);
-    const VERSION = "v2.18";
+    const VERSION = "v2.25";
     const GM_HOLDINGS_NAME = "BK_HOLDINGS";
     const GMPositionsName = "BK_POSITIONS";
     const GMRefTradeName = "BK_REF_TRADES";
@@ -690,26 +690,29 @@
     }
 
  function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
-        var textDisplay = `(${countPositionsDisplaying}) P&L: ${formatter.format(pnl)}(${(pnl/margin*100).toFixed(2)}%)`;
+        var textDisplay = `(${countPositionsDisplaying}) P&L: ${formatter.format(pnl)}`;
         
-        jQ("#stocksInTagCount").text(textDisplay);
-
-        jQ("#stocksInTagCount").removeClass("text-green");
-        jQ("#stocksInTagCount").removeClass("text-red");
-        jQ("#stocksInTagCount").removeClass("text-black");
+        var topDisplay = jQ("#stocksInTagCount");
+        topDisplay.text(textDisplay);
+        topDisplay.prop('title',`ROI: ${(pnl/margin*100).toFixed(2)}%`);
+        
+        topDisplay.removeClass("text-green");
+        topDisplay.removeClass("text-red");
+        topDisplay.removeClass("text-black");
         if(pnl>0) {
-            jQ("#stocksInTagCount").addClass("text-green");
+            topDisplay.addClass("text-green");
         } else if (pnl<0) {
-            jQ("#stocksInTagCount").addClass("text-red");
+            topDisplay.addClass("text-red");
         } else {
-            jQ("#stocksInTagCount").addClass("text-black");
+            topDisplay.addClass("text-black");
         }
 
         if (margin < 0 ) {
-            jQ("#marginDiv").text('enable CORS');
+            jQ("#marginDiv").text('0');
         } else {
             jQ("#marginDiv").text("M: " + formatter.format(margin));
         }
+        jQ("#marginDiv").prop('title',`ROI: ${(pnl/margin*100).toFixed(2)}%`);
     }
 
     function createMisFilter() {
@@ -1184,11 +1187,27 @@ const calculateMargin = async (selection) => {
 
 const getMarginCalculationData = (instrument, product, q, price) => {
     // frame payload for SPAN calculation
-    var tokens=instrument.split(" ");
+    var tokens=instrument.replace(/\s+/g, ' ').split(" ");
+    debug(tokens);
     var data = {};
     data.exchange=tokens[2]==="FUT"?`${tokens[3].substring(0, 3)}`:`${tokens[4].substring(0, 3)}`;
     data.product=product.replace(/\n/g,'').replace(/\t/g,'');
-    data.tradingsymbol=tokens[2]==="FUT"?`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}FUT`:`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}${tokens[2]}${tokens[3]}`;
+    if(tokens[2] === "FUT") {
+        //NIFTY APR FUT NFO
+        data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}FUT`;
+        data.exchange = `${tokens[3]}`;
+    } else {
+        if (tokens[2] === "w") {
+            //eg: NIFTY2140814200CE (NIFTY 8th w APR 14200 CE NFO LABELS) 
+            data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${moment(new Date()).format("M")}${tokens[1].match(/\d+/)[0].padStart(2,0)}${tokens[4]}${tokens[5]}`;
+            data.exchange = `${tokens[6]}`;
+        } else {
+            //eg: NIFTY21APR14200PE (NIFTY APR 14200 PE NFO LABELS)
+            data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}${tokens[2]}${tokens[3]}`;
+            data.exchange = `${tokens[4]}`;
+        }
+    }
+
     data.quantity=q>0?q:q*-1;
     data.price=price;
     data.transaction_type=q>0?'BUY':'SELL';

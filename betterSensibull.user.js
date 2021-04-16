@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterSensibull
 // @namespace    https://github.com/amit0rana/betterSensibull
-// @version      0.05
+// @version      0.06
 // @description  Introduces small features on top of sensibull
 // @author       Amit
 // @match        https://web.sensibull.com/*
@@ -42,10 +42,10 @@ const g_config = new MonkeyConfig({
 });
 const D_LEVEL = g_config.get('logging');
 
-const allDOMPaths = {
-    domForPlacingToggleSelectBox : "#builder-left-col-scrolling-div > div.style__TradeViewWrapper-evUGWc.iufYvd > div.style__HeaderText-fcSeJa.dmFDbN > div:nth-child(2)",
-    domForPositionsRows : '#builder-left-col-scrolling-div > div.style__TradeViewWrapper-evUGWc.iufYvd > div',
-    domForPositionExpiry : 'div > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1)',
+const allDOMPaths = { 
+    domForPlacingToggleSelectBox : "#builder-left-col-scrolling-div > div.style__TradeViewWrapper-evUGWc.rCcEi > div.style__HeaderText-fcSeJa.byyUgf > div:nth-child(2)",
+    domForPositionsRows : '#builder-left-col-scrolling-div > div.style__TradeViewWrapper-evUGWc.rCcEi > div.style__StyledCard-ktEkEv.dqAFAk',
+    domForPositionExpiry : 'div.style__LegInstrumentRowWrapper-gudSLo.khMggA > div:nth-child(1) > div:nth-child(1) > div.style__InstrumentInfo-iZSHUf.leJbQJ',
     domForStrategySuggestions : '#app > div > div.page-sidebar-is-open.sn-page--builder.style__AppWrapper-djPJnZ.gvrWYn > div.sn-l__app-content.style__AppContent-haAgYm.korEfl > div.style__ContainerSpacing-kZpkBx.kJeLXd > div > div.style__BuilderWrapper-hHFjHn.nAQhs > div.style__BuilderColRight-jAAkJD.hbmLzB > div.style__BuilderPresetStrategiesWrapper-iJakRq.jDHsHZ',
     domForCheckbox : 'span > span:nth-child(1) > input'
 };
@@ -76,7 +76,9 @@ function main() {
 
     var expiryArray = [];
     rows.each(function(rowIndex) {
-        var t = $(this).find(allDOMPaths.domForPositionExpiry).text();
+        //console.log('r: ' + $(this).find(allDOMPaths.domForPositionExpiry).text());
+        var t = getExpiryText($(this).find(allDOMPaths.domForPositionExpiry).text());
+        //console.log('t: ' + t);
         if (t && !expiryArray.includes(t)) {
             expiryArray.push(t);
 
@@ -87,28 +89,35 @@ function main() {
         }
     });
 
-    $('.jss1557').click();
+    //$('.jss1557').click();
 
     $(allDOMPaths.domForPlacingToggleSelectBox).after(selectBox);
 
-    selectBox.addEventListener("change", function() {
+    selectBox.addEventListener("click", function() {
         console.log(this.value);
         var selectedItem = this.value;
 
         var rows = $(allDOMPaths.domForPositionsRows);
         rows.each(function(rowIndex) {
-            var t = $(this).find(allDOMPaths.domForPositionExpiry).text();
+            var t = getExpiryText($(this).find(allDOMPaths.domForPositionExpiry).text());
 
-            if (t && t == selectedItem) {
+            //console.log('text to cmp' + t);
+            if (selectedItem == 'All' || (t && t == selectedItem)) {
                 var c = $(this).find(allDOMPaths.domForCheckbox);
                 document.getElementsByClassName($(c[0]).attr('class'))[0].click();
             }
         });
 
-        selectBox.value = 'All';
+        //selectBox.value = 'All';
     });
 
 }
 
+function getExpiryText(fullText) {
+    var expiry = fullText.split(' ');
+    t = expiry[0]+ ' ' + expiry[1];
+
+    return t;
+}
 
 tEv("sensibull","visit","main","");
