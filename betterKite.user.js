@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.22
+// @version      2.23
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -533,7 +533,7 @@
                     var instrument = jQ(jQ(this).find("td")[2]).text();
                     var product = jQ(jQ(this).find("td")[1]).text();
                     var qty = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
-
+                    var price = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
                     debug("INSTRUMENT : " + instrument);
 
                 //if (instrument.includes(' CE')) {
@@ -608,7 +608,7 @@
                             peCount++;
                         }
 
-                    var data = getMarginCalculationData(instrument, product, qty);
+                    var data = getMarginCalculationData(instrument, product, qty, price);
                     selection.push(data);
                 } else {
                     jQ(this).hide();
@@ -1150,8 +1150,8 @@ const calculateMargin = async (selection) => {
     selection.forEach(data => {
         var d = {
             'exchange': data.exchange,
-            'order_type': 'MARKET',
-            'price': 0,            
+            'order_type': 'LIMIT',
+            'price': data.price,            
             'product': data.product,
             'quantity': data.quantity,
             'squareoff': 0,
@@ -1173,7 +1173,7 @@ const calculateMargin = async (selection) => {
     debug(`config: ${config} payload: ${payload}`)
     return await axios.post("/oms/margins/basket?mode=compact", payload, config)
         .then(function (response) {
-            margin = response.data.data.final!=null && response.data.data.final!==undefined?response.data.data.final.total:0;
+            margin = response.data.data.initial!=null && response.data.data.initial!==undefined?response.data.data.initial.total:0;
             return margin;}
             )
         .catch(function (error) {
@@ -1182,7 +1182,7 @@ const calculateMargin = async (selection) => {
 
 }
 
-const getMarginCalculationData = (instrument, product, q) => {
+const getMarginCalculationData = (instrument, product, q, price) => {
     // frame payload for SPAN calculation
     var tokens=instrument.split(" ");
     var data = {};
@@ -1190,6 +1190,7 @@ const getMarginCalculationData = (instrument, product, q) => {
     data.product=product.replace(/\n/g,'').replace(/\t/g,'');
     data.tradingsymbol=tokens[2]==="FUT"?`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}FUT`:`${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}${tokens[2]}${tokens[3]}`;
     data.quantity=q>0?q:q*-1;
+    data.price=price;
     data.transaction_type=q>0?'BUY':'SELL';
     return data;
 }
@@ -1230,8 +1231,9 @@ function updatePnl(forPositions = true) {
                 var instrument = jQ(jQ(this).find("td")[2]).text();
 
                 var qty = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
+                var price = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
                 var product = jQ(jQ(this).find("td")[1]).text();
-                var data = getMarginCalculationData(instrument, product, qty);
+                var data = getMarginCalculationData(instrument, product, qty, price);
                 selection.push(data);
             }
         });
@@ -1478,7 +1480,7 @@ function main() {
                 }
 
                 var product = jQ(jQ(this).find("td")[1]).text();
-                var data = getMarginCalculationData(instrument, product, q);
+                var data = getMarginCalculationData(instrument, product, q, avgPrice);
                 selection.push(data);
             });
 
