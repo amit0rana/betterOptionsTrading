@@ -29,7 +29,7 @@
     });
 
     window.jQ=jQuery.noConflict(true);
-    const VERSION = "v2.25";
+    const VERSION = "v2.26";
     const GM_HOLDINGS_NAME = "BK_HOLDINGS";
     const GMPositionsName = "BK_POSITIONS";
     const GMRefTradeName = "BK_REF_TRADES";
@@ -869,14 +869,14 @@
         var spanForCount = document.createElement("div");
         spanForCount.classList.add("randomClassToHelpHide");
         spanForCount.classList.add("tagSelectorStyle");
-        spanForCount.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;font-size: 12px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 0px;"
+        spanForCount.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;font-size: 10.5px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 0px;"
         spanForCount.id ='stocksInTagCount';
         spanForCount.addEventListener("click", ()=>updatePnl(true));
 
         var divForMargin = document.createElement("div");
         divForMargin.classList.add("randomClassToHelpHide");
         divForMargin.classList.add("tagSelectorStyle");
-        //divForMargin.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
+        divForMargin.style="font-size: 10.5px;"
         divForMargin.id ='marginDiv';
 
         div1.appendChild(spanForCount);
