@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.26
+// @version      2.27
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -29,7 +29,7 @@
     });
 
     window.jQ=jQuery.noConflict(true);
-    const VERSION = "v2.26";
+    const VERSION = "v2.27";
     const GM_HOLDINGS_NAME = "BK_HOLDINGS";
     const GMPositionsName = "BK_POSITIONS";
     const GMRefTradeName = "BK_REF_TRADES";
@@ -1528,7 +1528,7 @@ function main() {
                             pnlText = "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl);
 
                         }
-                        pnlText += "<br><span class='text-label randomClassToHelpHide'>Max Profit: "+formatter.format(maxPnl)+"</span>";
+                        pnlText += "<br><span class='text-label randomClassToHelpHide'>Max Profit: "+formatter.format(maxPnl)+ " / Max ROI: "+ (maxPnl/margin*100).toFixed(2) +"%</span>";
                         pnlText += "<br><span class='text-label randomClassToHelpHide'>% Profit achieved: "+(pnl/maxPnl*100).toFixed(2)+"% </span>";
                         if (margin >= 0) {
                             pnlText += "<br><span class='text-label randomClassToHelpHide'>Margin: "+formatter.format(margin)+"</span>";
