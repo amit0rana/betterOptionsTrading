@@ -2006,15 +2006,49 @@ function sensibull(firstTry = true) {
         rows.each(function(rowIndex) {
             var t = jQ(this).find('th > div > div:nth-child(3)').text().split(" ")[2];
 
+            //console.log('bs: text to cmp' + t.toUpperCase());
             debug('toggle for ' + t);
             if (selectedItem == 'All' || t.toUpperCase() == selectedItem.toUpperCase()) {
                 debug('toggle : success');
                 var c = jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].click();
+                //debug(c[0]);
+                //document.getElementsByClassName(jQ(c[0]).attr('class'))[0].click();
+                //debug(jQ(c[0]).attr('class'));
+                //debug(document.getElementsByClassName('jss48')[1]);
+                //debug(document.getElementsByClassName('jss48')[1].click());
+                //debug(jQ(c[0]).prop("checked"));
+
+                //jQ(c[0]).attr("checked",false);
+
+                //jQ(c[0]).prop("checked", false).trigger("change");
+                //jQ(c[0]).click();
+                //jQ(c[0]).submit();
+                //debug(jQ(c[0]).prop("checked"));
             }
         });
+
+        //selectBox.value = 'All';
     });
 }
-debug('test');
+
+debug(getLastThursday('May'));
+
+function getLastThursday(m, year) {
+    var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    var month = months[m.toUpperCase()];
+
+  var d = new Date();
+  if (year) { d.setFullYear(year); }
+  d.setDate(1); // Roll to the first day of ...
+  d.setMonth(month || d.getMonth() + 1); // ... the next month.
+  do { // Roll the days backwards until Monday.
+    d.setDate(d.getDate() - 1);
+  } while (d.getDay() !== 4);
+
+  let da = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(d);
+  let mo = new Intl.DateTimeFormat('en', { month: 'short' }).format(d);
+  return da+mo;
+}
 
 
 jQ.fn.exists = function () {
