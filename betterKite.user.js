@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.28
+// @version      2.29
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -30,7 +30,7 @@ const formatter = Intl.NumberFormat('en-IN', {
 });
 
 window.jQ=jQuery.noConflict(true);
-const VERSION = "v2.28";
+const VERSION = "v2.29";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -88,6 +88,7 @@ const info = function(logInfo) {
 const allDOMPaths = {
     rowsFromHoldingsTable : "div.holdings > section > div > div > table > tbody > tr",
     attrNameForInstrumentTR : "data-uid",
+    tradingSymbol : "td.instrument > span.tradingsymbol",
     domPathWatchlistRow : "div.instruments > div > div.vddl-draggable.instrument",
     domPathPendingOrdersTR : "div.pending-orders > div > table > tbody > tr",
     domPathExecutedOrdersTR : "div.completed-orders > div > table > tbody > tr",
@@ -531,7 +532,7 @@ function createPositionsDropdown() {
                 var p = dataUidInTR.split(".")[1];
 
                 var matchFound = false;
-                var tradingSymbolText = jQ(this).find("td.instrument > span.tradingsymbol").text();
+                var tradingSymbolText = jQ(this).find(allDOMPaths.tradingSymbol).text();
                 var productType = jQ(this).find("td.product > span").text().trim();
                 var instrument = jQ(jQ(this).find("td")[2]).text();
                 var product = jQ(jQ(this).find("td")[1]).text();
@@ -1959,6 +1960,7 @@ function introducePnlFilter() {
 //sensibull inside kite
 //#app > div > div > div > div > div > div
 waitForKeyElements ('#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > table > thead > tr > th > span:nth-child(2)', sensibull);
+var previousArray = [];
 function sensibull(firstTry = true) {
     debug('sensibull');
     tEv("kite","positions","sensibull","");
@@ -1967,7 +1969,7 @@ function sensibull(firstTry = true) {
     //debug(d);
     debug(rows.length);
     if (firstTry && rows.length < 1) {
-        setTimeout(function(){ sensibull(false); }, 2000);
+        setTimeout(function(){ sensibull(false); }, 1000);
         return;
     }
 
@@ -1995,6 +1997,13 @@ function sensibull(firstTry = true) {
         }
     });
 
+    if (arrayEquals(previousArray, expiryArray)) {
+        debug('ignore array set');
+        return;
+    } else {
+        previousArray = expiryArray;
+    }
+    jQ('#toggleSelectboxID').remove();
     jQ( "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > table > thead > tr > th > span:nth-child(2)").after(selectBox);
 
     selectBox.addEventListener("click", function() {
@@ -2011,24 +2020,55 @@ function sensibull(firstTry = true) {
             if (selectedItem == 'All' || t.toUpperCase() == selectedItem.toUpperCase()) {
                 debug('toggle : success');
                 var c = jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].click();
-                //debug(c[0]);
-                //document.getElementsByClassName(jQ(c[0]).attr('class'))[0].click();
-                //debug(jQ(c[0]).attr('class'));
-                //debug(document.getElementsByClassName('jss48')[1]);
-                //debug(document.getElementsByClassName('jss48')[1].click());
-                //debug(jQ(c[0]).prop("checked"));
-
-                //jQ(c[0]).attr("checked",false);
-
-                //jQ(c[0]).prop("checked", false).trigger("change");
-                //jQ(c[0]).click();
-                //jQ(c[0]).submit();
-                //debug(jQ(c[0]).prop("checked"));
             }
         });
-
-        //selectBox.value = 'All';
     });
+}
+
+function arrayEquals(a, b) {
+  return Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((val, index) => val === b[index]);
+}
+
+waitForKeyElements ('#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > table > tbody', attachSensibullObserver);
+function attachSensibullObserver() {
+    debug('attachSensibullObserver');
+    // The node to be monitored nifty/banknifty drop down
+    var target = jQ( "#app > div > div > div > div > div > div > div.style__LeftContentWrapper-t0trse-21.kQiWSc > div.style__SearchableInstrumentWrapper-t0trse-10.duNZzV > div > button > span.MuiButton-label")[0];
+
+    // Create an observer instance
+    var iframeObserver = new MutationObserver(function( mutations ) {
+        var st = null;
+
+        //jQ('#toggleSelectboxID').remove();
+        mutations.forEach(function( mutation ) {
+            debug(mutation);
+            var newNodes = mutation.addedNodes; // DOM NodeList
+            if( newNodes !== null ) { // If there are new nodes added
+                if (st != null) {
+                    debug('clear');
+                    clearTimeout(st);
+                }
+                debug('set');
+                st = setTimeout(function(){sensibull1();},1000);
+            }
+        });
+    });
+
+    // Configuration of the observer:
+    var config = {
+        childList: true,
+        characterData: true
+    };
+
+    // Pass in the target node, as well as the observer options
+    iframeObserver.observe(target, config);
+}
+function sensibull1() {
+    debug('sensbulll1');
+    sensibull(false);
 }
 
 debug(getLastThursday('May'));
