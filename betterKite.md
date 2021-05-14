@@ -29,6 +29,9 @@ Contributors
 ![addPositions](https://dl.dropbox.com/s/mvavj8njmt2xvtp/pnlAddition.png?dl=0)
 * "Filter" button is added next to 1,2,3,4,5 watchlist. You can use this to filter your watchlist.
 ![watchlistFilter](https://dl.dropbox.com/s/5gf2paw5pk9you6/watchlistFilter.png?dl=0)
+* Filter positions within the sensibull interface.
+![zerodaSensibullAnalyze](https://dl.dropbox.com/s/rqzpo214j961x1u/zerodaSensibullAnalyze.png?dl=0)
+![zerodhaSensibullFilters](https://dl.dropbox.com/s/1s91foyuaewkfed/zerodhaSensibullFilters.png?dl=0)
 
 ------
 # https://kite.zerodha.com/holdings page

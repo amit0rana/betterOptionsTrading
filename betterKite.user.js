@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      2.29
+// @version      3.00
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -24,13 +24,14 @@
 var context=window,options="{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}";const hhistory=context.history,doc=document,nav=navigator||{},storage=localStorage,encode=encodeURIComponent,pushState=hhistory.pushState,typeException="exception",generateId=()=>Math.random().toString(36),getId=()=>(storage.cid||(storage.cid=generateId()),storage.cid),serialize=e=>{var t=[];for(var o in e)e.hasOwnProperty(o)&&void 0!==e[o]&&t.push(encode(o)+"="+encode(e[o]));return t.join("&")},track=(e,t,o,n,i,a,r)=>{const c="https://www.google-analytics.com/collect",s=serialize({v:"1",ds:"web",aip:options.anonymizeIp?1:void 0,tid:"UA-176741575-1",cid:getId(),t:e||"pageview",sd:options.colorDepth&&screen.colorDepth?`${screen.colorDepth}-bits`:void 0,dr:doc.referrer||void 0,dt:doc.title,dl:doc.location.origin+doc.location.pathname+doc.location.search,ul:options.language?(nav.language||"").toLowerCase():void 0,de:options.characterSet?doc.characterSet:void 0,sr:options.screenSize?`${(context.screen||{}).width}x${(context.screen||{}).height}`:void 0,vp:options.screenSize&&context.visualViewport?`${(context.visualViewport||{}).width}x${(context.visualViewport||{}).height}`:void 0,ec:t||void 0,ea:o||void 0,el:n||void 0,ev:i||void 0,exd:a||void 0,exf:void 0!==r&&!1==!!r?0:void 0});if(nav.sendBeacon)nav.sendBeacon(c,s);else{var d=new XMLHttpRequest;d.open("POST",c,!0),d.send(s)}},tEv=(e,t,o,n)=>track("event",e,t,o,n),tEx=(e,t)=>track(typeException,null,null,null,null,e,t);hhistory.pushState=function(e){return"function"==typeof history.onpushstate&&hhistory.onpushstate({state:e}),setTimeout(track,options.delay||10),pushState.apply(hhistory,arguments)},track(),context.ma={tEv:tEv,tEx:tEx};
 
 const D_LEVEL_DEBUG = 1;
+const D_LEVEL_INFO = 2;
 
 const formatter = Intl.NumberFormat('en-IN', {
     style: 'currency', currency: 'INR'
 });
 
 window.jQ=jQuery.noConflict(true);
-const VERSION = "v2.29";
+const VERSION = "v3.00";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -75,14 +76,24 @@ const PRO_MODE = g_config.get('pro_mode');
 
 const log = function(level, logInfo) {
     if (level >= D_LEVEL) {
-        console.log(logInfo);
+        switch(level) {
+            case D_LEVEL_DEBUG:
+                console.debug(logInfo);
+              break;
+            case D_LEVEL_INFO:
+                console.info(logInfo);
+              break;
+            default:
+                console.log(logInfo);
+          } 
+        
     }
 }
 const debug = function(logInfo) {
     log( D_LEVEL_DEBUG , logInfo);
 }
 const info = function(logInfo) {
-    log( 2 , logInfo);
+    log( D_LEVEL_INFO, logInfo);
 }
 
 const allDOMPaths = {
@@ -100,8 +111,11 @@ const allDOMPaths = {
     domPathForPositionsDayHistory : "div.positions > section.day-positions.table-wrapper > div > div > table > tbody > tr",
     positionHeader: "header.row.data-table-header > h3",
     sensibullRows: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > table > tbody > tr ",
-    sensibullRowCheckbox : "th > div > span > span > input"
+    sensibullRowCheckbox : "th > div > span > span > input",
+    sensibullScriptSelected: "#app > div > div > div > div > div > div > div.style__LeftContentWrapper-t0trse-21.kQiWSc > div.style__SearchableInstrumentWrapper-t0trse-10.duNZzV > div > button > span.MuiButton-label"
 };
+//sensibullScriptSelected: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(1) > div > button > span.MuiButton-label"
+//("#app > div > div > div > div > div > div > div.style__LeftContentWrapper-t0trse-21.kQiWSc > div.style__SearchableInstrumentWrapper-t0trse-10.duNZzV > div > button > span.MuiButton-label")
 
 const holdings = initHoldings();
 
@@ -157,6 +171,21 @@ function initHoldings() {
     }
 
     return holdings;
+}
+
+function getSensibullZerodhaTradingSymbol(original) {
+    //BANKNIFTY JUN 30000 PE NFO
+    debug(`getSensibullZerodhaTradingSymbol ${original}`)
+    var ts = original.split(" ");
+    if (ts[2] == 'FUT') {
+        debug('FUT');
+    } else if (ts[2] == "w") {
+        debug('weekly');
+        return `${ts[0]} ${ts[1].match(/\d+/)[0].padStart(2,0)}${ts[3]} ${ts[4]} ${ts[5]}`;
+    } else {
+        return `${ts[0]} ${getLastThursday(ts[1])} ${ts[2]} ${ts[3]}`;
+    }
+    return;
 }
 
 function initPositions() {
@@ -215,7 +244,10 @@ function initPositions() {
         selectedPositions.each(function(rowIndex) {
             var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
 
-            var text = dataUidInTR.split(".")[1];
+            var text = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
+            //return;
+
+            //var text = dataUidInTR.split(".")[1];
             positionArray.push(text);
         });
 
@@ -529,7 +561,9 @@ function createPositionsDropdown() {
 
             allPositionsRow.each(function(rowIndex) {
                 var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
-                var p = dataUidInTR.split(".")[1];
+                //var p = dataUidInTR.split(".")[1];
+                
+                var p = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
 
                 var matchFound = false;
                 var tradingSymbolText = jQ(this).find(allDOMPaths.tradingSymbol).text();
@@ -627,7 +661,9 @@ function createPositionsDropdown() {
 
             allPositionsDayHistoryDomTRs.each(function(rowIndex) {
                 var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
-                var p = dataUidInTR.split(".")[1];
+                //var p = dataUidInTR.split(".")[1];
+                
+                var p = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[1]).text());
 
                 var matchFound = false;
                 var tradingSymbolText = jQ(this).find("td.instrument > span.tradingsymbol").text();
@@ -695,7 +731,7 @@ function createPositionsDropdown() {
 
 function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
     var textDisplay = `(${countPositionsDisplaying}) P&L: ${formatter.format(pnl)}`;
-
+    debug('updatePositionInfo ' + textDisplay);
     var topDisplay = jQ("#stocksInTagCount");
     topDisplay.text(textDisplay);
     topDisplay.prop('title',`ROI: ${(pnl/margin*100).toFixed(2)}%`);
@@ -1459,7 +1495,9 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
     jQ(document).on('click',allDOMPaths.PathForPositions, function() {
         var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
 
-        var text = dataUidInTR.split(".")[1];
+        //var text = dataUidInTR.split(".")[1];
+        
+        var text = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
         navigator.clipboard.writeText(text).then(function() {
             debug('Async: Copying to clipboard was successful!');
         }, function(err) {
@@ -1969,7 +2007,7 @@ function sensibull(firstTry = true) {
     //debug(d);
     debug(rows.length);
     if (firstTry && rows.length < 1) {
-        setTimeout(function(){ sensibull(false); }, 1000);
+        setTimeout(function(){ sensibull(false); attachSensibullObserver();}, 1000);
         return;
     }
 
@@ -2006,8 +2044,8 @@ function sensibull(firstTry = true) {
     jQ('#toggleSelectboxID').remove();
     jQ( "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > table > thead > tr > th > span:nth-child(2)").after(selectBox);
 
-    selectBox.addEventListener("click", function() {
-        tEv("kite","positions","sensibull","select");
+    selectBox.addEventListener("change", function() {
+        tEv("kite","positions","sensibull","expiry-filter");
         var selectedItem = this.value;
         debug(selectedItem);
 
@@ -2023,6 +2061,54 @@ function sensibull(firstTry = true) {
             }
         });
     });
+
+    var strategySelectBox = document.createElement("SELECT");
+    strategySelectBox.id = "userStrategiesId";
+    strategySelectBox.classList.add("randomClassToHelpHide");
+    strategySelectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;font-size: 12px;background-color: var(--color-bg-default)"
+
+    //add options to the positions select drop down
+    for(var key in positions){
+        option = document.createElement("option");
+        option.text = key;
+        option.value = key;
+        strategySelectBox.add(option);
+    };
+
+    jQ('#userStrategiesId').remove();
+    jQ("#app > div > div > div > div > div > div > div.style__RightContentWrapper-t0trse-29.gEQfiX > div.style__StyledBrandLogo-t0trse-8.style__StyledBrandLogoSuccessPage-t0trse-9.iFquEa.cMHbVS").before(strategySelectBox);
+
+    strategySelectBox.addEventListener("change", function() {
+        tEv("kite","positions","sensibull","strategy-filter");
+        var selectedItem = this.value;
+        info(selectedItem);
+
+        var script = jQ(jQ(allDOMPaths.sensibullScriptSelected)[0]).text().split(' ')[0];
+
+        var selectedPositions = positions[selectedItem].map(value => value.toUpperCase());
+        debug(selectedPositions);
+
+        var rows = jQ(allDOMPaths.sensibullRows);
+        //rest all.
+        rows.each(function(rowIndex) {
+            debug(jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].checked);
+            if (!jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].checked) {
+                var c = jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].click();
+            }
+        });
+        rows.each(function(rowIndex) {
+            var t = `${script} ${jQ(this).find('th > div > div:nth-child(3)').text().split(" ").slice(2).join(" ")}`;
+
+            debug('comparing sesibull position ' + t);
+            if (!selectedPositions.includes(t.toUpperCase())) {
+                var c = jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].click();
+            }
+            // if (t.toUpperCase() == selectedItem.toUpperCase()) {
+            //     debug('toggle : success');
+            //     var c = jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].click();
+            // }
+        });
+    });
 }
 
 function arrayEquals(a, b) {
@@ -2032,11 +2118,12 @@ function arrayEquals(a, b) {
     a.every((val, index) => val === b[index]);
 }
 
-waitForKeyElements ('#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > table > tbody', attachSensibullObserver);
+//waitForKeyElements ('#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > table > tbody', attachSensibullObserver,);
+//waitForKeyElements (allDOMPaths.sensibullScriptSelected, attachSensibullObserver,);
 function attachSensibullObserver() {
     debug('attachSensibullObserver');
     // The node to be monitored nifty/banknifty drop down
-    var target = jQ( "#app > div > div > div > div > div > div > div.style__LeftContentWrapper-t0trse-21.kQiWSc > div.style__SearchableInstrumentWrapper-t0trse-10.duNZzV > div > button > span.MuiButton-label")[0];
+    var target = jQ(allDOMPaths.sensibullScriptSelected)[0];
 
     // Create an observer instance
     var iframeObserver = new MutationObserver(function( mutations ) {
@@ -2071,11 +2158,12 @@ function sensibull1() {
     sensibull(false);
 }
 
-debug(getLastThursday('May'));
+//debug(getLastThursday('Jan'));
 
 function getLastThursday(m, year) {
     var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    var month = months[m.toUpperCase()];
+    debug(months.indexOf(m.toUpperCase()));
+    var month = months.indexOf(m.toUpperCase())+1;
 
   var d = new Date();
   if (year) { d.setFullYear(year); }
