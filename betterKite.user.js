@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.00
+// @version      3.01
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -31,7 +31,7 @@ const formatter = Intl.NumberFormat('en-IN', {
 });
 
 window.jQ=jQuery.noConflict(true);
-const VERSION = "v3.00";
+const VERSION = "v3.01";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -644,7 +644,9 @@ function createPositionsDropdown() {
                     }
 
                 var data = getMarginCalculationData(instrument, product, qty, price);
-                selection.push(data);
+                if (data != null) {
+                    selection.push(data);
+                }
             } else {
                 jQ(this).hide();
             }
@@ -659,7 +661,7 @@ function createPositionsDropdown() {
             allPositionsDayHistoryDomTRs.each(function(rowIndex) {
                 var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
                 //var p = dataUidInTR.split(".")[1];
-                
+                debug('3');
                 var p = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[1]).text());
 
                 var matchFound = false;
@@ -1227,7 +1229,9 @@ const getMarginCalculationData = (instrument, product, q, price) => {
 var tokens=instrument.replace(/\s+/g, ' ').split(" ");
 debug(tokens);
 var data = {};
-data.exchange=tokens[2]==="FUT"?`${tokens[3].substring(0, 3)}`:`${tokens[4].substring(0, 3)}`;
+if(tokens[1] === "NSE" || tokens[1] === "BSE")  { //buy: OAL BSE HOLDING, sell: OAL NSE SOLD HOLDING
+    return null;
+}
 data.product=product.replace(/\n/g,'').replace(/\t/g,'');
 if(tokens[2] === "FUT") {
     //NIFTY APR FUT NFO
@@ -1290,7 +1294,9 @@ function updatePnl(forPositions = true) {
             var price = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
             var product = jQ(jQ(this).find("td")[1]).text();
             var data = getMarginCalculationData(instrument, product, qty, price);
-            selection.push(data);
+            if (data != null) {
+                selection.push(data);
+            }
         }
     });
 
@@ -1520,6 +1526,9 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
 
             var instrument = jQ(jQ(this).find("td")[2]).text();
             debug(instrument);
+            if (instrument.includes('NSE') || instrument.includes('BSE')) {
+                return;
+            }
             var q = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
             if (instrument.includes(' CE')) {
                 ceQ = ceQ + q;
@@ -1539,7 +1548,9 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
 
             var product = jQ(jQ(this).find("td")[1]).text();
             var data = getMarginCalculationData(instrument, product, q, avgPrice);
-            selection.push(data);
+            if (data != null) {
+                selection.push(data);
+            }
         });
 
         var tag = jQ("span[random-att='temppnl']");
