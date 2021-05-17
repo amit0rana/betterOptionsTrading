@@ -62,8 +62,8 @@ const g_config = new MonkeyConfig({
         logging: {
             type: 'select',
             choices: [ 'Info','Debug'],
-            values: [2, 1],
-            default: 2
+            values: [D_LEVEL_INFO, D_LEVEL_DEBUG],
+            default: D_LEVEL_INFO
         },
         pro_mode: {
             type: 'checkbox',
@@ -75,19 +75,16 @@ const D_LEVEL = g_config.get('logging');
 const PRO_MODE = g_config.get('pro_mode');
 
 const log = function(level, logInfo) {
-    if (level >= D_LEVEL) {
-        switch(level) {
-            case D_LEVEL_DEBUG:
-                console.debug(logInfo);
-              break;
-            case D_LEVEL_INFO:
-                console.info(logInfo);
-              break;
-            default:
-                console.log(logInfo);
-          } 
-        
-    }
+    switch(level) {
+        case D_LEVEL_DEBUG:
+            console.debug(logInfo);
+            break;
+        case D_LEVEL_INFO:
+            console.info(logInfo);
+            break;
+        default:
+            console.log(logInfo);
+        }
 }
 const debug = function(logInfo) {
     log( D_LEVEL_DEBUG , logInfo);
