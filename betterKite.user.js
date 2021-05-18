@@ -59,6 +59,10 @@ const g_config = new MonkeyConfig({
             type: 'checkbox',
             default: false
         },
+        include_existing_positions: {
+            type: 'checkbox',
+            default: false
+        },
         logging: {
             type: 'select',
             choices: [ 'Info','Debug'],
@@ -951,7 +955,7 @@ function showPositionDropdown(retry = true) {
 
     // Pass in the target node, as well as the observer options
     g_observer.observe(target, config);
-
+    
     if (g_config.get('auto_refresh_PnL')===true) {
         debug('going to observe pnl change');
         target = jQ( "div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[3];
@@ -1213,9 +1217,10 @@ var config = {
     }
 };
 debug(`config: ${config} payload: ${payload}`)
-return await axios.post("/oms/margins/basket?mode=compact", payload, config)
+return await axios.post(`/oms/margins/basket?consider_positions=${g_config.get('include_existing_positions')}&mode=compact`, payload, config)
     .then(function (response) {
-        margin = response.data.data.initial!=null && response.data.data.initial!==undefined?response.data.data.initial.total:0;
+        //margin = response.data.data.initial!=null && response.data.data.initial!==undefined?response.data.data.initial.total:0;
+        margin = response.data.data.final!=null && response.data.data.final!==undefined?response.data.data.final.total:0;
         return margin;}
         )
     .catch(function (error) {
