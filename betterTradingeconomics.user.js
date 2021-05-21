@@ -1,10 +1,11 @@
     // ==UserScript==
     // @name         betterTradingeconomics
     // @namespace    https://github.com/amit0rana/betterTradingeconomics
-    // @version      0.01
+    // @version      0.02
     // @description  Introduces small features on top of betterTradingeconomics site
     // @author       Amit
     // @match        https://tradingeconomics.com/*
+    // @match        https://in.investing.com/*
     // @grant        GM_addStyle
     // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js
     // @require      https://raw.githubusercontent.com/amit0rana/MonkeyConfig/master/monkeyconfig.js
@@ -17,15 +18,19 @@
     var currentUrl = window.location.pathname;
     info(currentUrl);
 
+//tradingeconomics.com
     function stockFilter() {
         if (currentUrl.includes('stocks')) {
             $('div.container > div.row > div.col-lg-8.col-md-9 > div#ctl00_ctl09_AdPanel').hide();
+
+            //jQ(allDOMPaths.PathForPositions).filter(':has(:checkbox:checked)');
 
             var statuses = [];
             var selectBox = document.createElement("SELECT");
             selectBox.id = "toggleSelectboxID";
             selectBox.classList.add("randomClassToHelpHide");
-            
+            //selectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;background-color: var(--color-bg-default)"
+
             var option = document.createElement("option");
             option.text = "Show All";
             option.value= "All";
@@ -85,3 +90,10 @@
     }
 
     stockFilter();
+
+//investing.in
+function hideAds() {
+    $('div.ads').hide();
+}
+
+hideAds();

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.02
+// @version      3.03
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -31,7 +31,7 @@ const formatter = Intl.NumberFormat('en-IN', {
 });
 
 window.jQ=jQuery.noConflict(true);
-const VERSION = "v3.02";
+const VERSION = "v3.03";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -111,7 +111,7 @@ const allDOMPaths = {
     PathForPositions : "div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr",
     domPathForPositionsDayHistory : "div.positions > section.day-positions.table-wrapper > div > div > table > tbody > tr",
     positionHeader: "header.row.data-table-header > h3",
-    sensibullRows: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > table > tbody > tr ",
+    sensibullRows: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > div > table > tbody > tr",
     sensibullRowCheckbox : "th > div > span > span > input",
     sensibullScriptSelected: "#app > div > div > div > div > div > div > div.style__LeftContentWrapper-t0trse-21.kQiWSc > div.style__SearchableInstrumentWrapper-t0trse-10.duNZzV > div > button > span.MuiButton-label"
 };
@@ -563,7 +563,7 @@ function createPositionsDropdown() {
             allPositionsRow.each(function(rowIndex) {
                 var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
                 //var p = dataUidInTR.split(".")[1];
-                
+
                 var p = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
 
                 var matchFound = false;
@@ -955,7 +955,7 @@ function showPositionDropdown(retry = true) {
 
     // Pass in the target node, as well as the observer options
     g_observer.observe(target, config);
-    
+
     if (g_config.get('auto_refresh_PnL')===true) {
         debug('going to observe pnl change');
         target = jQ( "div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[3];
@@ -1504,7 +1504,7 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
         var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
 
         //var text = dataUidInTR.split(".")[1];
-        
+
         var text = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
         navigator.clipboard.writeText(text).then(function() {
             debug('Async: Copying to clipboard was successful!');
@@ -2009,8 +2009,8 @@ function introducePnlFilter() {
 //NOT WORKING waitForKeyElements (BASE_PNL_REPORT, introducePnlFilter);
 
 //sensibull inside kite
-//#app > div > div > div > div > div > div
-waitForKeyElements ('#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > table > thead > tr > th > span:nth-child(2)', sensibull);
+//watching for 'do more with strategy builder' link
+waitForKeyElements ('#app > div > div > div > div > div > div > div.style__RightContentWrapper-t0trse-29.gEQfiX > div.style__ExternalLinkWrapper-t0trse-44.hsUdKE > a.style__BuilderRedirectLink-t0trse-31.dSNmpD', sensibull);
 var previousArray = [];
 function sensibull(firstTry = true) {
     debug('sensibull');
@@ -2020,7 +2020,7 @@ function sensibull(firstTry = true) {
     //debug(d);
     debug(rows.length);
     if (firstTry && rows.length < 1) {
-        setTimeout(function(){ sensibull(false); attachSensibullObserver();}, 1000);
+        setTimeout(function(){ sensibull(false);}, 1000);
         return;
     }
 
@@ -2055,7 +2055,8 @@ function sensibull(firstTry = true) {
         previousArray = expiryArray;
     }
     jQ('#toggleSelectboxID').remove();
-    jQ( "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > table > thead > tr > th > span:nth-child(2)").after(selectBox);
+    //document.querySelector("")
+    jQ( "#app > div > div > div > div > div > div > div.style__LeftContentWrapper-t0trse-21.kQiWSc > div.style__TradesTableWrapper-t0trse-35.bKtisg > thead > tr > th.MuiTableCell-root.jss27.MuiTableCell-head > span:nth-child(2)").after(selectBox);
 
     selectBox.addEventListener("change", function() {
         tEv("kite","positions","sensibull","expiry-filter");
@@ -2131,41 +2132,23 @@ function arrayEquals(a, b) {
     a.every((val, index) => val === b[index]);
 }
 
-//waitForKeyElements ('#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > table > tbody', attachSensibullObserver,);
-//waitForKeyElements (allDOMPaths.sensibullScriptSelected, attachSensibullObserver,);
-function attachSensibullObserver() {
-    debug('attachSensibullObserver');
-    // The node to be monitored nifty/banknifty drop down
-    var target = jQ(allDOMPaths.sensibullScriptSelected)[0];
-
-    // Create an observer instance
-    var iframeObserver = new MutationObserver(function( mutations ) {
-        var st = null;
-
-        //jQ('#toggleSelectboxID').remove();
-        mutations.forEach(function( mutation ) {
-            debug(mutation);
-            var newNodes = mutation.addedNodes; // DOM NodeList
-            if( newNodes !== null ) { // If there are new nodes added
-                if (st != null) {
-                    debug('clear');
-                    clearTimeout(st);
-                }
-                debug('set');
-                st = setTimeout(function(){sensibull1();},1000);
-            }
-        });
-    });
-
-    // Configuration of the observer:
-    var config = {
-        childList: true,
-        characterData: true
-    };
-
-    // Pass in the target node, as well as the observer options
-    iframeObserver.observe(target, config);
+//div.InstrumentPickerSymbolWrapper
+waitForKeyElements ('div[role=menu]', listenToSymbolChange);
+function listenToSymbolChange() {
+    debug('listenToSymbolChange');
+    jQ(document).off('click',"div[role=menu]" , handleSymbolClick);
+    jQ(document).on('click',"div[role=menu]", handleSymbolClick);
 }
+
+function handleSymbolClick(event){
+    debug('listenToSymbolChange click');
+    //stopImmediatePropagation
+    event.stopPropagation();
+    tEv("kite","positions","sensibull","symbol-change");
+
+    setTimeout(() => sensibull1(), 3000);
+}
+
 function sensibull1() {
     debug('sensbulll1');
     sensibull(false);
