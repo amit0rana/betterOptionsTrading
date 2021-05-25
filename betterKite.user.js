@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.03
+// @version      3.04
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -31,7 +31,7 @@ const formatter = Intl.NumberFormat('en-IN', {
 });
 
 window.jQ=jQuery.noConflict(true);
-const VERSION = "v3.03";
+const VERSION = "v3.04";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -1245,7 +1245,8 @@ if(tokens[2] === "FUT") {
 } else {
     if (tokens[2] === "w") {
         //eg: NIFTY2140814200CE (NIFTY 8th w APR 14200 CE NFO LABELS)
-        data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${moment(new Date()).format("M")}${tokens[1].match(/\d+/)[0].padStart(2,0)}${tokens[4]}${tokens[5]}`;
+        
+        data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${moment(new Date(tokens[3]+' 1 '+(new Date()).getFullYear())).format("M")}${tokens[1].match(/\d+/)[0].padStart(2,0)}${tokens[4]}${tokens[5]}`;
         data.exchange = `${tokens[6]}`;
     } else {
         //eg: NIFTY21APR14200PE (NIFTY APR 14200 PE NFO LABELS)
