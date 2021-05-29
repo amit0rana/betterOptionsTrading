@@ -26,7 +26,3 @@ const formatter = Intl.NumberFormat('en-IN', {
 const reloadPage = function(values) {
     window.location.reload();
 }
-
-const formatter = Intl.NumberFormat('en-IN', {
-    style: 'currency', currency: 'INR'
-});
