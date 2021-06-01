@@ -1011,16 +1011,13 @@ function toggleDropdown(currentUrl) {
                 simulateSelectBoxEvent();
         }
     } else if (currentUrl.includes('orders')) {
-        if (jQ('#bo_basket-form').length > 0) {
-            debug('found send order form');
-            //jQ('#bo_basket-form').remove();
-            //g_tradingBasket.splice(0, g_tradingBasket.length);
-            //navigator.clipboard.writeText("");
-            updateOrderButtons();
-        } else {
-            debug('showing send order form');
-            showSendOrderButton();
-        }
+        // if (jQ('#bo_basket-form').length > 0) {
+        //     debug('found send order form');
+        //     updateOrderButtons();
+        // } else {
+        //     debug('showing send order form');
+        //     showSendOrderButton();
+        // }
     }
 }
 
