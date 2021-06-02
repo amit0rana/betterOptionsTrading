@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.04
+// @version      3.05
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -790,6 +790,7 @@ function hideDropdown() {
     if (g_positionsPnlObserver) g_positionsPnlObserver.disconnect();
 }
 
+waitForKeyElements("#app > div.container.wrapper > div.container-right > div > div > section.open-positions.table-wrapper > div > div > table > thead > tr > th.select",showPositionDropdown);
 
 function showPositionDropdown(retry = true) {
     jQ("#misNotificationId").remove();
@@ -802,7 +803,9 @@ function showPositionDropdown(retry = true) {
     if (allPositionsRow.length < 1) {
         debug('sleeping as couldnt find positions');
         //TODO if no positions this will cause loop
-        setTimeout(function(){ showPositionDropdown(false); }, 1000);
+        if (retry) {
+            setTimeout(function(){ showPositionDropdown(false); }, 1000);
+        }
         return;
     }
 
@@ -1039,7 +1042,7 @@ function simulateSelectBoxEvent() {
                 tagSelectorH.dispatchEvent(new Event("change"));
             } else {
                 debug('sleeping as couldnt find holding');
-                setTimeout(function(){ simulateSelectBoxEvent(); }, 1000);
+                //setTimeout(function(){ simulateSelectBoxEvent(); }, 1000);
             }
         }
     } else if (currentUrl.includes('positions')) {
@@ -1052,7 +1055,7 @@ function simulateSelectBoxEvent() {
                 tagSelectorP.dispatchEvent(new Event("change"));
             } else {
                 debug('sleeping as couldnt find positions');
-                setTimeout(function(){ simulateSelectBoxEvent(); }, 2000);
+                //setTimeout(function(){ simulateSelectBoxEvent(); }, 2000);
             }
         }
     }
@@ -1897,7 +1900,7 @@ function showSendOrderButton() {
     if (jQ("div.container.wrapper > div.container-right > div.page-nav").length < 1) {
         debug('sleeping as couldnt find order div');
 
-        setTimeout(function(){ jQ("div.container.wrapper > div.container-right > div.page-nav").append(div); }, 1100);
+        //setTimeout(function(){ jQ("div.container.wrapper > div.container-right > div.page-nav").append(div); }, 1100);
         return;
     }
 
