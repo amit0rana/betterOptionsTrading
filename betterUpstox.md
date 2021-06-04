@@ -1,5 +1,6 @@
 # betterUpstox
 
+June 4 21
 I have stopped trading on Upstox so this script is not updated. I am told it doesn't work anymore.
 
 This userscript adds simple features on https://pro.upstox.com/trading UI
