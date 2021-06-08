@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterSensibull
 // @namespace    https://github.com/amit0rana/betterSensibull
-// @version      0.08
+// @version      0.09
 // @description  Introduces small features on top of sensibull
 // @author       Amit
 // @match        https://web.sensibull.com/*
@@ -10,7 +10,7 @@
 // @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
-// @require      https://github.com/amit0rana/betterOptionsTrading/raw/master/common.js
+// @require      https://raw.githubusercontent.com/amit0rana/betterOptionsTrading/master/betterCommon.js
 // @require      https://raw.githubusercontent.com/amit0rana/MonkeyConfig/master/monkeyconfig.js
 // @require      https://gist.github.com/raw/2625891/waitForKeyElements.js
 // @downloadURL  https://github.com/amit0rana/betterOptionsTrading/raw/master/betterSensibull.user.js
@@ -23,10 +23,6 @@ var context = window, options = "{    anonymizeIp: true,    colorDepth: true,   
 //window.jQ=jQuery.noConflict(true);
 const VERSION = "v0.07";
 const PRO_MODE = false;
-
-const reloadPage = function (values) {
-    window.location.reload();
-}
 
 const g_config = new MonkeyConfig({
     title: 'betterSensibull Settings',
@@ -42,6 +38,7 @@ const g_config = new MonkeyConfig({
     }
 });
 const D_LEVEL = g_config.get('logging');
+
 const allDOMPaths = {
     //document.querySelector("#builder-left-col-scrolling-div > div.style__StrategyTradesCardsWrapper-sc-1t5habn-5.TJqrp > div.style__SecondaryActionWrapper-sc-1t5habn-11.jFcNKY > div.style__LegsHeader-sc-1t5habn-91.kGUWbs")
     domForPlacingToggleSelectBox: "#builder-left-col-scrolling-div > div.style__StrategyTradesCardsWrapper-sc-1t5habn-5.TJqrp > div.style__SecondaryActionWrapper-sc-1t5habn-11.jFcNKY > div.style__LegsHeader-sc-1t5habn-91.kGUWbs",
@@ -51,12 +48,17 @@ const allDOMPaths = {
     domForStrategySuggestions: '#app > div > div.page-sidebar-is-open.sn-page--builder.style__AppWrapper-djPJnZ.gvrWYn > div.sn-l__app-content.style__AppContent-haAgYm.korEfl > div.style__ContainerSpacing-kZpkBx.kJeLXd > div > div.style__BuilderWrapper-hHFjHn.nAQhs > div.style__BuilderColRight-jAAkJD.hbmLzB > div.style__BuilderPresetStrategiesWrapper-iJakRq.jDHsHZ',
     domForCheckbox: 'span > span:nth-child(1) > input'
 };
-
-$(document).on('click', allDOMPaths.domForPlacingToggleSelectBox, function () {
-    debug('onclick');
+/
+waitForKeyElements(allDOMPaths.domForPlacingToggleSelectBox, function () {
+    console.log('onwait');
+    main();
+});
+$(document).on('click', "#app > div > div.style__AppWrapper-gfb86b-0.kMpPMs.page-sidebar-is-open.sn-page--builder > div.style__NavBarWrapper-gfb86b-4.Jdjhy.sn-l__navBar-wrapper > div > div:nth-child(2) > div > div:nth-child(1) > div", function () {
+    console.log('onclick');
 
     main();
 });
+
 
 
 // all behavior related actions go here.
@@ -80,9 +82,6 @@ function main() {
 
     var expiryArray = [];
     rows.each(function (rowIndex) {
-        //console.log($(this));
-        //console.log($(this).find(allDOMPaths.domForPositionExpiry).length);
-        //console.log($(this).find(allDOMPaths.domForPositionExpiry));
         var t = getExpiryText($(this).find(allDOMPaths.domForPositionExpiry).text());
         console.log('bs: t: ' + t);
         if (t && !expiryArray.includes(t)) {
