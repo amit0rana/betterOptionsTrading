@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterSensibull
 // @namespace    https://github.com/amit0rana/betterSensibull
-// @version      0.08
+// @version      0.00
 // @description  Introduces small features on top of sesibull
 // @author       Amit
 // @match        https://web.sensibull.com/*
