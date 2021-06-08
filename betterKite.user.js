@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.06
+// @version      3.07
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -151,10 +151,12 @@ function initHoldings() {
 
 function getSensibullZerodhaTradingSymbol(original) {
     //BANKNIFTY JUN 30000 PE NFO
+    //BHARTIARTL JUN FUT NFO
     debug(`getSensibullZerodhaTradingSymbol ${original}`)
     var ts = original.split(" ");
     if (ts[2] == 'FUT') {
         debug('FUT');
+        return `${ts[0]} ${getLastThursday(ts[1])} ${ts[2]}`;
     } else if (ts[2] == "w") {
         debug('weekly');
         return `${ts[0]} ${ts[1].match(/\d+/)[0].padStart(2,0)}${ts[3]} ${ts[4]} ${ts[5]}`;
@@ -1222,7 +1224,7 @@ if(tokens[2] === "FUT") {
 } else {
     if (tokens[2] === "w") {
         //eg: NIFTY2140814200CE (NIFTY 8th w APR 14200 CE NFO LABELS)
-        
+
         data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${moment(new Date(tokens[3]+' 1 '+(new Date()).getFullYear())).format("M")}${tokens[1].match(/\d+/)[0].padStart(2,0)}${tokens[4]}${tokens[5]}`;
         data.exchange = `${tokens[6]}`;
     } else {
