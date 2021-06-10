@@ -48,7 +48,7 @@ const allDOMPaths = {
     domForStrategySuggestions: '#app > div > div.page-sidebar-is-open.sn-page--builder.style__AppWrapper-djPJnZ.gvrWYn > div.sn-l__app-content.style__AppContent-haAgYm.korEfl > div.style__ContainerSpacing-kZpkBx.kJeLXd > div > div.style__BuilderWrapper-hHFjHn.nAQhs > div.style__BuilderColRight-jAAkJD.hbmLzB > div.style__BuilderPresetStrategiesWrapper-iJakRq.jDHsHZ',
     domForCheckbox: 'span > span:nth-child(1) > input'
 };
-/
+
 waitForKeyElements(allDOMPaths.domForPlacingToggleSelectBox, function () {
     console.log('onwait');
     main();
