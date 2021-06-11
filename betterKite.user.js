@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.07
+// @version      3.08
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -25,7 +25,7 @@
 var context=window,options="{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}";const hhistory=context.history,doc=document,nav=navigator||{},storage=localStorage,encode=encodeURIComponent,pushState=hhistory.pushState,typeException="exception",generateId=()=>Math.random().toString(36),getId=()=>(storage.cid||(storage.cid=generateId()),storage.cid),serialize=e=>{var t=[];for(var o in e)e.hasOwnProperty(o)&&void 0!==e[o]&&t.push(encode(o)+"="+encode(e[o]));return t.join("&")},track=(e,t,o,n,i,a,r)=>{const c="https://www.google-analytics.com/collect",s=serialize({v:"1",ds:"web",aip:options.anonymizeIp?1:void 0,tid:"UA-176741575-1",cid:getId(),t:e||"pageview",sd:options.colorDepth&&screen.colorDepth?`${screen.colorDepth}-bits`:void 0,dr:doc.referrer||void 0,dt:doc.title,dl:doc.location.origin+doc.location.pathname+doc.location.search,ul:options.language?(nav.language||"").toLowerCase():void 0,de:options.characterSet?doc.characterSet:void 0,sr:options.screenSize?`${(context.screen||{}).width}x${(context.screen||{}).height}`:void 0,vp:options.screenSize&&context.visualViewport?`${(context.visualViewport||{}).width}x${(context.visualViewport||{}).height}`:void 0,ec:t||void 0,ea:o||void 0,el:n||void 0,ev:i||void 0,exd:a||void 0,exf:void 0!==r&&!1==!!r?0:void 0});if(nav.sendBeacon)nav.sendBeacon(c,s);else{var d=new XMLHttpRequest;d.open("POST",c,!0),d.send(s)}},tEv=(e,t,o,n)=>track("event",e,t,o,n),tEx=(e,t)=>track(typeException,null,null,null,null,e,t);hhistory.pushState=function(e){return"function"==typeof history.onpushstate&&hhistory.onpushstate({state:e}),setTimeout(track,options.delay||10),pushState.apply(hhistory,arguments)},track(),context.ma={tEv:tEv,tEx:tEx};
 
 window.jQ=jQuery.noConflict(true);
-const VERSION = "v3.07";
+const VERSION = "v3.08";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -682,9 +682,9 @@ function createPositionsDropdown() {
                 //END work on Positions Day history AREA
             });
 
-            jQ("#misCoundId").text("("+misCount+")");
-            jQ("#peCountId").text("("+peCount+")");
-            jQ("#ceCountId").text("("+ceCount+")");
+            jQ("#misCoundId").text("MIS ("+misCount+")");
+            jQ("#peCountId").text("PE ("+peCount+")");
+            jQ("#ceCountId").text("CE ("+ceCount+")");
 
             calculateMargin(selection).then(margin=>{
                 updatePositionInfo(countPositionsDisplaying, pnl, margin);
@@ -739,7 +739,7 @@ function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
 
 function createMisFilter() {
     debug('createMisFilter');
-    var s = jQ("<span id='misNotificationId' class='randomClassToHelpHide' style='font-size: 10px;margin: 0px 10px; border-left: 1px solid rgb(224, 224, 224); padding: 10px 10px;'>Show only <span  class='text-label red randomClassToHelpHide'>MIS</span></span>");
+    var s = jQ("<span id='headerSubActionsID' class='text-label grey randomClassToHelpHide' >Actions: <span  id='misCoundId' class='text-label red randomClassToHelpHide'>MIS</span></span>");
 
     var i = document.createElement("INPUT");
     i.style = 'margin: 5px';
@@ -751,10 +751,10 @@ function createMisFilter() {
 
     jQ(s).append(i);
 
-    jQ(s).append("<span id='misCoundId'></span>");
+    //jQ(s).append("<span id='misCoundId'></span>");
 
     //PE only
-    var t = jQ("<span id='peNotificationId' class='text-label red randomClassToHelpHide'>PE</span>");
+    var t = jQ("<span id='peCountId' class='text-label red randomClassToHelpHide'>PE</span>");
     i = document.createElement("INPUT");
     i.style = 'margin: 5px';
     i.type = 'checkbox';
@@ -763,13 +763,14 @@ function createMisFilter() {
     i.value='SHOWPEONLY';
     i.checked = g_showOnlyPEPositions;
 
-    jQ(t).append(i);
+    // jQ(t).append(i);
 
-    jQ(t).append("<span id='peCountId'></span>");
+    // jQ(t).append("<span id='peCountId'></span>");
     jQ(s).append(t);
+    jQ(s).append(i);
 
     //CE only
-    t = jQ("<span id='peNotificationId' class='text-label red randomClassToHelpHide'>CE</span>");
+    t = jQ("<span id='ceCountId' class='text-label red randomClassToHelpHide'>CE</span>");
     i = document.createElement("INPUT");
     i.style = 'margin: 5px';
     i.type = 'checkbox';
@@ -778,10 +779,27 @@ function createMisFilter() {
     i.value='SHOWCEONLY';
     i.checked = g_showOnlyCEPositions;
 
-    jQ(t).append(i);
+    // jQ(t).append(i);
 
-    jQ(t).append("<span id='ceCountId'></span>");
+    // jQ(t).append("<span id='ceCountId'></span>");
     jQ(s).append(t);
+    jQ(s).append(i);
+
+    //Select all
+    t = jQ("<span id='spanselectAllId' class='text-label red randomClassToHelpHide'>|</span>");
+    i = document.createElement("INPUT");
+    i.style = 'margin: 5px';
+    i.type = 'button';
+    i.id = "selectAllId";
+    i.name='selectAllId';
+    i.value='Toggle Selection';
+    i.checked = false;
+
+    // jQ(t).append(i);
+
+    // jQ(t).append("<span id='peCountId'></span>");
+    jQ(s).append(t);
+    jQ(s).append(i);
 
     return s;
 }
@@ -801,7 +819,7 @@ function hideDropdown() {
 waitForKeyElements("#app > div.container.wrapper > div.container-right > div > div > section.open-positions.table-wrapper > div > div > table > thead > tr > th.select",showPositionDropdown);
 
 function showPositionDropdown(retry = true) {
-    jQ("#misNotificationId").remove();
+    jQ("#headerSubActionsID").remove();
     jQ("div.positions > section.open-positions.table-wrapper > header > h3").after(createMisFilter());
 
     debug('showPositionDropdown');
@@ -1292,6 +1310,100 @@ function updatePnl(forPositions = true) {
     }
 }
 
+function onSuCheckboxSelection() {
+    tEv("kite","positionscheckbox","click","");
+    debug('select su-checkbox changed');
+    var selectedRows = jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr.selected");
+
+    var pnl = 0;
+    var maxPnl = 0;
+    var peQ = 0;
+    var ceQ = 0;
+    var points = 0;
+    var selection = [];
+    debug(`su- selected rows: ${selectedRows.length}`);
+    selectedRows.each(function(rowIndex) {
+        var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
+
+        pnl += parseFloat(v);
+
+        var instrument = jQ(jQ(this).find("td")[2]).text();
+        debug(instrument);
+        if (instrument.includes('NSE') || instrument.includes('BSE')) {
+            return;
+        }
+        var q = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
+        if (instrument.includes(' CE')) {
+            ceQ = ceQ + q;
+        } else if (instrument.includes(' PE')) {
+            peQ = peQ + q;
+        }
+
+        var avgPrice = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
+        var value = q * avgPrice;
+        maxPnl = maxPnl - value;
+
+        if (q > 0) {
+            points = points + avgPrice;
+        } else {
+            points = points - avgPrice;
+        }
+
+        var product = jQ(jQ(this).find("td")[1]).text();
+        var data = getMarginCalculationData(instrument, product, q, avgPrice);
+        if (data != null) {
+            selection.push(data);
+        }
+    });
+
+    var tag = jQ("span[random-att='temppnl']");
+    if (tag.length > 0) {
+        tag.remove();
+    }
+    tag = jQ("span[random-att='marginsave']");
+    if (tag.length > 0) {
+        tag.remove();
+    }
+
+    if (selectedRows.length > 0 ) {
+      calculateMargin(selection).then(margin=>{
+          if (selectedRows.length>0) {
+              if (ceQ > peQ) {
+
+                } else if (peQ > ceQ) {
+
+                }
+                var t = ceQ+"CE & "+peQ+"PE";
+                var pnlText = "";
+                if (pnl > 0) {
+                    pnlText = "<span random-att='temppnl' class='text-green open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl);
+                } else {
+                    pnlText = "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl);
+
+                }
+                pnlText += "<br><span class='text-label randomClassToHelpHide'>Max Profit: "+formatter.format(maxPnl)+ " / "+ (maxPnl/margin*100).toFixed(2) +"%</span>";
+                pnlText += "<br><span class='text-label randomClassToHelpHide'>% Profit achieved: "+(pnl/maxPnl*100).toFixed(2)+"% </span>";
+                if (margin >= 0) {
+                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Margin: "+formatter.format(margin)+"</span>";
+                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Current ROI: "+(pnl/margin*100).toFixed(2)+"% </span>";
+                }
+                pnlText += "</span>";
+
+                var mTag = jQ("span[random-att='marginsave']");
+                if (mTag.length > 0) {
+                    mTag.remove();
+                }
+                mTag = jQ("span[random-att='temppnl']");
+                if (mTag.length > 0) {
+                    mTag.remove();
+                }                    jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append("<span random-att='marginsave' class='pnl randomClassToHelpHide'> "+t+" (Points: "+formatter.format(points)+")</span>");
+                jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append(pnlText);
+            }
+        });
+    }
+
+}
+
 // all behavior related actions go here.
 function main() {
 GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
@@ -1327,6 +1439,29 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
 
         info(filterValue + g_showOnlyCEPositions);
         simulateSelectBoxEvent();
+    });
+    
+    //click of select all filter
+    jQ(document).on('click',"#selectAllId", function(){
+        tEv("kite","selectAllFilter","click","");
+        var allVisibleRows = jQ(allDOMPaths.PathForPositions+":visible");
+       
+        debug('found visible rows: ' + allVisibleRows.length);
+
+        jQ(document).off('change', "input.su-checkbox", onSuCheckboxSelection);
+
+        var lastOne;
+        allVisibleRows.each(function(rowIndex) {
+            lastOne = jQ(this).find('input.su-checkbox');
+            lastOne.click();
+        });
+
+        //lastOne.trigger('change');
+        setTimeout(onSuCheckboxSelection, 10);
+
+        jQ(document).on('change', "input.su-checkbox", onSuCheckboxSelection);
+        
+        //simulateSelectBoxEvent();
     });
 
     //click of PE filter
@@ -1493,95 +1628,9 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
         });
     });
 
+
     //whenever selection in position row changes.
-    jQ(document).on('change', "input.su-checkbox", function () {
-        tEv("kite","positionscheckbox","click","");
-        var selectedRows = jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr.selected");
-
-        var pnl = 0;
-        var maxPnl = 0;
-        var peQ = 0;
-        var ceQ = 0;
-        var points = 0;
-        var selection = [];
-        selectedRows.each(function(rowIndex) {
-            var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
-
-            pnl += parseFloat(v);
-
-            var instrument = jQ(jQ(this).find("td")[2]).text();
-            debug(instrument);
-            if (instrument.includes('NSE') || instrument.includes('BSE')) {
-                return;
-            }
-            var q = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
-            if (instrument.includes(' CE')) {
-                ceQ = ceQ + q;
-            } else if (instrument.includes(' PE')) {
-                peQ = peQ + q;
-            }
-
-            var avgPrice = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
-            var value = q * avgPrice;
-            maxPnl = maxPnl - value;
-
-            if (q > 0) {
-                points = points + avgPrice;
-            } else {
-                points = points - avgPrice;
-            }
-
-            var product = jQ(jQ(this).find("td")[1]).text();
-            var data = getMarginCalculationData(instrument, product, q, avgPrice);
-            if (data != null) {
-                selection.push(data);
-            }
-        });
-
-        var tag = jQ("span[random-att='temppnl']");
-        if (tag.length > 0) {
-            tag.remove();
-        }
-        tag = jQ("span[random-att='marginsave']");
-        if (tag.length > 0) {
-            tag.remove();
-        }
-
-        if (selectedRows.length > 0 ) {
-          calculateMargin(selection).then(margin=>{
-              if (selectedRows.length>0) {
-                  if (ceQ > peQ) {
-
-                    } else if (peQ > ceQ) {
-
-                    }
-                    var t = ceQ+"CE & "+peQ+"PE";
-                    var pnlText = "";
-                    if (pnl > 0) {
-                        pnlText = "<span random-att='temppnl' class='text-green open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl);
-                    } else {
-                        pnlText = "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl);
-
-                    }
-                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Max Profit: "+formatter.format(maxPnl)+ " / "+ (maxPnl/margin*100).toFixed(2) +"%</span>";
-                    pnlText += "<br><span class='text-label randomClassToHelpHide'>% Profit achieved: "+(pnl/maxPnl*100).toFixed(2)+"% </span>";
-                    if (margin >= 0) {
-                        pnlText += "<br><span class='text-label randomClassToHelpHide'>Margin: "+formatter.format(margin)+"</span>";
-                        pnlText += "<br><span class='text-label randomClassToHelpHide'>Current ROI: "+(pnl/margin*100).toFixed(2)+"% </span>";
-                    }
-                    pnlText += "</span>";
-
-                    var mTag = jQ("span[random-att='marginsave']");
-                    if (mTag.length > 0) {
-                        mTag.remove();
-                    }
-                    jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append("<span random-att='marginsave' class='pnl randomClassToHelpHide'> "+t+" (Points: "+formatter.format(points)+")</span>");
-                    jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append(pnlText);
-                }
-            });
-        }
-
-    });
+    jQ(document).on('change', "input.su-checkbox", onSuCheckboxSelection);
 
     //fire hide/show logic if history/url changes.
     var pushState = history.pushState;
