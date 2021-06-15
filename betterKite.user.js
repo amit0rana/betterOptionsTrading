@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.08
+// @version      3.09
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -25,7 +25,7 @@
 var context=window,options="{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}";const hhistory=context.history,doc=document,nav=navigator||{},storage=localStorage,encode=encodeURIComponent,pushState=hhistory.pushState,typeException="exception",generateId=()=>Math.random().toString(36),getId=()=>(storage.cid||(storage.cid=generateId()),storage.cid),serialize=e=>{var t=[];for(var o in e)e.hasOwnProperty(o)&&void 0!==e[o]&&t.push(encode(o)+"="+encode(e[o]));return t.join("&")},track=(e,t,o,n,i,a,r)=>{const c="https://www.google-analytics.com/collect",s=serialize({v:"1",ds:"web",aip:options.anonymizeIp?1:void 0,tid:"UA-176741575-1",cid:getId(),t:e||"pageview",sd:options.colorDepth&&screen.colorDepth?`${screen.colorDepth}-bits`:void 0,dr:doc.referrer||void 0,dt:doc.title,dl:doc.location.origin+doc.location.pathname+doc.location.search,ul:options.language?(nav.language||"").toLowerCase():void 0,de:options.characterSet?doc.characterSet:void 0,sr:options.screenSize?`${(context.screen||{}).width}x${(context.screen||{}).height}`:void 0,vp:options.screenSize&&context.visualViewport?`${(context.visualViewport||{}).width}x${(context.visualViewport||{}).height}`:void 0,ec:t||void 0,ea:o||void 0,el:n||void 0,ev:i||void 0,exd:a||void 0,exf:void 0!==r&&!1==!!r?0:void 0});if(nav.sendBeacon)nav.sendBeacon(c,s);else{var d=new XMLHttpRequest;d.open("POST",c,!0),d.send(s)}},tEv=(e,t,o,n)=>track("event",e,t,o,n),tEx=(e,t)=>track(typeException,null,null,null,null,e,t);hhistory.pushState=function(e){return"function"==typeof history.onpushstate&&hhistory.onpushstate({state:e}),setTimeout(track,options.delay||10),pushState.apply(hhistory,arguments)},track(),context.ma={tEv:tEv,tEx:tEx};
 
 window.jQ=jQuery.noConflict(true);
-const VERSION = "v3.08";
+const VERSION = "v3.09";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -816,7 +816,7 @@ function hideDropdown() {
     if (g_positionsPnlObserver) g_positionsPnlObserver.disconnect();
 }
 
-waitForKeyElements("#app > div.container.wrapper > div.container-right > div > div > section.open-positions.table-wrapper > div > div > table > thead > tr > th.select",showPositionDropdown);
+//waitForKeyElements("#app > div.container.wrapper > div.container-right > div > div > section.open-positions.table-wrapper > div > div > table > thead > tr > th.select",showPositionDropdown);
 
 function showPositionDropdown(retry = true) {
     jQ("#headerSubActionsID").remove();
@@ -845,13 +845,13 @@ function showPositionDropdown(retry = true) {
 
     var lastC = positionGroupdropdown.lastChild;
     debug(lastC);
-    if (lastC.id == "randomForDeleteOptGroupE") {
+    if (lastC && lastC.id == "randomForDeleteOptGroupE") {
         positionGroupdropdown.removeChild(lastC);
     }
 
     lastC = positionGroupdropdown.lastChild;
     debug(lastC);
-    if (lastC.id == "randomForDeleteOptGroup") {
+    if (lastC && lastC.id == "randomForDeleteOptGroup") {
         positionGroupdropdown.removeChild(lastC);
     }
 
@@ -1440,12 +1440,12 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
         info(filterValue + g_showOnlyCEPositions);
         simulateSelectBoxEvent();
     });
-    
+
     //click of select all filter
     jQ(document).on('click',"#selectAllId", function(){
         tEv("kite","selectAllFilter","click","");
         var allVisibleRows = jQ(allDOMPaths.PathForPositions+":visible");
-       
+
         debug('found visible rows: ' + allVisibleRows.length);
 
         jQ(document).off('change', "input.su-checkbox", onSuCheckboxSelection);
@@ -1460,7 +1460,7 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
         setTimeout(onSuCheckboxSelection, 10);
 
         jQ(document).on('change', "input.su-checkbox", onSuCheckboxSelection);
-        
+
         //simulateSelectBoxEvent();
     });
 
@@ -2039,7 +2039,9 @@ function introducePnlFilter() {
 
 //sensibull inside kite
 //watching for 'do more with strategy builder' link
-waitForKeyElements ('#app > div > div > div > div > div > div > div.style__RightContentWrapper-t0trse-29.gEQfiX > div.style__ExternalLinkWrapper-t0trse-44.hsUdKE > a.style__BuilderRedirectLink-t0trse-31.dSNmpD', sensibull);
+//waitForKeyElements ('.style__BuilderRedirectLink-t0trse-30', sensibull);
+waitForKeyElements ("a:contains('Do more with Strategy Builder')", sensibull);
+
 var previousArray = [];
 function sensibull(firstTry = true) {
     debug('sensibull');
@@ -2085,7 +2087,7 @@ function sensibull(firstTry = true) {
     }
     jQ('#toggleSelectboxID').remove();
     //document.querySelector("")
-    jQ( "#app > div > div > div > div > div > div > div.style__LeftContentWrapper-t0trse-21.kQiWSc > div.style__TradesTableWrapper-t0trse-35.bKtisg > thead > tr > th.MuiTableCell-root.jss27.MuiTableCell-head > span:nth-child(2)").after(selectBox);
+    jQ("span:contains('F&O Instruments')").after(selectBox);
 
     selectBox.addEventListener("change", function() {
         tEv("kite","positions","sensibull","expiry-filter");
@@ -2119,7 +2121,7 @@ function sensibull(firstTry = true) {
     };
 
     jQ('#userStrategiesId').remove();
-    jQ("#app > div > div > div > div > div > div > div.style__RightContentWrapper-t0trse-29.gEQfiX > div.style__StyledBrandLogo-t0trse-8.style__StyledBrandLogoSuccessPage-t0trse-9.iFquEa.cMHbVS").before(strategySelectBox);
+    jQ(".style__StyledBrandLogo-t0trse-8").before(strategySelectBox);
 
     strategySelectBox.addEventListener("change", function() {
         tEv("kite","positions","sensibull","strategy-filter");
