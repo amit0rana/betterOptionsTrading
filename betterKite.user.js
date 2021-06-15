@@ -2210,4 +2210,4 @@ jQ.fn.exists = function () {
     return this.length !== 0;
 }
 
-tEv("kite","visit","main","");
+tEv("kite","visit","main",VERSION);
