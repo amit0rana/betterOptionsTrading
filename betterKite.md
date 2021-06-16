@@ -1,6 +1,9 @@
 # betterKite
 
-Very simple "userscript" which adds following features to kite.zerodha.com ui
+Very simple "userscript" which adds several features to kite.zerodha.com ui
+* Group positions under strategies
+* See P&L for each strategy
+* See margin utilised for each position or for a strategy
 
 ------
 Contributors
