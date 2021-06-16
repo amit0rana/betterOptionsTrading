@@ -5,7 +5,7 @@ Very simple "userscript" which adds several features to kite.zerodha.com ui
 * See P&L for each strategy
 * See margin utilised for each position or for a strategy
 * Margin calculation is done by 2 methods. If you use 'baseket' method (this is default) then no further action needed but if youw ant to use 'Margin Calculator' method then you need to enable CORS. Choosing which method is available in settings. 
-* Check this video on enabling CORS:
+* Check this image on enabling CORS:
 ![corsusage](https://dl.dropbox.com/s/mbktrw9dkqu4wl0/corsToggle.png?dl=0)
 
 ------
@@ -28,6 +28,10 @@ Follow below mentioned steps
 * ![dashboard sample](https://dl.dropbox.com/s/blv2j9t8e6iohkt/dashboardSample.png?dl=0)
 * Now just go to <https://kite.zerodha.com> (refresh the page if its already open) and start using.
 * Verify that your version should be more than v2.00. Click on Tempermonkey icon, you will see version in the 'Reset Data (WARNING) menu item.
+* Below plugin is required only if you want to use Margin Calculator methods* Install CORS plugin for your browser.
+  * Firefox: https://addons.mozilla.org/en-US/firefox/addon/access-control-allow-origin/
+  * Edge: https://microsoftedge.microsoft.com/addons/detail/allow-cors-accesscontro/bhjepjpgngghppolkjdhckmnfphffdag?hl=en-GB
+  * chrome: https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf 
 
 ------
 # https://kite.zerodha.com/positions page
