@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.09
+// @version      3.10
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -22,10 +22,10 @@
 // @updateURL    https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.meta.js
 // ==/UserScript==
 
-var context=window,options="{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}";const hhistory=context.history,doc=document,nav=navigator||{},storage=localStorage,encode=encodeURIComponent,pushState=hhistory.pushState,typeException="exception",generateId=()=>Math.random().toString(36),getId=()=>(storage.cid||(storage.cid=generateId()),storage.cid),serialize=e=>{var t=[];for(var o in e)e.hasOwnProperty(o)&&void 0!==e[o]&&t.push(encode(o)+"="+encode(e[o]));return t.join("&")},track=(e,t,o,n,i,a,r)=>{const c="https://www.google-analytics.com/collect",s=serialize({v:"1",ds:"web",aip:options.anonymizeIp?1:void 0,tid:"UA-176741575-1",cid:getId(),t:e||"pageview",sd:options.colorDepth&&screen.colorDepth?`${screen.colorDepth}-bits`:void 0,dr:doc.referrer||void 0,dt:doc.title,dl:doc.location.origin+doc.location.pathname+doc.location.search,ul:options.language?(nav.language||"").toLowerCase():void 0,de:options.characterSet?doc.characterSet:void 0,sr:options.screenSize?`${(context.screen||{}).width}x${(context.screen||{}).height}`:void 0,vp:options.screenSize&&context.visualViewport?`${(context.visualViewport||{}).width}x${(context.visualViewport||{}).height}`:void 0,ec:t||void 0,ea:o||void 0,el:n||void 0,ev:i||void 0,exd:a||void 0,exf:void 0!==r&&!1==!!r?0:void 0});if(nav.sendBeacon)nav.sendBeacon(c,s);else{var d=new XMLHttpRequest;d.open("POST",c,!0),d.send(s)}},tEv=(e,t,o,n)=>track("event",e,t,o,n),tEx=(e,t)=>track(typeException,null,null,null,null,e,t);hhistory.pushState=function(e){return"function"==typeof history.onpushstate&&hhistory.onpushstate({state:e}),setTimeout(track,options.delay||10),pushState.apply(hhistory,arguments)},track(),context.ma={tEv:tEv,tEx:tEx};
+var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
-window.jQ=jQuery.noConflict(true);
-const VERSION = "v3.09";
+window.jQ = jQuery.noConflict(true);
+const VERSION = "v3.10";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -33,12 +33,15 @@ const GMRefTradeName = "BK_REF_TRADES";
 const DD_NONE = '';
 const DD_HOLDINGS = 'H';
 const DD_POSITONS = 'P';
+const MM_BASKET = 'MM_BASKET';
+const MM_CALC = 'MM_CALC';
 var g_dropdownDisplay = DD_NONE;
 var g_showOnlyMISPositions = false;
 var g_showOnlyPEPositions = false;
 var g_showOnlyCEPositions = false;
+const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-var g_color = ( (jQ('html').attr('data-theme') == 'dark') ? '#191919' : 'white' );
+var g_color = ((jQ('html').attr('data-theme') == 'dark') ? '#191919' : 'white');
 
 const g_config = new MonkeyConfig({
     title: 'betterKite Settings',
@@ -53,13 +56,19 @@ const g_config = new MonkeyConfig({
             type: 'checkbox',
             default: false
         },
+        margin_method: {
+            type: 'select',
+            choices: ['Basket', 'Calculator'],
+            values: [MM_BASKET, MM_CALC],
+            default: MM_BASKET
+        },
         filter_watchlist: {
             type: 'checkbox',
             default: true
         },
         logging: {
             type: 'select',
-            choices: [ 'Info','Debug'],
+            choices: ['Info', 'Debug'],
             values: [D_LEVEL_INFO, D_LEVEL_DEBUG],
             default: D_LEVEL_INFO
         },
@@ -71,23 +80,24 @@ const g_config = new MonkeyConfig({
 });
 const D_LEVEL = g_config.get('logging');
 const PRO_MODE = g_config.get('pro_mode');
+const MARGIN_METHOD = g_config.get('margin_method');
 
 const allDOMPaths = {
-    rowsFromHoldingsTable : "div.holdings > section > div > div > table > tbody > tr",
-    attrNameForInstrumentTR : "data-uid",
-    tradingSymbol : "td.instrument > span.tradingsymbol",
-    domPathWatchlistRow : "div.instruments > div > div.vddl-draggable.instrument",
-    domPathPendingOrdersTR : "div.pending-orders > div > table > tbody > tr",
-    domPathExecutedOrdersTR : "div.completed-orders > div > table > tbody > tr",
-    domPathTradingSymbolInsideOrdersTR : "span.tradingsymbol > span",
-    domPathStockNameInWatchlistRow : "span.nice-name",
-    domPathMainInitiatorLabel : "h3.page-title.small > span",
-    domPathTabToChangeWatchlist : "ul.marketwatch-selector.list-flat > li",
-    PathForPositions : "div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr",
-    domPathForPositionsDayHistory : "div.positions > section.day-positions.table-wrapper > div > div > table > tbody > tr",
+    rowsFromHoldingsTable: "div.holdings > section > div > div > table > tbody > tr",
+    attrNameForInstrumentTR: "data-uid",
+    tradingSymbol: "td.instrument > span.tradingsymbol",
+    domPathWatchlistRow: "div.instruments > div > div.vddl-draggable.instrument",
+    domPathPendingOrdersTR: "div.pending-orders > div > table > tbody > tr",
+    domPathExecutedOrdersTR: "div.completed-orders > div > table > tbody > tr",
+    domPathTradingSymbolInsideOrdersTR: "span.tradingsymbol > span",
+    domPathStockNameInWatchlistRow: "span.nice-name",
+    domPathMainInitiatorLabel: "h3.page-title.small > span",
+    domPathTabToChangeWatchlist: "ul.marketwatch-selector.list-flat > li",
+    PathForPositions: "div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr",
+    domPathForPositionsDayHistory: "div.positions > section.day-positions.table-wrapper > div > div > table > tbody > tr",
     positionHeader: "header.row.data-table-header > h3",
     sensibullRows: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > div > table > tbody > tr",
-    sensibullRowCheckbox : "th > div > span > span > input",
+    sensibullRowCheckbox: "th > div > span > span > input",
     sensibullScriptSelected: "#app > div > div > div > div > div > div > div.style__LeftContentWrapper-t0trse-21.kQiWSc > div.style__SearchableInstrumentWrapper-t0trse-10.duNZzV > div > button > span.MuiButton-label"
 };
 //sensibullScriptSelected: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(1) > div > button > span.MuiButton-label"
@@ -122,22 +132,22 @@ function initHoldings() {
     //Note: Zerodha may either display NSE stock or BSE stock so better to mention both for the stock.
 
     var defaultHoldings = {
-    "Dividend" : ["SJVN","VEDL"],
-    "Wealth Creators" : ["WHIRLPOOL","ICICIBANK",],
-    "Sell On profit" : ["LUMAXIND","RADICO","M&amp;M"]
+        "Dividend": ["SJVN", "VEDL"],
+        "Wealth Creators": ["WHIRLPOOL", "ICICIBANK",],
+        "Sell On profit": ["LUMAXIND", "RADICO", "M&amp;M"]
     };
-    var holdings = GM_getValue(GM_HOLDINGS_NAME,defaultHoldings);
+    var holdings = GM_getValue(GM_HOLDINGS_NAME, defaultHoldings);
 
     if (PRO_MODE) {
-        GM_registerMenuCommand("Set Holdings", function() {
-            var h = GM_getValue(GM_HOLDINGS_NAME,defaultHoldings);
+        GM_registerMenuCommand("Set Holdings", function () {
+            var h = GM_getValue(GM_HOLDINGS_NAME, defaultHoldings);
             h = prompt("Provide Holdings object. Eg: {'groupName 1':['INFY','RELIANCE'],'groupName 2':['M&amp;M','ICICIBANK']}", JSON.stringify(h));
             if (h == null) return;
             try {
                 holdings = JSON.parse(h);
-                GM_setValue(GM_HOLDINGS_NAME,holdings);
+                GM_setValue(GM_HOLDINGS_NAME, holdings);
             }
-            catch(err) {
+            catch (err) {
                 alert("There was error in your input");
                 debug(err);
             }
@@ -159,7 +169,7 @@ function getSensibullZerodhaTradingSymbol(original) {
         return `${ts[0]} ${getLastThursday(ts[1])} ${ts[2]}`;
     } else if (ts[2] == "w") {
         debug('weekly');
-        return `${ts[0]} ${ts[1].match(/\d+/)[0].padStart(2,0)}${ts[3]} ${ts[4]} ${ts[5]}`;
+        return `${ts[0]} ${ts[1].match(/\d+/)[0].padStart(2, 0)}${ts[3]} ${ts[4]} ${ts[5]}`;
     } else {
         return `${ts[0]} ${getLastThursday(ts[1])} ${ts[2]} ${ts[3]}`;
     }
@@ -169,29 +179,29 @@ function getSensibullZerodhaTradingSymbol(original) {
 function initPositions() {
     var defaultPositions = {
     };
-    var positions = GM_getValue(GMPositionsName,defaultPositions);
+    var positions = GM_getValue(GMPositionsName, defaultPositions);
 
     if (PRO_MODE) {
-        GM_registerMenuCommand("Option Strategies", function() {
-            var p = GM_getValue(GMPositionsName,defaultPositions);
+        GM_registerMenuCommand("Option Strategies", function () {
+            var p = GM_getValue(GMPositionsName, defaultPositions);
             p = prompt("Provide Positions object. Eg: {'strategy 1':['12304386','12311298'],'strategy 2':['12431106']}", JSON.stringify(p));
             if (p == null) return;
             try {
                 positions = JSON.parse(p);
-                GM_setValue(GMPositionsName,positions);
+                GM_setValue(GMPositionsName, positions);
             }
-            catch(err) {
+            catch (err) {
                 alert("There was error in your input");
             }
 
             window.location.reload();
         }, "p");
     }
-    GM_registerMenuCommand("Add to or Create new Strategy", function() {
+    GM_registerMenuCommand("Add to or Create new Strategy", function () {
         var selectedPositions = jQ(allDOMPaths.PathForPositions).filter(':has(:checkbox:checked)');
-        info("selected ps "+ selectedPositions.length);
+        info("selected ps " + selectedPositions.length);
 
-        var storedStrategies = GM_getValue(GMPositionsName,defaultPositions);
+        var storedStrategies = GM_getValue(GMPositionsName, defaultPositions);
         var keys = [];
         for (var k in storedStrategies) {
             keys.push(k);
@@ -204,13 +214,13 @@ function initPositions() {
             //msg = 'You have selected '+selectedPositions.length+' positions. Please provide name of the strategy. \n\nNOTE: (1) If strategy name exists then position will be added to the group. \n(2) If this is new name then new strategy will be created.';
         }
 
-        msg = 'Please tell your strategy name:\n\nNOTE: (1) If there is an existing strategy with same name then we will add selected position to same strategy. \n(2)If there is no strategy with this name then we will create a new one.\n\nYour existing strategies are: '+keys.toString();
+        msg = 'Please tell your strategy name:\n\nNOTE: (1) If there is an existing strategy with same name then we will add selected position to same strategy. \n(2)If there is no strategy with this name then we will create a new one.\n\nYour existing strategies are: ' + keys.toString();
 
         var strategyName = prompt(msg);
         if (strategyName == null) return;
         strategyName = strategyName.toUpperCase();
 
-        if(keys.includes(strategyName)) {
+        if (keys.includes(strategyName)) {
             var confirmAdd = confirm("This message is to confirm that there was no typo in strategy name.\n\nYou are adding to an **EXISTING** strategy.");
             if (confirmAdd == false) return;
         } else {
@@ -219,7 +229,7 @@ function initPositions() {
         }
 
         var positionArray = [];
-        selectedPositions.each(function(rowIndex) {
+        selectedPositions.each(function (rowIndex) {
             var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
 
             var text = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
@@ -231,19 +241,19 @@ function initPositions() {
 
         debug(JSON.stringify(storedStrategies));
 
-        if(keys.includes(strategyName)) {
+        if (keys.includes(strategyName)) {
             storedStrategies[strategyName] = storedStrategies[strategyName].concat(positionArray);
         } else {
             storedStrategies[strategyName] = positionArray;
         }
         debug(JSON.stringify(storedStrategies));
 
-        GM_setValue(GMPositionsName,storedStrategies);
+        GM_setValue(GMPositionsName, storedStrategies);
         window.location.reload();
     }, "s");
 
-    GM_registerMenuCommand("Delete A Strategy", function() {
-        var storedStrategies = GM_getValue(GMPositionsName,defaultPositions);
+    GM_registerMenuCommand("Delete A Strategy", function () {
+        var storedStrategies = GM_getValue(GMPositionsName, defaultPositions);
         var keys = [];
         for (var k in storedStrategies) {
             keys.push(k);
@@ -253,14 +263,14 @@ function initPositions() {
         if (strategyToDelete == null) return;
         strategyToDelete = strategyToDelete.toUpperCase();
 
-        if(keys.includes(strategyToDelete)) {
+        if (keys.includes(strategyToDelete)) {
             var confirmDelete = confirm("Deleting strategy " + strategyToDelete + "\n\nNOTE: Deletion does not have any impact on the Positions, this will simply delete strategy from the dropdown. Please confirm, name is correct?");
             if (confirmDelete == false) return;
 
             debug(JSON.stringify(storedStrategies));
             delete storedStrategies[strategyToDelete];
             debug(JSON.stringify(storedStrategies));
-            GM_setValue(GMPositionsName,storedStrategies);
+            GM_setValue(GMPositionsName, storedStrategies);
 
             window.location.reload();
         } else {
@@ -274,21 +284,21 @@ function initPositions() {
 
 function initReferenceTrades() {
     var defaultRefTrades = {
-    "RF.blue" : ["12304386","10397698"],
-    "MT.red" : ["11899650"]
+        "RF.blue": ["12304386", "10397698"],
+        "MT.red": ["11899650"]
     };
-    var referenceTrades = GM_getValue(GMRefTradeName,defaultRefTrades);
+    var referenceTrades = GM_getValue(GMRefTradeName, defaultRefTrades);
 
     if (PRO_MODE) {
-        GM_registerMenuCommand("Reference Trades & Martingales", function() {
-            var rt = GM_getValue(GMRefTradeName,defaultRefTrades);
+        GM_registerMenuCommand("Reference Trades & Martingales", function () {
+            var rt = GM_getValue(GMRefTradeName, defaultRefTrades);
             rt = prompt("Provide trades object. Eg: {'RF.blue':['12304386','12311298'],'MT.red':['12431106']}", JSON.stringify(rt));
             if (rt == null) return;
             try {
                 referenceTrades = JSON.parse(rt);
-                GM_setValue(GMRefTradeName,referenceTrades);
+                GM_setValue(GMRefTradeName, referenceTrades);
             }
-            catch(err) {
+            catch (err) {
                 alert("There was error in your input");
             }
 
@@ -301,13 +311,13 @@ function initReferenceTrades() {
 
 function assignHoldingTags() {
     jQ(allDOMPaths.rowsFromHoldingsTable).hover(
-        function() {
+        function () {
             if (jQ(this).find("span[random-att='tagAddBtn']").length < 1) {
                 var displayedStockName = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
-                jQ(this).find(".instrument.right-border").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='tagAddIcon' class='text-label grey randomClassToHelpHide' value='"+displayedStockName+"'>+</span></span>");
+                jQ(this).find(".instrument.right-border").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='tagAddIcon' class='text-label grey randomClassToHelpHide' value='" + displayedStockName + "'>+</span></span>");
             }
         },
-        function() {
+        function () {
             jQ(this).find("span[random-att='tagAddBtn']").remove();
         }
     );
@@ -318,21 +328,21 @@ function assignHoldingTags() {
     if (tagNameSpans.length < 1) {
 
         //add label indicating category of stock
-        jQ("td.instrument.right-border > span:nth-child(1)").each(function(rowIndex){
+        jQ("td.instrument.right-border > span:nth-child(1)").each(function (rowIndex) {
 
             var displayedStockName = this.innerHTML;
             if (displayedStockName.includes("-BE")) {
                 displayedStockName = displayedStockName.split("-BE")[0];
             }
 
-            for(var categoryName in holdings){
+            for (var categoryName in holdings) {
                 if (holdings[categoryName].includes(displayedStockName)) {
-                    jQ(this).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForTagDeleteAction' class='text-label blue randomClassToHelpHide' tag='"+categoryName+"' stock='"+displayedStockName+"'>"+categoryName+"</span>");
+                    jQ(this).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForTagDeleteAction' class='text-label blue randomClassToHelpHide' tag='" + categoryName + "' stock='" + displayedStockName + "'>" + categoryName + "</span>");
                 }
             }
 
         });
-    } else {debug('tags found');}
+    } else { debug('tags found'); }
 }
 
 function removeExtraCharsFromStockName(dataUidInTR, selectedCat) {
@@ -355,7 +365,7 @@ function filterWatchlist(stocksToFilter, selectedCat) {
     } else {
         allWatchlistRows.addClass("allHiddenRows");
 
-        allWatchlistRows.each(function(rowIndex){
+        allWatchlistRows.each(function (rowIndex) {
             var watchlistRowDiv = this;
             var stockName = jQ(watchlistRowDiv).find(allDOMPaths.domPathStockNameInWatchlistRow);
             var watchlistStock = stockName.text();
@@ -382,14 +392,14 @@ function createHoldingsDropdown() {
     var selectBox = document.createElement("SELECT");
     selectBox.id = "tagSelectorH";
     selectBox.classList.add("randomClassToHelpHide");
-    selectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px; background-color: var(--color-bg-default)"
+    selectBox.style = "margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px; background-color: var(--color-bg-default)"
 
     var option = document.createElement("option");
     option.text = "All Holdings";
-    option.value= "All";
+    option.value = "All";
     selectBox.add(option);
-    selectBox.addEventListener("change", function() {
-        tEv("kite","holdings","filter","");
+    selectBox.addEventListener("change", function () {
+        tEv("kite", "holdings", "filter", "");
         var selectedCat = this.value;
 
         info("Tag selected: " + selectedCat);
@@ -412,7 +422,7 @@ function createHoldingsDropdown() {
                 allHoldingrows.addClass("allHiddenRows");
 
                 var pnl = 0;
-                allHoldingrows.each(function(rowIndex) {
+                allHoldingrows.each(function (rowIndex) {
                     var dataUidInTR = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
 
                     var matchFound = false;
@@ -427,7 +437,7 @@ function createHoldingsDropdown() {
                     }
                 });
 
-                jQ("#stocksInTagCount").text("("+countHoldingsStocks+") " + formatter.format(pnl));
+                jQ("#stocksInTagCount").text("(" + countHoldingsStocks + ") " + formatter.format(pnl));
 
             }
 
@@ -443,7 +453,7 @@ function createHoldingsDropdown() {
         return this;
     });
 
-    for(var key in holdings){
+    for (var key in holdings) {
         option = document.createElement("option");
         option.text = key;
         option.value = key;
@@ -454,15 +464,15 @@ function createHoldingsDropdown() {
 
 function assignPositionTags() {
     jQ(allDOMPaths.PathForPositions).hover(
-        function() {
+        function () {
             if (jQ(this).find("span[random-att='tagAddBtn']").length < 1) {
                 var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
                 var p = dataUidInTR.split(".")[1];
 
-                jQ(this).find(".open.instrument").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='"+p+"'>+</span></span>");
+                jQ(this).find(".open.instrument").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='" + p + "'>+</span></span>");
             }
         },
-        function() {
+        function () {
             jQ(this).find("span[random-att='tagAddBtn']").remove();
         }
     );
@@ -472,40 +482,40 @@ function assignPositionTags() {
     info('no of tags found: ' + tagNameSpans.length);
     if (tagNameSpans.length < 1) {
         var allPositionsRow = jQ(allDOMPaths.PathForPositions);
-        allPositionsRow.each(function(rowIndex) {
+        allPositionsRow.each(function (rowIndex) {
             var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
             var p = dataUidInTR.split(".")[1];
 
             var positionSpan = jQ(this).find("span.exchange.text-xxsmall.dim");
 
-            for(var tradeTag in referenceTrades){
+            for (var tradeTag in referenceTrades) {
                 if (referenceTrades[tradeTag].includes(p)) {
                     var color = tradeTag.split(".")[1];
                     var tn = tradeTag.split(".")[0];
-                    jQ(positionSpan).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForPositionTagDeleteAction' tag='"+tradeTag+"' position='"+p+"' class='text-label "+ color +" randomClassToHelpHide'>"+tn+"</span>");
+                    jQ(positionSpan).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForPositionTagDeleteAction' tag='" + tradeTag + "' position='" + p + "' class='text-label " + color + " randomClassToHelpHide'>" + tn + "</span>");
                 }
             }
         });
-    } else {debug('tags found');}
+    } else { debug('tags found'); }
 }
 
 function createPositionsDropdown() {
     var selectBox = document.createElement("SELECT");
     selectBox.id = "tagSelectorP";
     selectBox.classList.add("randomClassToHelpHide");
-    selectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;font-size: 12px;background-color: var(--color-bg-default)"
+    selectBox.style = "margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;font-size: 12px;background-color: var(--color-bg-default)"
 
     var option = document.createElement("option");
     option.text = "All Positions";
-    option.value= "All";
+    option.value = "All";
     selectBox.add(option);
 
     var userGeneratedGroups = document.createElement("optgroup");
     userGeneratedGroups.text = "---USER GROUPS---";
     userGeneratedGroups.label = "---USER GROUPS---";
 
-    selectBox.addEventListener("change", function() {
-        tEv("kite","positions","filter","");
+    selectBox.addEventListener("change", function () {
+        tEv("kite", "positions", "filter", "");
         var selectedGroup = this.value;
 
         info("Group selected: " + selectedGroup);
@@ -537,7 +547,7 @@ function createPositionsDropdown() {
 
             var selection = [];
 
-            allPositionsRow.each(function(rowIndex) {
+            allPositionsRow.each(function (rowIndex) {
                 var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
                 //var p = dataUidInTR.split(".")[1];
 
@@ -552,35 +562,37 @@ function createPositionsDropdown() {
                 var price = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
                 debug("INSTRUMENT : " + instrument);
 
-            //if (instrument.includes(' CE')) {
+                //if (instrument.includes(' CE')) {
 
                 if (selectedGroup.includes("SPECIAL")) {
                     var lengthOfSpecial = 7;
-                    var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL")+lengthOfSpecial);
+                    var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL") + lengthOfSpecial);
                     var ts = tradingSymbolText.split(" ")[0];
-                    if (ts == s) {
+                    var expiry = getExpiryText(p);
+                    if (ts == s || s == expiry) {
                         matchFound = true;
-                    } else if (tradingSymbolText.includes(" " + s + " ")) {
-                        matchFound = true;
-                    }
+                    } 
+                    // } else if (tradingSymbolText.includes(" " + s + " ")) {
+                        // matchFound = true;
+                    // }
                     if (matchFound) {
                         if (!stocksInList.includes(ts)) {
                             if (ts == 'BANKNIFTY') {
                                 stocksInList.push('NIFTY BANK');
-                            } else if(ts == 'NIFTY') {
+                            } else if (ts == 'NIFTY') {
                                 stocksInList.push('NIFTY 50');
                             } else {
                                 stocksInList.push(ts);
                             }
                         }
                     }
-                }  else if (selectedGroup === "All") {
+                } else if (selectedGroup === "All") {
                     matchFound = true;
                 } else {
                     matchFound = selectedPositions.includes(p);
                 }
 
-                if(g_showOnlyMISPositions) {
+                if (g_showOnlyMISPositions) {
                     if (productType == "MIS") {
                         //let filter decision pass
                     } else {
@@ -588,7 +600,7 @@ function createPositionsDropdown() {
                         matchFound = false;
                     }
                 }
-                if(g_showOnlyCEPositions) {
+                if (g_showOnlyCEPositions) {
                     if (instrument.includes(' CE')) {
                         //let filter decision pass
                     } else {
@@ -596,7 +608,7 @@ function createPositionsDropdown() {
                         matchFound = false;
                     }
                 }
-                if(g_showOnlyPEPositions) {
+                if (g_showOnlyPEPositions) {
                     if (instrument.includes(' PE')) {
                         //let filter decision pass
                     } else {
@@ -624,22 +636,22 @@ function createPositionsDropdown() {
                         peCount++;
                     }
 
-                var data = getMarginCalculationData(instrument, product, qty, price);
-                if (data != null) {
-                    selection.push(data);
+                    var data = getMarginCalculationData(instrument, product, qty, price);
+                    if (data != null) {
+                        selection.push(data);
+                    }
+                } else {
+                    jQ(this).hide();
                 }
-            } else {
-                jQ(this).hide();
-            }
-            //END work on Positions AREA
-        });
+                //END work on Positions AREA
+            });
 
 
             var allPositionsDayHistoryDomTRs = jQ(allDOMPaths.domPathForPositionsDayHistory);
             allPositionsDayHistoryDomTRs.show();
             allPositionsDayHistoryDomTRs.addClass("allHiddenRows");
 
-            allPositionsDayHistoryDomTRs.each(function(rowIndex) {
+            allPositionsDayHistoryDomTRs.each(function (rowIndex) {
                 var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
                 //var p = dataUidInTR.split(".")[1];
                 debug('3');
@@ -651,20 +663,20 @@ function createPositionsDropdown() {
 
                 if (selectedGroup.includes("SPECIAL")) {
                     var lengthOfSpecial = 7;
-                    var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL")+lengthOfSpecial);
+                    var s = selectedGroup.substring(selectedGroup.indexOf("SPECIAL") + lengthOfSpecial);
                     var ts = tradingSymbolText.split(" ")[0];
                     if (ts == s) {
                         matchFound = true;
                     } else if (tradingSymbolText.includes(" " + s + " ")) {
                         matchFound = true;
                     }
-                }  else if (selectedGroup === "All") {
+                } else if (selectedGroup === "All") {
                     matchFound = true;
                 } else {
                     matchFound = selectedPositions.includes(p);
                 }
 
-                if(g_showOnlyMISPositions) {
+                if (g_showOnlyMISPositions) {
                     if (productType == "MIS") {
                         //let filter decision pass
                     } else {
@@ -682,11 +694,11 @@ function createPositionsDropdown() {
                 //END work on Positions Day history AREA
             });
 
-            jQ("#misCoundId").text("MIS ("+misCount+")");
-            jQ("#peCountId").text("PE ("+peCount+")");
-            jQ("#ceCountId").text("CE ("+ceCount+")");
+            jQ("#misCoundId").text("MIS (" + misCount + ")");
+            jQ("#peCountId").text("PE (" + peCount + ")");
+            jQ("#ceCountId").text("CE (" + ceCount + ")");
 
-            calculateMargin(selection).then(margin=>{
+            calculateMargin(selection).then(margin => {
                 updatePositionInfo(countPositionsDisplaying, pnl, margin);
             });
 
@@ -700,7 +712,7 @@ function createPositionsDropdown() {
     });
 
     //add options to the positions select drop down
-    for(var key in positions){
+    for (var key in positions) {
         option = document.createElement("option");
         option.text = key;
         option.value = key;
@@ -716,25 +728,29 @@ function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
     debug('updatePositionInfo ' + textDisplay);
     var topDisplay = jQ("#stocksInTagCount");
     topDisplay.text(textDisplay);
-    topDisplay.prop('title',`ROI: ${(pnl/margin*100).toFixed(2)}%`);
+    topDisplay.prop('title', `ROI: ${(pnl / margin * 100).toFixed(2)}%`);
 
     topDisplay.removeClass("text-green");
     topDisplay.removeClass("text-red");
     topDisplay.removeClass("text-black");
-    if(pnl>0) {
+    if (pnl > 0) {
         topDisplay.addClass("text-green");
-    } else if (pnl<0) {
+    } else if (pnl < 0) {
         topDisplay.addClass("text-red");
     } else {
         topDisplay.addClass("text-black");
     }
 
-    if (margin < 0 ) {
+    if (margin < 0) {
         jQ("#marginDiv").text('0');
     } else {
-        jQ("#marginDiv").text("M: " + formatter.format(margin));
+        var display = 'M (C)';
+        if (MARGIN_METHOD == MM_BASKET) {
+            display = 'M (B)';
+        } 
+        jQ("#marginDiv").text(display+": " + formatter.format(margin));
     }
-    jQ("#marginDiv").prop('title',`ROI: ${(pnl/margin*100).toFixed(2)}%`);
+    jQ("#marginDiv").prop('title', `ROI: ${(pnl / margin * 100).toFixed(2)}%`);
 }
 
 function createMisFilter() {
@@ -745,8 +761,8 @@ function createMisFilter() {
     i.style = 'margin: 5px';
     i.type = 'checkbox';
     i.id = "misFilterId";
-    i.name='misFilter';
-    i.value='SHOWMISONLY';
+    i.name = 'misFilter';
+    i.value = 'SHOWMISONLY';
     i.checked = g_showOnlyMISPositions;
 
     jQ(s).append(i);
@@ -759,8 +775,8 @@ function createMisFilter() {
     i.style = 'margin: 5px';
     i.type = 'checkbox';
     i.id = "peFilterId";
-    i.name='peFilter';
-    i.value='SHOWPEONLY';
+    i.name = 'peFilter';
+    i.value = 'SHOWPEONLY';
     i.checked = g_showOnlyPEPositions;
 
     // jQ(t).append(i);
@@ -775,8 +791,8 @@ function createMisFilter() {
     i.style = 'margin: 5px';
     i.type = 'checkbox';
     i.id = "ceFilterId";
-    i.name='ceFilter';
-    i.value='SHOWCEONLY';
+    i.name = 'ceFilter';
+    i.value = 'SHOWCEONLY';
     i.checked = g_showOnlyCEPositions;
 
     // jQ(t).append(i);
@@ -791,8 +807,8 @@ function createMisFilter() {
     i.style = 'margin: 5px';
     i.type = 'button';
     i.id = "selectAllId";
-    i.name='selectAllId';
-    i.value='Toggle Selection';
+    i.name = 'selectAllId';
+    i.value = 'Toggle Selection';
     i.checked = false;
 
     // jQ(t).append(i);
@@ -830,7 +846,7 @@ function showPositionDropdown(retry = true) {
         debug('sleeping as couldnt find positions');
         //TODO if no positions this will cause loop
         if (retry) {
-            setTimeout(function(){ showPositionDropdown(false); }, 1000);
+            setTimeout(function () { showPositionDropdown(false); }, 1000);
         }
         return;
     }
@@ -867,8 +883,9 @@ function showPositionDropdown(retry = true) {
 
     var arrForUnique = [];
     var uniqueExpiryArray = [];
-    allPositionsRow.each(function(rowIndex) {
+    allPositionsRow.each(function (rowIndex) {
 
+        var text = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
         var tradingSymbol = jQ(this).find("td.instrument > span.tradingsymbol").text();
 
         //creating auto generated script wise grouping
@@ -876,29 +893,20 @@ function showPositionDropdown(retry = true) {
         if (!arrForUnique.includes(ts)) {
             var option = document.createElement("option");
             option.text = ts;
-            option.value = "SPECIAL"+ts;
+            option.value = "SPECIAL" + ts;
             jQ(optGrp).append(option);
             arrForUnique.push(ts);
         }
 
         //creating auto generated expiry wise grouping
-        var arr = tradingSymbol.split(" ");
-        var ex = "";
-        var len = arr.length-2;
-        //for futures AXISBANK JUL FUT
-        if (arr.length == 3) {
-            len = arr.length-1;
-        }
-        for (var i=1 ; i < len ; i++) {
-            ex = ex + " " + arr[i];
-        }
-        ex = ex.trim();
-        if (!uniqueExpiryArray.includes(ex)) {
+
+        var expiry = getExpiryText(text);
+        if (!uniqueExpiryArray.includes(expiry)) {
             var option2 = document.createElement("option");
-            option2.text = ex;
-            option2.value = "SPECIAL"+ex;
+            option2.text = expiry;
+            option2.value = "SPECIAL" + expiry;
             jQ(optGrpExpiry).append(option2);
-            uniqueExpiryArray.push(ex);
+            uniqueExpiryArray.push(expiry);
         }
     });
 
@@ -912,15 +920,15 @@ function showPositionDropdown(retry = true) {
     var spanForCount = document.createElement("div");
     spanForCount.classList.add("randomClassToHelpHide");
     spanForCount.classList.add("tagSelectorStyle");
-    spanForCount.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;font-size: 10.5px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 0px;"
-    spanForCount.id ='stocksInTagCount';
-    spanForCount.addEventListener("click", ()=>updatePnl(true));
+    spanForCount.style = "margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;font-size: 10.5px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 0px;"
+    spanForCount.id = 'stocksInTagCount';
+    spanForCount.addEventListener("click", () => updatePnl(true));
 
     var divForMargin = document.createElement("div");
     divForMargin.classList.add("randomClassToHelpHide");
     divForMargin.classList.add("tagSelectorStyle");
-    divForMargin.style="font-size: 10.5px;"
-    divForMargin.id ='marginDiv';
+    divForMargin.style = "font-size: 10.5px;"
+    divForMargin.id = 'marginDiv';
 
     div1.appendChild(spanForCount);
     div1.appendChild(divForMargin);
@@ -931,18 +939,18 @@ function showPositionDropdown(retry = true) {
     simulateSelectBoxEvent();
 
     // The node to be monitored
-    var target = jQ( "div.positions > section.open-positions.table-wrapper > div > div > table > tbody")[0];
+    var target = jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tbody")[0];
 
     // Create an observer instance
-    g_observer = new MutationObserver(function( mutations ) {
+    g_observer = new MutationObserver(function (mutations) {
         var st = null;
-        mutations.forEach(function( mutation ) {
+        mutations.forEach(function (mutation) {
             var newNodes = mutation.addedNodes; // DOM NodeList
-            if( newNodes !== null ) { // If there are new nodes added
+            if (newNodes !== null) { // If there are new nodes added
                 if (st != null) {
                     clearTimeout(st);
                 }
-                st = setTimeout(function(){simulateSelectBoxEvent();},2000);
+                st = setTimeout(function () { simulateSelectBoxEvent(); }, 2000);
             }
         });
     });
@@ -956,14 +964,14 @@ function showPositionDropdown(retry = true) {
     // Pass in the target node, as well as the observer options
     g_observer.observe(target, config);
 
-    if (g_config.get('auto_refresh_PnL')===true) {
+    if (g_config.get('auto_refresh_PnL') === true) {
         debug('going to observe pnl change');
-        target = jQ( "div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[3];
-        debug("**********"+jQ(target).text());
-        g_positionsPnlObserver = new MutationObserver(function( mutations ) {
+        target = jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[3];
+        debug("**********" + jQ(target).text());
+        g_positionsPnlObserver = new MutationObserver(function (mutations) {
             var st = null;
-            mutations.forEach(function( mutation ) {
-                if( mutation.type == "characterData" ) {
+            mutations.forEach(function (mutation) {
+                if (mutation.type == "characterData") {
                     debug("pnl changed");
                     updatePnl(true);
                 }
@@ -981,6 +989,30 @@ function showPositionDropdown(retry = true) {
     }
 }
 
+function getScripText(fullText) {
+    debug('getExpiryText ' + fullText);
+    var expiry = fullText.split(' ');
+    var t = expiry[0];
+
+    return t;
+}
+
+function getScripExpiryText(fullText) {
+    debug('getExpiryText ' + fullText);
+    var expiry = fullText.split(' ');
+    var t = expiry[0] + ' ' + expiry[1];
+
+    return t;
+}
+
+function getExpiryText(fullText) {
+    //debug('getExpiryText ' + fullText);
+    var expiry = fullText.split(' ');
+    var t = expiry[1];
+
+    return t;
+}
+
 function showHoldingDropdown() {
     g_dropdownDisplay = DD_HOLDINGS;
     //crete the dropdown to filter stocks.
@@ -992,10 +1024,10 @@ function showHoldingDropdown() {
     var spanForCount = document.createElement("span");
     spanForCount.classList.add("randomClassToHelpHide");
     spanForCount.classList.add("tagSelectorStyle");
-    spanForCount.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
+    spanForCount.style = "margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
 
-    spanForCount.id ='stocksInTagCount';
-    spanForCount.addEventListener("click", ()=>updatePnl(false));
+    spanForCount.id = 'stocksInTagCount';
+    spanForCount.addEventListener("click", () => updatePnl(false));
     jQ(dropdown).after(spanForCount);
 
     addWatchlistFilter();
@@ -1006,7 +1038,7 @@ function toggleDropdown(currentUrl) {
     debug('toggleDropdown');
 
     if (currentUrl.includes('positions')) {
-        switch(g_dropdownDisplay) {
+        switch (g_dropdownDisplay) {
             case DD_NONE:
                 // show positions dropdown
                 showPositionDropdown();
@@ -1023,7 +1055,7 @@ function toggleDropdown(currentUrl) {
                 showPositionDropdown();
         }
     } else if (currentUrl.includes('holdings')) {
-        switch(g_dropdownDisplay) {
+        switch (g_dropdownDisplay) {
             case DD_NONE:
                 // show holdings dropdown
                 showHoldingDropdown();
@@ -1117,9 +1149,9 @@ function filterOrders() { //notused
 
     var selectedCat = "All";
 
-    if(tagSelectorH) {
+    if (tagSelectorH) {
         selectedCat = tagSelectorH.value;
-    } else if(tagSelectorP) {
+    } else if (tagSelectorP) {
         selectedCat = tagSelectorP.value;
     } else {
         //do nothing
@@ -1142,7 +1174,7 @@ function filterOrders() { //notused
     } else {
         var countPendingOrdersStocks = 0;
         allPendingOrderRows.addClass("allHiddenRows");
-        allPendingOrderRows.each(function(rowIndex){
+        allPendingOrderRows.each(function (rowIndex) {
             var workingRow = this;
             var stockInRow = jQ(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
             debug("found pending order: " + stockInRow);
@@ -1160,10 +1192,10 @@ function filterOrders() { //notused
             }
         });
 
-        jQ("#stocksInTagCount").text("("+countPendingOrdersStocks+") ");
+        jQ("#stocksInTagCount").text("(" + countPendingOrdersStocks + ") ");
 
         allExecutedOrderRows.addClass("allHiddenRows");
-        allExecutedOrderRows.each(function(rowIndex){
+        allExecutedOrderRows.each(function (rowIndex) {
             var workingRow = this;
             var stockInRow = jQ(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
             debug("found executed order: " + stockInRow);
@@ -1187,98 +1219,149 @@ function filterOrders() { //notused
     //Trades
 }
 
-const calculateMargin = async (selection) => {
-let margin = 0
-var payload=[]
-selection.forEach(data => {
-    var d = {
-        'exchange': data.exchange,
-        'order_type': 'LIMIT',
-        'price': data.price,
-        'product': data.product,
-        'quantity': data.quantity,
-        'squareoff': 0,
-        'stoploss': 0,
-        'tradingsymbol': data.tradingsymbol,
-        'transaction_type': data.transaction_type,
-        'trigger_price': 0,
-        'variety': 'regular'
-    };
-    payload.push(d)
-});
 
-var config = {
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `enctoken ${Cookies.get('enctoken')}`
+const calculateMargin = async (selection) => {
+    if (MARGIN_METHOD == MM_BASKET) {
+        return calculateMarginUsingBasket(selection);
+    } else {
+        return calculateMarginUsingMarginCalculator(selection);
     }
-};
-debug(`config: ${config} payload: ${payload}`)
-return await axios.post(`/oms/margins/basket?consider_positions=${g_config.get('include_existing_positions')}&mode=compact`, payload, config)
-    .then(function (response) {
-        //margin = response.data.data.initial!=null && response.data.data.initial!==undefined?response.data.data.initial.total:0;
-        margin = response.data.data.final!=null && response.data.data.final!==undefined?response.data.data.final.total:0;
-        return margin;}
+}
+
+const calculateMarginUsingMarginCalculator = async (selection) => {
+    let margin = 0
+    var payload = qs.stringify({
+        'action': 'calculate'
+    });
+    selection.forEach(data => {
+        var d = qs.stringify({
+            'exchange[]': data.exchange,
+            'product[]': data.optfut,
+            'scrip[]': data.scrip,
+            'option_type[]': data.pece,
+            'strike_price[]': `${data.strike}`,
+            'qty[]': `${data.quantity}`,
+            'trade[]': data.transaction_type.toLowerCase()
+        });
+        payload = `${payload}&${d}`
+    });
+
+    var config = {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+    };
+    let response = await axios.post("https://zerodha.com/margin-calculator/SPAN/", payload, config);
+    margin = response.data.total != null && response.data.total !== undefined ? response.data.total.total : 0;
+    debug('calculateMarginUsingMarginCalculator');
+    return margin;
+}
+
+const calculateMarginUsingBasket = async (selection) => {
+    let margin = 0
+    var payload = []
+    selection.forEach(data => {
+        var d = {
+            'exchange': data.exchange,
+            'order_type': 'LIMIT',
+            'price': data.price,
+            'product': data.product,
+            'quantity': data.quantity,
+            'squareoff': 0,
+            'stoploss': 0,
+            'tradingsymbol': data.tradingsymbol,
+            'transaction_type': data.transaction_type,
+            'trigger_price': 0,
+            'variety': 'regular'
+        };
+        payload.push(d)
+    });
+
+    var config = {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `enctoken ${Cookies.get('enctoken')}`
+        }
+    };
+    debug(`config: ${config} payload: ${payload}`)
+    return await axios.post(`/oms/margins/basket?consider_positions=${g_config.get('include_existing_positions')}&mode=compact`, payload, config)
+        .then(function (response) {
+            //margin = response.data.data.initial!=null && response.data.data.initial!==undefined?response.data.data.initial.total:0;
+            margin = response.data.data.final != null && response.data.data.final !== undefined ? response.data.data.final.total : 0;
+            return margin;
+        }
         )
-    .catch(function (error) {
-        debug(error);return -1;}
+        .catch(function (error) {
+            debug(error); return -1;
+        }
         );
 
 }
 
 const getMarginCalculationData = (instrument, product, q, price) => {
-// frame payload for SPAN calculation
-var tokens=instrument.replace(/\s+/g, ' ').split(" ");
-debug(tokens);
-var data = {};
-if(tokens[1] === "NSE" || tokens[1] === "BSE")  { //buy: OAL BSE HOLDING, sell: OAL NSE SOLD HOLDING
-    return null;
-}
-data.product=product.replace(/\n/g,'').replace(/\t/g,'');
-if(tokens[2] === "FUT") {
-    //NIFTY APR FUT NFO
-    data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}FUT`;
-    data.exchange = `${tokens[3]}`;
-} else {
-    if (tokens[2] === "w") {
-        //eg: NIFTY2140814200CE (NIFTY 8th w APR 14200 CE NFO LABELS)
-
-        data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${moment(new Date(tokens[3]+' 1 '+(new Date()).getFullYear())).format("M")}${tokens[1].match(/\d+/)[0].padStart(2,0)}${tokens[4]}${tokens[5]}`;
-        data.exchange = `${tokens[6]}`;
-    } else {
-        //eg: NIFTY21APR14200PE (NIFTY APR 14200 PE NFO LABELS)
-        data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}${tokens[2]}${tokens[3]}`;
-        data.exchange = `${tokens[4]}`;
+    // frame payload for SPAN calculation
+    var tokens = instrument.replace(/\s+/g, ' ').split(" ");
+    debug(tokens);
+    var data = {};
+    if (tokens[1] === "NSE" || tokens[1] === "BSE") { //buy: OAL BSE HOLDING, sell: OAL NSE SOLD HOLDING
+        return null;
     }
-}
+    data.product = product.replace(/\n/g, '').replace(/\t/g, '');
+    if (tokens[2] === "FUT") {
+        //NIFTY APR FUT NFO
+        data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}FUT`;
+        data.exchange = `${tokens[3]}`;
+        data.pece = 'PE';
+        data.strike = '';
+        data.optfut = 'FUT';
+        data.scrip = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}`;
+    } else {
+        data.optfut = 'OPT';
+        if (tokens[2] === "w") {
+            //eg: NIFTY2140814200CE (NIFTY 8th w APR 14200 CE NFO LABELS)
 
-data.quantity=q>0?q:q*-1;
-data.price=price;
-data.transaction_type=q>0?'BUY':'SELL';
-return data;
+            data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${moment(new Date(tokens[3] + ' 1 ' + (new Date()).getFullYear())).format("M")}${tokens[1].match(/\d+/)[0].padStart(2, 0)}${tokens[4]}${tokens[5]}`;
+            data.exchange = `${tokens[6]}`;
+            data.pece = `${tokens[5]}`;
+            data.strike = `${tokens[4]}`;
+            data.scrip = `${tokens[0]}${moment(new Date()).format("YY")}${MONTHS.indexOf(tokens[3]) + 1}${tokens[1].replace(/\D/g, "")}`
+        } else {
+            //eg: NIFTY21APR14200PE (NIFTY APR 14200 PE NFO LABELS)
+            data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}${tokens[2]}${tokens[3]}`;
+            data.exchange = `${tokens[4]}`;
+            data.pece = `${tokens[3]}`;
+            data.strike = `${tokens[2]}`;
+            data.scrip = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}`;
+        }
+    }
+
+    data.quantity = q > 0 ? q : q * -1;
+    data.price = price;
+    data.transaction_type = q > 0 ? 'BUY' : 'SELL';
+    return data;
 }
 
 var filterText = "";
 function addWatchlistFilter() {
-//jQ("#watchlistFilterId").remove();
-var wFilter = document.createElement("li");
-wFilter.id = 'watchlistFilterId';
-wFilter.classList.add("randomClassToHelpHide");
-wFilter.classList.add("item");
-wFilter.innerText = "Filter";
+    //jQ("#watchlistFilterId").remove();
+    var wFilter = document.createElement("li");
+    wFilter.id = 'watchlistFilterId';
+    wFilter.classList.add("randomClassToHelpHide");
+    wFilter.classList.add("item");
+    wFilter.innerText = "Filter";
 
-jQ("div.marketwatch-sidebar.marketwatch-wrap > ul > li.settings").before(wFilter);
+    jQ("div.marketwatch-sidebar.marketwatch-wrap > ul > li.settings").before(wFilter);
 }
 
 function updatePnl(forPositions = true) {
     var allVisibleRows;
     var pnlCol;
     if (forPositions) {
-        allVisibleRows = jQ(allDOMPaths.PathForPositions+":visible");
+        allVisibleRows = jQ(allDOMPaths.PathForPositions + ":visible");
         pnlCol = 6;
     } else {
         pnlCol = 5;
-        allVisibleRows = jQ(allDOMPaths.rowsFromHoldingsTable+":visible");
+        allVisibleRows = jQ(allDOMPaths.rowsFromHoldingsTable + ":visible");
     }
 
     debug('found visible rows: ' + allVisibleRows.length);
@@ -1286,7 +1369,7 @@ function updatePnl(forPositions = true) {
     var pnl = 0;
 
     var selection = [];
-    allVisibleRows.each(function(rowIndex) {
+    allVisibleRows.each(function (rowIndex) {
         var v = jQ(jQ(this).find("td")[pnlCol]).text().split(",").join("");
         pnl += parseFloat(v);
 
@@ -1303,15 +1386,15 @@ function updatePnl(forPositions = true) {
         }
     });
 
-    if (allVisibleRows.length>0) {
-        calculateMargin(selection).then(margin=>{
+    if (allVisibleRows.length > 0) {
+        calculateMargin(selection).then(margin => {
             updatePositionInfo(allVisibleRows.length, pnl, margin);
         });
     }
 }
 
 function onSuCheckboxSelection() {
-    tEv("kite","positionscheckbox","click","");
+    tEv("kite", "positionscheckbox", "click", "");
     debug('select su-checkbox changed');
     var selectedRows = jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr.selected");
 
@@ -1322,7 +1405,7 @@ function onSuCheckboxSelection() {
     var points = 0;
     var selection = [];
     debug(`su- selected rows: ${selectedRows.length}`);
-    selectedRows.each(function(rowIndex) {
+    selectedRows.each(function (rowIndex) {
         var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
 
         pnl += parseFloat(v);
@@ -1365,27 +1448,27 @@ function onSuCheckboxSelection() {
         tag.remove();
     }
 
-    if (selectedRows.length > 0 ) {
-      calculateMargin(selection).then(margin=>{
-          if (selectedRows.length>0) {
-              if (ceQ > peQ) {
+    if (selectedRows.length > 0) {
+        calculateMargin(selection).then(margin => {
+            if (selectedRows.length > 0) {
+                if (ceQ > peQ) {
 
                 } else if (peQ > ceQ) {
 
                 }
-                var t = ceQ+"CE & "+peQ+"PE";
+                var t = ceQ + "CE & " + peQ + "PE";
                 var pnlText = "";
                 if (pnl > 0) {
-                    pnlText = "<span random-att='temppnl' class='text-green open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl);
+                    pnlText = "<span random-att='temppnl' class='text-green open pnl randomClassToHelpHide'>P&L: " + formatter.format(pnl);
                 } else {
-                    pnlText = "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: "+formatter.format(pnl);
+                    pnlText = "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: " + formatter.format(pnl);
 
                 }
-                pnlText += "<br><span class='text-label randomClassToHelpHide'>Max Profit: "+formatter.format(maxPnl)+ " / "+ (maxPnl/margin*100).toFixed(2) +"%</span>";
-                pnlText += "<br><span class='text-label randomClassToHelpHide'>% Profit achieved: "+(pnl/maxPnl*100).toFixed(2)+"% </span>";
+                pnlText += "<br><span class='text-label randomClassToHelpHide'>Max Profit: " + formatter.format(maxPnl) + " / " + (maxPnl / margin * 100).toFixed(2) + "%</span>";
+                pnlText += "<br><span class='text-label randomClassToHelpHide'>% Profit achieved: " + (pnl / maxPnl * 100).toFixed(2) + "% </span>";
                 if (margin >= 0) {
-                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Margin: "+formatter.format(margin)+"</span>";
-                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Current ROI: "+(pnl/margin*100).toFixed(2)+"% </span>";
+                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Margin: " + formatter.format(margin) + "</span>";
+                    pnlText += "<br><span class='text-label randomClassToHelpHide'>Current ROI: " + (pnl / margin * 100).toFixed(2) + "% </span>";
                 }
                 pnlText += "</span>";
 
@@ -1396,24 +1479,25 @@ function onSuCheckboxSelection() {
                 mTag = jQ("span[random-att='temppnl']");
                 if (mTag.length > 0) {
                     mTag.remove();
-                }                    jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append("<span random-att='marginsave' class='pnl randomClassToHelpHide'> "+t+" (Points: "+formatter.format(points)+")</span>");
+                } jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append("<span random-att='marginsave' class='pnl randomClassToHelpHide'> " + t + " (Points: " + formatter.format(points) + ")</span>");
                 jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append(pnlText);
             }
         });
+        calculateMarginUsingMarginCalculator(selection);
     }
 
 }
 
 // all behavior related actions go here.
 function main() {
-GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
+    GM_registerMenuCommand("Reset Data (WARNING) " + VERSION, function () {
         if (confirm('Are you sure you want to reset all tag data?')) {
             if (confirm('I am checking with you one last time, are you sure?')) {
-                tEv("kite","menu","reset","");
+                tEv("kite", "menu", "reset", "");
 
-                GM_setValue(GM_HOLDINGS_NAME,{});
-                GM_setValue(GMPositionsName,{});
-                GM_setValue(GMRefTradeName,{});
+                GM_setValue(GM_HOLDINGS_NAME, {});
+                GM_setValue(GMPositionsName, {});
+                GM_setValue(GMRefTradeName, {});
 
                 window.location.reload();
             }
@@ -1422,8 +1506,8 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
     }, "r");
 
     //click of mis filter
-    jQ(document).on('click',"#misFilterId", function(){
-        tEv("kite","misfilter","click","");
+    jQ(document).on('click', "#misFilterId", function () {
+        tEv("kite", "misfilter", "click", "");
         var filterValue = this.value;
         g_showOnlyMISPositions = this.checked;
 
@@ -1432,8 +1516,8 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
     });
 
     //click of CE filter
-    jQ(document).on('click',"#ceFilterId", function(){
-        tEv("kite","cefilter","click","");
+    jQ(document).on('click', "#ceFilterId", function () {
+        tEv("kite", "cefilter", "click", "");
         var filterValue = this.value;
         g_showOnlyCEPositions = this.checked;
 
@@ -1442,16 +1526,16 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
     });
 
     //click of select all filter
-    jQ(document).on('click',"#selectAllId", function(){
-        tEv("kite","selectAllFilter","click","");
-        var allVisibleRows = jQ(allDOMPaths.PathForPositions+":visible");
+    jQ(document).on('click', "#selectAllId", function () {
+        tEv("kite", "selectAllFilter", "click", "");
+        var allVisibleRows = jQ(allDOMPaths.PathForPositions + ":visible");
 
         debug('found visible rows: ' + allVisibleRows.length);
 
         jQ(document).off('change', "input.su-checkbox", onSuCheckboxSelection);
 
         var lastOne;
-        allVisibleRows.each(function(rowIndex) {
+        allVisibleRows.each(function (rowIndex) {
             lastOne = jQ(this).find('input.su-checkbox');
             lastOne.click();
         });
@@ -1465,8 +1549,8 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
     });
 
     //click of PE filter
-    jQ(document).on('click',"#peFilterId", function(){
-        tEv("kite","pefilter","click","");
+    jQ(document).on('click', "#peFilterId", function () {
+        tEv("kite", "pefilter", "click", "");
         var filterValue = this.value;
         g_showOnlyPEPositions = this.checked;
 
@@ -1475,8 +1559,8 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
     });
 
     //click of watchlist filter
-    jQ(document).on('click',"#watchlistFilterId", function(){
-        tEv("kite","watchlistfilter","click","");
+    jQ(document).on('click', "#watchlistFilterId", function () {
+        tEv("kite", "watchlistfilter", "click", "");
         var h = prompt("Provide filter text. Press Esc or Click cancel to reset filter.", filterText);
         if (h == null || h == "") {
             filterText = "";
@@ -1492,9 +1576,9 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
 
     //on click of + to assign tag to holdings
     jQ(document).on('click', "#tagAddIcon", function () {
-        tEv("kite","holdingsaddtag","click","");
+        tEv("kite", "holdingsaddtag", "click", "");
         var stock = jQ(this).attr('value');
-        var tagName = prompt('Which group do you want to put '+ stock +' in?');
+        var tagName = prompt('Which group do you want to put ' + stock + ' in?');
 
         if (tagName == null) return;
         tagName = tagName.toUpperCase();
@@ -1509,30 +1593,30 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
             holdings[tagName] = [stock];
         }
 
-        GM_setValue(GM_HOLDINGS_NAME,holdings);
-        tEv("kite","positionaddtag","add","");
+        GM_setValue(GM_HOLDINGS_NAME, holdings);
+        tEv("kite", "positionaddtag", "add", "");
         debug(holdings);
         window.location.reload();
     });
 
     //on click of a holding tag. ask user if they want to remove the tag
     jQ(document).on('click', "#idForTagDeleteAction", function () {
-        tEv("kite","holdingsdeletetag","click","");
+        tEv("kite", "holdingsdeletetag", "click", "");
         var stock = jQ(this).attr('stock');
         var tagName = jQ(this).attr('tag');
 
         if (confirm('Do you want to remove this tag?')) {
             //get existing array
             var existingArray = holdings[tagName];
-            existingArray.splice(existingArray.indexOf(stock), 1 );
+            existingArray.splice(existingArray.indexOf(stock), 1);
 
             if (existingArray.length < 1) {
-                delete(holdings[tagName]);
+                delete (holdings[tagName]);
             }
 
 
-            GM_setValue(GM_HOLDINGS_NAME,holdings);
-            tEv("kite","holdingsdeletetag","delete","");
+            GM_setValue(GM_HOLDINGS_NAME, holdings);
+            tEv("kite", "holdingsdeletetag", "delete", "");
             debug(holdings);
             window.location.reload();
         }
@@ -1540,7 +1624,7 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
 
     //on click of + to assign tag to positions
     jQ(document).on('click', "#positionTagAddIcon", function () {
-        tEv("kite","positionsaddtag","click","");
+        tEv("kite", "positionsaddtag", "click", "");
         var position = jQ(this).attr('value');
         var tagName = prompt('Please provide tag name and color. For eg: MT.red or RT.blue or BS.green');
 
@@ -1556,30 +1640,30 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
             referenceTrades[tagName] = [position];
         }
 
-        GM_setValue(GMRefTradeName,referenceTrades);
-        tEv("kite","positionsaddtag","add","");
+        GM_setValue(GMRefTradeName, referenceTrades);
+        tEv("kite", "positionsaddtag", "add", "");
 
         window.location.reload();
     });
 
     //on click of a position tag. ask user if they want to remove the tag
     jQ(document).on('click', "#idForPositionTagDeleteAction", function () {
-        tEv("kite","positionsdeletetag","click","");
+        tEv("kite", "positionsdeletetag", "click", "");
         var position = jQ(this).attr('position');
         var tagName = jQ(this).attr('tag');
 
         if (confirm('Do you want to remove this tag?')) {
             //get existing array
             var existingArray = referenceTrades[tagName];
-            existingArray.splice(existingArray.indexOf(position), 1 );
+            existingArray.splice(existingArray.indexOf(position), 1);
 
             if (existingArray.length < 1) {
-                delete(referenceTrades[tagName]);
+                delete (referenceTrades[tagName]);
             }
 
 
-            GM_setValue(GMRefTradeName,referenceTrades);
-            tEv("kite","positionsdeletetag","delete","");
+            GM_setValue(GMRefTradeName, referenceTrades);
+            tEv("kite", "positionsdeletetag", "delete", "");
 
             window.location.reload();
         }
@@ -1587,7 +1671,7 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
 
     //click of positions header
     jQ(document).on('click', allDOMPaths.positionHeader, function () {
-        tEv("kite","positions","toggle","");
+        tEv("kite", "positions", "toggle", "");
         var currentUrl = window.location.pathname;
         if (currentUrl.includes('positions')) {
             debug('click on positions header.');
@@ -1601,7 +1685,7 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
 
     //click of Holdings header
     jQ(document).on('click', allDOMPaths.domPathMainInitiatorLabel, function () {
-        tEv("kite","holdings","toggle","");
+        tEv("kite", "holdings", "toggle", "");
         var currentUrl = window.location.pathname;
         if (currentUrl.includes('holdings')) {
             debug('click on holdings header.');
@@ -1615,15 +1699,15 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
 
 
     //click of Positions row to copy pos id
-    jQ(document).on('click',allDOMPaths.PathForPositions, function() {
+    jQ(document).on('click', allDOMPaths.PathForPositions, function () {
         var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
 
         //var text = dataUidInTR.split(".")[1];
 
         var text = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
-        navigator.clipboard.writeText(text).then(function() {
+        navigator.clipboard.writeText(text).then(function () {
             debug('Async: Copying to clipboard was successful!');
-        }, function(err) {
+        }, function (err) {
             debug('Async: Could not copy text: ', err);
         });
     });
@@ -1641,12 +1725,12 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
         toggleDropdown(currentUrl);
 
         if (currentUrl.includes('funds')) {
-            waitForKeyElements ("#app > div.container.wrapper > div.container-right > div > div.margins > div.row > div:nth-child(1) > div > table > tbody > tr:nth-child(1)", showFundsHelp);
+            waitForKeyElements("#app > div.container.wrapper > div.container-right > div > div.margins > div.row > div:nth-child(1) > div > table > tbody > tr:nth-child(1)", showFundsHelp);
         }
     };
 
     //on click of watchlist tab (1-5)
-    jQ(document).on('click', allDOMPaths.domPathTabToChangeWatchlist,function(){
+    jQ(document).on('click', allDOMPaths.domPathTabToChangeWatchlist, function () {
         info("clicked on: " + jQ(this).attr("id"));
         if (jQ(this).attr("id") == "watchlistFilterId") {
             //do nothing
@@ -1662,31 +1746,31 @@ GM_registerMenuCommand("Reset Data (WARNING) "+VERSION, function() {
 
         var holdingTRs = jQ(allDOMPaths.rowsFromHoldingsTable);
 
-        jQ.expr[':'].regex = function(elem, index, match) {
+        jQ.expr[':'].regex = function (elem, index, match) {
             var matchParams = match[3].split(','),
                 validLabels = /^(data|css):/,
                 attr = {
                     method: matchParams[0].match(validLabels) ?
-                    matchParams[0].split(':')[0] : 'attr',
-                    property: matchParams.shift().replace(validLabels,'')
+                        matchParams[0].split(':')[0] : 'attr',
+                    property: matchParams.shift().replace(validLabels, '')
                 },
                 regexFlags = 'ig',
-                regex = new RegExp(matchParams.join('').replace(/^\s+|\s+jQ/g,''), regexFlags);
+                regex = new RegExp(matchParams.join('').replace(/^\s+|\s+jQ/g, ''), regexFlags);
             return regex.test(jQ(elem)[attr.method](attr.property));
         }
 
         //tigadam for stocks with & in name
         if (watchlistStock.indexOf('&') >= 0) {
-            watchlistStock = watchlistStock.slice(0,watchlistStock.indexOf('&amp;'))+'&'+watchlistStock.slice(watchlistStock.indexOf('&amp;')+5,watchlistStock.length);
+            watchlistStock = watchlistStock.slice(0, watchlistStock.indexOf('&amp;')) + '&' + watchlistStock.slice(watchlistStock.indexOf('&amp;') + 5, watchlistStock.length);
         }
-        var holdingStockTR = jQ("tr:regex("+allDOMPaths.attrNameForInstrumentTR+", ^"+watchlistStock+".*)");
+        var holdingStockTR = jQ("tr:regex(" + allDOMPaths.attrNameForInstrumentTR + ", ^" + watchlistStock + ".*)");
 
         if (holdingStockTR.length > 0) {
             debug("found holding row for scrolling : " + holdingStockTR);
             var w = jQ(window);
-            w.scrollTop( holdingStockTR.offset().top - (w.height()/2) );
+            w.scrollTop(holdingStockTR.offset().top - (w.height() / 2));
             jQ(holdingStockTR).css("background-color", 'lightGray');
-            setTimeout(function(){ jQ(holdingStockTR).css("background-color", 'var(--color-bg-default)'); }, 4000);
+            setTimeout(function () { jQ(holdingStockTR).css("background-color", 'var(--color-bg-default)'); }, 4000);
         }
     });
 
@@ -1696,22 +1780,22 @@ function showFundsHelp() {
     debug('showFundsHelp');
 
     var helpText = ["You can use this amount to place new trades. The available margin includes the benefit of pledging collateral, the premium received from shorting options, funds added during the day, the effect of realised profits & losses, and unrealised losses.",
-"You have used this amount towards trades during the day. The used margin can be negative if you have generated some funds by selling your holdings, closing F&O positions, or making intraday gains.",
-"This is the current cash balance in your account. If your available cash balance is negative, you will be charged interest.",
-"This is the cash available in your trading account at the beginning of the day.",
-"The funds you add to your trading account during the day reflect as the payin balance.",
-"This is a part of the amount blocked for your F&O trades. You can also check SPAN on our margin calculator. ",
-"This is the margin blocked when you sell securities (20% of the value of stocks sold) from your demat or T1 holdings. As per the peak margin norms, only 80% of credit from selling your holdings will be available for new trades. The funds blocked under this field will be available from the next trading day. The delivery margin also includes additional margin blocked if you have any F&O positions due for physical delivery. ",
-"This is a part of the amount blocked for your F&O trades. You can also check the exposure margin here.",
-"The total amount you have paid to purchase options. This value will be negative if you have received funds for shorting/writing options.",
-"This amount is made available for trading against Liquidbees ETFs or liquid mutual funds you have pledged.",
-"This amount is made available for trading against stocks/ETFs you have pledged.",
-"This is the sum total of liquid funds and equity collateral."];
+        "You have used this amount towards trades during the day. The used margin can be negative if you have generated some funds by selling your holdings, closing F&O positions, or making intraday gains.",
+        "This is the current cash balance in your account. If your available cash balance is negative, you will be charged interest.",
+        "This is the cash available in your trading account at the beginning of the day.",
+        "The funds you add to your trading account during the day reflect as the payin balance.",
+        "This is a part of the amount blocked for your F&O trades. You can also check SPAN on our margin calculator. ",
+        "This is the margin blocked when you sell securities (20% of the value of stocks sold) from your demat or T1 holdings. As per the peak margin norms, only 80% of credit from selling your holdings will be available for new trades. The funds blocked under this field will be available from the next trading day. The delivery margin also includes additional margin blocked if you have any F&O positions due for physical delivery. ",
+        "This is a part of the amount blocked for your F&O trades. You can also check the exposure margin here.",
+        "The total amount you have paid to purchase options. This value will be negative if you have received funds for shorting/writing options.",
+        "This amount is made available for trading against Liquidbees ETFs or liquid mutual funds you have pledged.",
+        "This amount is made available for trading against stocks/ETFs you have pledged.",
+        "This is the sum total of liquid funds and equity collateral."];
 
     var allRows = jQ("#app > div.container.wrapper > div.container-right > div > div.margins > div.row > div:nth-child(1) > div > table > tbody > tr");
     debug(allRows.length);
-    allRows.each(function(rowIndex) {
-        var stock = jQ(this).attr('title',helpText[rowIndex]);
+    allRows.each(function (rowIndex) {
+        var stock = jQ(this).attr('title', helpText[rowIndex]);
         debug(jQ(this));
         debug(stock);
         debug(helpText[rowIndex]);
@@ -1719,7 +1803,7 @@ function showFundsHelp() {
 
 }
 
-function waitForKeyElements (
+function waitForKeyElements(
     selectorTxt,    /* Required: The jQuery selector string that
                         specifies the desired element(s).
                     */
@@ -1738,86 +1822,86 @@ function waitForKeyElements (
     var targetNodes, btargetsFound;
 
     if (typeof iframeSelector == "undefined")
-        targetNodes     = jQ(selectorTxt);
+        targetNodes = jQ(selectorTxt);
     else
-        targetNodes     = jQ(iframeSelector).contents ()
-                                        .find (selectorTxt);
+        targetNodes = jQ(iframeSelector).contents()
+            .find(selectorTxt);
 
-    if (targetNodes  &&  targetNodes.length > 0) {
-        btargetsFound   = true;
+    if (targetNodes && targetNodes.length > 0) {
+        btargetsFound = true;
         /*--- Found target node(s).  Go through each and act if they
             are new.
         */
-        targetNodes.each ( function () {
-            var jThis        = jQ(this);
-            var alreadyFound = jThis.data ('alreadyFound')  ||  false;
+        targetNodes.each(function () {
+            var jThis = jQ(this);
+            var alreadyFound = jThis.data('alreadyFound') || false;
 
             if (!alreadyFound) {
                 //--- Call the payload function.
-                var cancelFound     = actionFunction (jThis);
+                var cancelFound = actionFunction(jThis);
                 if (cancelFound)
-                    btargetsFound   = false;
+                    btargetsFound = false;
                 else
-                    jThis.data ('alreadyFound', true);
+                    jThis.data('alreadyFound', true);
             }
-        } );
+        });
     }
     else {
-        btargetsFound   = false;
+        btargetsFound = false;
     }
 
     //--- Get the timer-control variable for this selector.
-    var controlObj      = waitForKeyElements.controlObj  ||  {};
-    var controlKey      = selectorTxt.replace (/[^\w]/g, "_");
-    var timeControl     = controlObj [controlKey];
+    var controlObj = waitForKeyElements.controlObj || {};
+    var controlKey = selectorTxt.replace(/[^\w]/g, "_");
+    var timeControl = controlObj[controlKey];
 
     //--- Now set or clear the timer as appropriate.
-    if (btargetsFound  &&  bWaitOnce  &&  timeControl) {
+    if (btargetsFound && bWaitOnce && timeControl) {
         //--- The only condition where we need to clear the timer.
-        clearInterval (timeControl);
-        delete controlObj [controlKey]
+        clearInterval(timeControl);
+        delete controlObj[controlKey]
     }
     else {
         //--- Set a timer, if needed.
-        if ( ! timeControl) {
-            timeControl = setInterval ( function () {
-                    waitForKeyElements (    selectorTxt,
-                                            actionFunction,
-                                            bWaitOnce,
-                                            iframeSelector
-                                        );
-                },
+        if (!timeControl) {
+            timeControl = setInterval(function () {
+                waitForKeyElements(selectorTxt,
+                    actionFunction,
+                    bWaitOnce,
+                    iframeSelector
+                );
+            },
                 300
             );
-            controlObj [controlKey] = timeControl;
+            controlObj[controlKey] = timeControl;
         }
     }
-    waitForKeyElements.controlObj   = controlObj;
+    waitForKeyElements.controlObj = controlObj;
 }
 
 function orderInfo() {
     debug('orderInfo');
 
-    var ts = jQ(BASE_ORDERINFO_DOM +" > div > div > div > h3.tradingsymbol").text().trim().split(' ');
+    var ts = jQ(BASE_ORDERINFO_DOM + " > div > div > div > h3.tradingsymbol").text().trim().split(' ');
     var tradingsymbol = ts[0];
 
     var i = document.createElement("INPUT");
     i.type = 'button';
-    i.name='copyOrder';
-    i.value='Copy Order ('+ g_tradingBasket.length +')'
-    i.id='copyOrder';
+    i.name = 'copyOrder';
+    i.value = 'Copy Order (' + g_tradingBasket.length + ')'
+    i.id = 'copyOrder';
     i.classList.add('button');
     i.classList.add('button-outline');
 
-    if (JSON.stringify(g_tradingBasket).includes("\""+tradingsymbol+"\"")) {
-        i.value='Already Copied. Close';
+    if (JSON.stringify(g_tradingBasket).includes("\"" + tradingsymbol + "\"")) {
+        i.value = 'Already Copied. Close';
         i.onclick = function () {
             var buttons = jQ("#app > div.container.wrapper > div.container-right > div > div > div > div > div > div.modal-footer > div > button");
-            buttons[buttons.length-1].click();
+            buttons[buttons.length - 1].click();
         };
     } else {
         i.onclick = function () {
-            var ts = jQ(BASE_ORDERINFO_DOM +" > div > div > div > h3.tradingsymbol").text().trim().split(' ');
+            var ts = jQ(BASE_ORDERINFO_DOM + " > div > div > div > h3.tradingsymbol").text().trim().split(' ');
             var tradingsymbol = ts[0];
             debug(tradingsymbol);
             var exchange = ts[1];
@@ -1834,24 +1918,24 @@ function orderInfo() {
 
             var quantity = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(1) > div.six.columns.text-right > div").text().trim().split('/')[0];
 
-            var price = jQ(BASE_ORDERINFO_DOM+" > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(3) > div.six.columns.text-right > div").text().trim();
+            var price = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(3) > div.six.columns.text-right > div").text().trim();
             debug(price);
 
-            if (!JSON.stringify(g_tradingBasket).includes("\""+tradingsymbol+"\"")) {
-                g_tradingBasket.push({"product": product,"variety": "regular","tradingsymbol": tradingsymbol , "exchange": exchange,"transaction_type": transactionType,"order_type": orderType,"price": parseFloat(price),"quantity": parseInt(quantity) ,"readonly": false});
+            if (!JSON.stringify(g_tradingBasket).includes("\"" + tradingsymbol + "\"")) {
+                g_tradingBasket.push({ "product": product, "variety": "regular", "tradingsymbol": tradingsymbol, "exchange": exchange, "transaction_type": transactionType, "order_type": orderType, "price": parseFloat(price), "quantity": parseInt(quantity), "readonly": false });
 
                 navigator.clipboard.writeText(JSON.stringify(g_tradingBasket));
 
 
                 updateOrderButtons();
-                tEv("kite","order","copyOrder","");
+                tEv("kite", "order", "copyOrder", "");
             } else {
                 debug('not adding order to basket');
                 debug(JSON.stringify(g_tradingBasket));
             }
 
             var buttons = jQ("#app > div.container.wrapper > div.container-right > div > div > div > div > div > div.modal-footer > div > button");
-            buttons[buttons.length-1].click();
+            buttons[buttons.length - 1].click();
         };
     }
 
@@ -1891,15 +1975,15 @@ function showSendOrderButton() {
 
     var i = document.createElement("INPUT");
     i.type = 'hidden';
-    i.name='api_key';
-    i.value='4s0c0wfr478wne1s';
+    i.name = 'api_key';
+    i.value = '4s0c0wfr478wne1s';
     i.classList.add("randomClassToHelpHide");
 
     jQ(form).append(i);
 
     i = document.createElement("INPUT");
     i.type = 'hidden';
-    i.name='data';
+    i.name = 'data';
     i.id = 'bobasket';
     i.classList.add("randomClassToHelpHide");
 
@@ -1907,29 +1991,29 @@ function showSendOrderButton() {
 
     i = document.createElement("INPUT");
     i.type = 'button';
-    i.name='sendOrder';
-    i.value='Send Order';
+    i.name = 'sendOrder';
+    i.value = 'Send Order';
     i.classList.add("randomClassToHelpHide");
     i.classList.add('button');
     i.classList.add('button-outline');
-    i.id='sendOrder';
+    i.id = 'sendOrder';
 
     jQ(form).append(i);
 
     i = document.createElement("INPUT");
     i.type = 'button';
-    i.name='resetOrder';
-    i.value='Reset Order';
+    i.name = 'resetOrder';
+    i.value = 'Reset Order';
     i.classList.add("randomClassToHelpHide");
     i.classList.add('button');
     i.classList.add('button-outline');
-    i.id='resetOrder';
+    i.id = 'resetOrder';
 
     jQ(form).append(i);
 
     jQ(div).append(form);
 
-    jQ(document).on('click',"#sendOrder", async function() {
+    jQ(document).on('click', "#sendOrder", async function () {
         debug('submiting send ordre');
         const t = await navigator.clipboard.readText();
         jQ('#bobasket').val(t);
@@ -1937,22 +2021,22 @@ function showSendOrderButton() {
         //g_tradingBasket.splice(0, g_tradingBasket.length);
         //navigator.clipboard.writeText("");
         jQ("#bo_basket-form").submit();
-        tEv("kite","order","sendOrderClick","");
+        tEv("kite", "order", "sendOrderClick", "");
     });
 
-    jQ(document).on('mouseenter',"#sendOrder", async function() {
+    jQ(document).on('mouseenter', "#sendOrder", async function () {
         debug('refreshing mouse enter');
 
         updateOrderButtons();
 
-        tEv("kite","order","sendOrderMouseOver","");
+        tEv("kite", "order", "sendOrderMouseOver", "");
     });
 
-    jQ(document).on('click',"#resetOrder", async function() {
+    jQ(document).on('click', "#resetOrder", async function () {
         debug('reset order');
         navigator.clipboard.writeText("");
         updateOrderButtons();
-        tEv("kite","order","resetOrder","");
+        tEv("kite", "order", "resetOrder", "");
     });
     if (jQ("div.container.wrapper > div.container-right > div.page-nav").length < 1) {
         debug('sleeping as couldnt find order div');
@@ -1968,11 +2052,11 @@ async function updateOrderButtons() {
 
     try {
         g_tradingBasket = JSON.parse(t);
-    } catch(err) {
+    } catch (err) {
         g_tradingBasket.splice(0, g_tradingBasket.length);
         debug("There was error in parsing order");
     }
-    jQ("#sendOrder").val('Send Order ('+ g_tradingBasket.length +')');
+    jQ("#sendOrder").val('Send Order (' + g_tradingBasket.length + ')');
 }
 
 //click on order header
@@ -1997,7 +2081,7 @@ async function updateOrderButtons() {
 
 //div holding ready-made strategies.
 //div.modal-mask.positios-info-container.positions-info-modal > div.modal-wrapper > div.modal-container.layer-2
-waitForKeyElements (BASE_ORDERINFO_DOM, orderInfo);
+waitForKeyElements(BASE_ORDERINFO_DOM, orderInfo);
 
 function changePnLFilter() {
     debug('changePnLFilter');
@@ -2005,16 +2089,15 @@ function changePnLFilter() {
     document.querySelector("input[name='date']").click();
 
     var today = new Date();
-    var mm = today.getMonth()+1;
+    var mm = today.getMonth() + 1;
     var yyyy = today.getFullYear();
 
-    if(mm<10)
-    {
-        mm='0'+mm;
+    if (mm < 10) {
+        mm = '0' + mm;
     }
-    var monthStart = yyyy + '-'+ mm + '-01';
+    var monthStart = yyyy + '-' + mm + '-01';
 
-    document.querySelector("td[title='"+monthStart+"']").click();
+    document.querySelector("td[title='" + monthStart + "']").click();
     document.querySelector('#app > div.wrapper > div > div > div > form > div > div.one.columns > button').click()
     //2021-02-03 ~ 2021-03-01
 }
@@ -2025,8 +2108,8 @@ function introducePnlFilter() {
     spanForFilter.classList.add("randomClassToHelpHide");
     //spanForFilter.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);padding: 0 10px;"
     spanForFilter.textContent = 'F&O This Month';
-    spanForFilter.id ='customFilter';
-    spanForFilter.addEventListener("click", ()=>changePnLFilter());
+    spanForFilter.id = 'customFilter';
+    spanForFilter.addEventListener("click", () => changePnLFilter());
 
     jQ(BASE_PNL_REPORT).after(spanForFilter);
 
@@ -2040,18 +2123,18 @@ function introducePnlFilter() {
 //sensibull inside kite
 //watching for 'do more with strategy builder' link
 //waitForKeyElements ('.style__BuilderRedirectLink-t0trse-30', sensibull);
-waitForKeyElements ("a:contains('Do more with Strategy Builder')", sensibull);
+waitForKeyElements("a:contains('Do more with Strategy Builder')", sensibull);
 
 var previousArray = [];
 function sensibull(firstTry = true) {
     debug('sensibull');
-    tEv("kite","positions","sensibull","");
+    tEv("kite", "positions", "sensibull", "");
 
-    var rows = jQ( allDOMPaths.sensibullRows);
+    var rows = jQ(allDOMPaths.sensibullRows);
     //debug(d);
     debug(rows.length);
     if (firstTry && rows.length < 1) {
-        setTimeout(function(){ sensibull(false);}, 1000);
+        setTimeout(function () { sensibull(false); }, 1000);
         return;
     }
 
@@ -2062,11 +2145,11 @@ function sensibull(firstTry = true) {
 
     var option = document.createElement("option");
     option.text = "Toggle";
-    option.value= "All";
+    option.value = "All";
     selectBox.add(option);
 
     var expiryArray = [];
-    rows.each(function(rowIndex) {
+    rows.each(function (rowIndex) {
         var exp = jQ(this).find('th > div > div:nth-child(3)').text().split(" ")[2];
 
         if (!expiryArray.includes(exp)) {
@@ -2089,13 +2172,13 @@ function sensibull(firstTry = true) {
     //document.querySelector("")
     jQ("span:contains('F&O Instruments')").after(selectBox);
 
-    selectBox.addEventListener("change", function() {
-        tEv("kite","positions","sensibull","expiry-filter");
+    selectBox.addEventListener("change", function () {
+        tEv("kite", "positions", "sensibull", "expiry-filter");
         var selectedItem = this.value;
         debug(selectedItem);
 
         var rows = jQ(allDOMPaths.sensibullRows);
-        rows.each(function(rowIndex) {
+        rows.each(function (rowIndex) {
             var t = jQ(this).find('th > div > div:nth-child(3)').text().split(" ")[2];
 
             //console.log('bs: text to cmp' + t.toUpperCase());
@@ -2110,10 +2193,10 @@ function sensibull(firstTry = true) {
     var strategySelectBox = document.createElement("SELECT");
     strategySelectBox.id = "userStrategiesId";
     strategySelectBox.classList.add("randomClassToHelpHide");
-    strategySelectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;font-size: 12px;background-color: var(--color-bg-default)"
+    strategySelectBox.style = "margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;font-size: 12px;background-color: var(--color-bg-default)"
 
     //add options to the positions select drop down
-    for(var key in positions){
+    for (var key in positions) {
         option = document.createElement("option");
         option.text = key;
         option.value = key;
@@ -2123,8 +2206,8 @@ function sensibull(firstTry = true) {
     jQ('#userStrategiesId').remove();
     jQ(".style__StyledBrandLogo-t0trse-8").before(strategySelectBox);
 
-    strategySelectBox.addEventListener("change", function() {
-        tEv("kite","positions","sensibull","strategy-filter");
+    strategySelectBox.addEventListener("change", function () {
+        tEv("kite", "positions", "sensibull", "strategy-filter");
         var selectedItem = this.value;
         info(selectedItem);
 
@@ -2135,13 +2218,13 @@ function sensibull(firstTry = true) {
 
         var rows = jQ(allDOMPaths.sensibullRows);
         //rest all.
-        rows.each(function(rowIndex) {
+        rows.each(function (rowIndex) {
             debug(jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].checked);
             if (!jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].checked) {
                 var c = jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].click();
             }
         });
-        rows.each(function(rowIndex) {
+        rows.each(function (rowIndex) {
             var t = `${script} ${jQ(this).find('th > div > div:nth-child(3)').text().split(" ").slice(2).join(" ")}`;
 
             debug('comparing sesibull position ' + t);
@@ -2157,25 +2240,25 @@ function sensibull(firstTry = true) {
 }
 
 function arrayEquals(a, b) {
-  return Array.isArray(a) &&
-    Array.isArray(b) &&
-    a.length === b.length &&
-    a.every((val, index) => val === b[index]);
+    return Array.isArray(a) &&
+        Array.isArray(b) &&
+        a.length === b.length &&
+        a.every((val, index) => val === b[index]);
 }
 
 //div.InstrumentPickerSymbolWrapper
-waitForKeyElements ('div[role=menu]', listenToSymbolChange);
+waitForKeyElements('div[role=menu]', listenToSymbolChange);
 function listenToSymbolChange() {
     debug('listenToSymbolChange');
-    jQ(document).off('click',"div[role=menu]" , handleSymbolClick);
-    jQ(document).on('click',"div[role=menu]", handleSymbolClick);
+    jQ(document).off('click', "div[role=menu]", handleSymbolClick);
+    jQ(document).on('click', "div[role=menu]", handleSymbolClick);
 }
 
-function handleSymbolClick(event){
+function handleSymbolClick(event) {
     debug('listenToSymbolChange click');
     //stopImmediatePropagation
     event.stopPropagation();
-    tEv("kite","positions","sensibull","symbol-change");
+    tEv("kite", "positions", "sensibull", "symbol-change");
 
     setTimeout(() => sensibull1(), 3000);
 }
@@ -2188,21 +2271,21 @@ function sensibull1() {
 //debug(getLastThursday('Jan'));
 
 function getLastThursday(m, year) {
-    var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    debug(months.indexOf(m.toUpperCase()));
-    var month = months.indexOf(m.toUpperCase())+1;
+    
+    debug(MONTHS.indexOf(m.toUpperCase()));
+    var month = MONTHS.indexOf(m.toUpperCase()) + 1;
 
-  var d = new Date();
-  if (year) { d.setFullYear(year); }
-  d.setDate(1); // Roll to the first day of ...
-  d.setMonth(month || d.getMonth() + 1); // ... the next month.
-  do { // Roll the days backwards until Monday.
-    d.setDate(d.getDate() - 1);
-  } while (d.getDay() !== 4);
+    var d = new Date();
+    if (year) { d.setFullYear(year); }
+    d.setDate(1); // Roll to the first day of ...
+    d.setMonth(month || d.getMonth() + 1); // ... the next month.
+    do { // Roll the days backwards until Monday.
+        d.setDate(d.getDate() - 1);
+    } while (d.getDay() !== 4);
 
-  let da = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(d);
-  let mo = new Intl.DateTimeFormat('en', { month: 'short' }).format(d);
-  return da+mo;
+    let da = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(d);
+    let mo = new Intl.DateTimeFormat('en', { month: 'short' }).format(d);
+    return da + mo;
 }
 
 
@@ -2210,4 +2293,4 @@ jQ.fn.exists = function () {
     return this.length !== 0;
 }
 
-tEv("kite","visit","main",VERSION);
+tEv("kite", "visit", "main", VERSION);
