@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterSharekhan
 // @namespace    https://github.com/amit0rana/betterSharekhan
-// @version      0.04
+// @version      0.05
 // @description  Introduces small features on top of newtrade.sharekhan.com
 // @author       Amit
 // @match        https://newtrade.sharekhan.com/*
@@ -221,20 +221,7 @@ function createPositionsDropdown() {
         });
 
         //document.querySelector("#sort > tbody > tr:nth-child(5) > td:nth-child(16)") today mtm, settled mtm, total mtm, today bpl, total bpm
-        jQ('#idtodaymtm').remove();
-        jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(16)`).append(`<span id='idtodaymtm'><br /><b style="background: pink;">${tdymtm}</b></span>`);
-
-        jQ('#idsettledmtm').remove();
-        jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(17)`).append(`<span id='idsettledmtm'><br /><b style="background: pink;">${settledmtm}</b></span>`);
-
-        jQ('#idtotalmtm').remove();
-        jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(18)`).append(`<span id='idtotalmtm'><br /><b style="background: pink;">${totalmtm}</b></span>`);
-
-        jQ('#idtdybpl').remove();
-        jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(19)`).append(`<span id='idtdybpl'><br /><b style="background: pink;">${tdybpl}</b></span>`);
-
-        jQ('#idtotalbpl').remove();
-        jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(20)`).append(`<span id='idtotalbpl'><br /><b style="background: pink;">${totalbpl}</b></span>`);
+        updatePnlHtml(allPositionsRow, tdymtm, settledmtm, totalmtm, tdybpl, totalbpl);
 
         return this;
     });
@@ -249,6 +236,29 @@ function createPositionsDropdown() {
 
     selectBox.add(userGeneratedGroups);
     return selectBox;
+}
+
+function updatePnlHtml(allPositionsRow, tdymtm, settledmtm, totalmtm, tdybpl, totalbpl) {
+    jQ("#sort > thead > tr > th:nth-child(16)").attr("style","width:8%");
+    jQ("#sort > thead > tr > th:nth-child(17)").attr("style","width:8%");
+    jQ("#sort > thead > tr > th:nth-child(18)").attr("style","width:8%");
+    jQ("#sort > thead > tr > th:nth-child(19)").attr("style","width:8%");
+    jQ("#sort > thead > tr > th:nth-child(20)").attr("style","width:8%");
+
+    jQ('#idtodaymtm').remove();
+    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(16)`).append(`<span id='idtodaymtm'><br /><b style="font-size: 11px;background: pink;">${formatter.format(tdymtm)}</b></span>`);
+
+    jQ('#idsettledmtm').remove();
+    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(17)`).append(`<span id='idsettledmtm'><br /><b style="font-size: 11px;background: pink;">${formatter.format(settledmtm)}</b></span>`);
+
+    jQ('#idtotalmtm').remove();
+    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(18)`).append(`<span id='idtotalmtm'><br /><b style="font-size: 11px;background: pink;">${formatter.format(totalmtm)}</b></span>`);
+
+    jQ('#idtdybpl').remove();
+    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(19)`).append(`<span id='idtdybpl'><br /><b style="font-size: 11px;background: pink;">${formatter.format(tdybpl)}</b></span>`);
+
+    jQ('#idtotalbpl').remove();
+    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(20)`).append(`<span id='idtotalbpl'><br /><b style="font-size: 11px;background: pink;">${formatter.format(totalbpl)}</b></span>`);
 }
 
 waitForKeyElements("body > div:nth-child(6) > ui-view > ui-view > turnover > div > div.card > div.table-responsive.ng-scope > div:nth-child(1) > div.col-xs-1 > button",showPositionDropdown);
@@ -407,20 +417,7 @@ function updatePnl() {
     });
 
     //document.querySelector("#sort > tbody > tr:nth-child(5) > td:nth-child(16)") today mtm, settled mtm, total mtm, today bpl, total bpm
-    jQ('#idtodaymtm').remove();
-    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(16)`).append(`<span id='idtodaymtm'><br /><b style="background: pink;">${tdymtm}</b></span>`);
-
-    jQ('#idsettledmtm').remove();
-    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(17)`).append(`<span id='idsettledmtm'><br /><b style="background: pink;">${settledmtm}</b></span>`);
-
-    jQ('#idtotalmtm').remove();
-    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(18)`).append(`<span id='idtotalmtm'><br /><b style="background: pink;">${totalmtm}</b></span>`);
-
-    jQ('#idtdybpl').remove();
-    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(19)`).append(`<span id='idtdybpl'><br /><b style="background: pink;">${tdybpl}</b></span>`);
-
-    jQ('#idtotalbpl').remove();
-    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(20)`).append(`<span id='idtotalbpl'><br /><b style="background: pink;">${totalbpl}</b></span>`);
+    updatePnlHtml(allPositionsRow, tdymtm, settledmtm, totalmtm, tdybpl, totalbpl);
 
 }
 

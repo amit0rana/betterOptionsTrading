@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterSharekhan
 // @namespace    https://github.com/amit0rana/betterSharekhan
-// @version      0.04
+// @version      0.05
 // @description  Introduces small features on top of newtrade.sharekhan.com
 // @author       Amit
 // @match        https://newtrade.sharekhan.com/*
