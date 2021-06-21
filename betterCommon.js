@@ -1,5 +1,6 @@
 const D_LEVEL_INFO = 2;
 const D_LEVEL_DEBUG = 1;
+const D_LEVEL_NONE = 100;
 
 const log = function(level, logInfo) {
     switch(level) {
@@ -14,12 +15,16 @@ const log = function(level, logInfo) {
         }
 }
 const debug = function(logInfo) {
-    log( D_LEVEL_DEBUG , logInfo);
+    if (D_LEVEL <= D_LEVEL_DEBUG) {
+     log( D_LEVEL_DEBUG , logInfo);
+    }
 }
 const info = function(logInfo) {
-    log( D_LEVEL_INFO, logInfo);
+    if (D_LEVEL <= D_LEVEL_INFO) {
+        log( D_LEVEL_INFO, logInfo);
+    }
 }
-const formatter = Intl.NumberFormat('en-IN', { 
+const formatter = Intl.NumberFormat('en-IN', {
     style: 'currency', currency: 'INR'
 });
 
