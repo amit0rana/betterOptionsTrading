@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterSharekhan
 // @namespace    https://github.com/amit0rana/betterSharekhan
-// @version      0.03
+// @version      0.04
 // @description  Introduces small features on top of newtrade.sharekhan.com
 // @author       Amit
 // @match        https://newtrade.sharekhan.com/*
@@ -23,9 +23,9 @@
 var context=window,options="{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}";const hhistory=context.history,doc=document,nav=navigator||{},storage=localStorage,encode=encodeURIComponent,pushState=hhistory.pushState,typeException="exception",generateId=()=>Math.random().toString(36),getId=()=>(storage.cid||(storage.cid=generateId()),storage.cid),serialize=e=>{var t=[];for(var o in e)e.hasOwnProperty(o)&&void 0!==e[o]&&t.push(encode(o)+"="+encode(e[o]));return t.join("&")},track=(e,t,o,n,i,a,r)=>{const c="https://www.google-analytics.com/collect",s=serialize({v:"1",ds:"web",aip:options.anonymizeIp?1:void 0,tid:"UA-176741575-1",cid:getId(),t:e||"pageview",sd:options.colorDepth&&screen.colorDepth?`${screen.colorDepth}-bits`:void 0,dr:doc.referrer||void 0,dt:doc.title,dl:doc.location.origin+doc.location.pathname+doc.location.search,ul:options.language?(nav.language||"").toLowerCase():void 0,de:options.characterSet?doc.characterSet:void 0,sr:options.screenSize?`${(context.screen||{}).width}x${(context.screen||{}).height}`:void 0,vp:options.screenSize&&context.visualViewport?`${(context.visualViewport||{}).width}x${(context.visualViewport||{}).height}`:void 0,ec:t||void 0,ea:o||void 0,el:n||void 0,ev:i||void 0,exd:a||void 0,exf:void 0!==r&&!1==!!r?0:void 0});if(nav.sendBeacon)nav.sendBeacon(c,s);else{var d=new XMLHttpRequest;d.open("POST",c,!0),d.send(s)}},tEv=(e,t,o,n)=>track("event",e,t,o,n),tEx=(e,t)=>track(typeException,null,null,null,null,e,t);hhistory.pushState=function(e){return"function"==typeof history.onpushstate&&hhistory.onpushstate({state:e}),setTimeout(track,options.delay||10),pushState.apply(hhistory,arguments)},track(),context.ma={tEv:tEv,tEx:tEx};
 
 window.jQ=jQuery.noConflict(true);
-const VERSION = "v0.03";
+const VERSION = "v0.04";
 const GMPositionsName = "BK_POSITIONS";
-const D_LEVEL = D_LEVEL_INFO;
+const D_LEVEL = D_LEVEL_DEBUG;
 
 const allDOMPaths = {
     //document.querySelector("#sort > tbody > tr:nth-child(2)")
@@ -277,13 +277,13 @@ function showPositionDropdown(retry = true) {
 
     var lastC = positionGroupdropdown.lastChild;
     debug(lastC);
-    if (lastC.id == "randomForDeleteOptGroupE") {
+    if (lastC && lastC.id == "randomForDeleteOptGroupE") {
         positionGroupdropdown.removeChild(lastC);
     }
 
     lastC = positionGroupdropdown.lastChild;
     debug(lastC);
-    if (lastC.id == "randomForDeleteOptGroup") {
+    if (lastC && lastC.id == "randomForDeleteOptGroup") {
         positionGroupdropdown.removeChild(lastC);
     }
 
@@ -351,9 +351,77 @@ function showPositionDropdown(retry = true) {
     jQ("body > div:nth-child(6) > ui-view > ui-view > turnover > div > div.card > div.table-responsive.ng-scope > div:nth-child(1) > div.col-xs-1").before(ourDiv);
 
 //    simulateSelectBoxEvent();
+
+    var target = jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(18) > b`)[0];
+    debug('--------------------------------------------------------');
+
+    debug(target);
+    var g_positionsPnlObserver = new MutationObserver(function (mutations) {
+        var st = null;
+        mutations.forEach(function (mutation) {
+            if (mutation.type == "characterData") {
+                debug("pnl changed");
+                updatePnl();
+            }
+        });
+    });
+
+    // Configuration of the observer:
+    var config = {
+        attributes:true,
+        characterData: true,
+        subtree: true
+    };
+
+    // Pass in the target node, as well as the observer options
+    g_positionsPnlObserver.observe(target, config);
+
+    
 }
 
 function updatePnl() {
+    debug('pnl changed');
+
+    var allPositionsRow = jQ(allDOMPaths.PathForPositions);
+    var allVisibleRows = jQ(allDOMPaths.PathForPositions + ":visible");
+    
+    var tdymtm = 0.0;
+    var settledmtm = 0.0;
+    var totalmtm = 0.0;
+    var tdybpl = 0.0;
+    var totalbpl = 0.0;
+
+    allVisibleRows.each(function(rowIndex) {
+        var span = jQ(this).find("td:nth-child(2) > span");
+       try{
+            var params = JSON.parse(jQ(span).attr('params'));
+         
+            tdymtm += parseFloat(params.detail.tdymtm);
+            settledmtm += parseFloat(params.detail.settledmtm);
+            totalmtm += parseFloat(params.detail.totalmtm);
+            tdybpl += parseFloat(params.detail.tdybpl);
+            totalbpl += parseFloat(params.detail.totalbpl);
+        
+        } catch(err) {
+        }
+    });
+
+    //document.querySelector("#sort > tbody > tr:nth-child(5) > td:nth-child(16)") today mtm, settled mtm, total mtm, today bpl, total bpm
+    jQ('#idtodaymtm').remove();
+    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(16)`).append(`<span id='idtodaymtm'><br /><b style="background: pink;">${tdymtm}</b></span>`);
+
+    jQ('#idsettledmtm').remove();
+    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(17)`).append(`<span id='idsettledmtm'><br /><b style="background: pink;">${settledmtm}</b></span>`);
+
+    jQ('#idtotalmtm').remove();
+    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(18)`).append(`<span id='idtotalmtm'><br /><b style="background: pink;">${totalmtm}</b></span>`);
+
+    jQ('#idtdybpl').remove();
+    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(19)`).append(`<span id='idtdybpl'><br /><b style="background: pink;">${tdybpl}</b></span>`);
+
+    jQ('#idtotalbpl').remove();
+    jQ(`#sort > tbody > tr:nth-child(${allPositionsRow.length}) > td:nth-child(20)`).append(`<span id='idtotalbpl'><br /><b style="background: pink;">${totalbpl}</b></span>`);
+
 }
 
 jQ.fn.exists = function () {

@@ -68,9 +68,9 @@ const g_config = new MonkeyConfig({
         },
         logging: {
             type: 'select',
-            choices: ['Info', 'Debug'],
-            values: [D_LEVEL_INFO, D_LEVEL_DEBUG],
-            default: D_LEVEL_INFO
+            choices: ['Info', 'Debug', 'None'],
+            values: [D_LEVEL_INFO, D_LEVEL_DEBUG, D_LEVEL_NONE],
+            default: D_LEVEL_NONE
         },
         pro_mode: {
             type: 'checkbox',
@@ -571,7 +571,7 @@ function createPositionsDropdown() {
                     var expiry = getExpiryText(p);
                     if (ts == s || s == expiry) {
                         matchFound = true;
-                    } 
+                    }
                     // } else if (tradingSymbolText.includes(" " + s + " ")) {
                         // matchFound = true;
                     // }
@@ -747,7 +747,7 @@ function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
         var display = 'M (C)';
         if (MARGIN_METHOD == MM_BASKET) {
             display = 'M (B)';
-        } 
+        }
         jQ("#marginDiv").text(display+": " + formatter.format(margin));
     }
     jQ("#marginDiv").prop('title', `ROI: ${(pnl / margin * 100).toFixed(2)}%`);
@@ -833,7 +833,7 @@ function hideDropdown() {
     if (g_positionsPnlObserver) g_positionsPnlObserver.disconnect();
 }
 
-//waitForKeyElements("#app > div.container.wrapper > div.container-right > div > div > section.open-positions.table-wrapper > div > div > table > thead > tr > th.select",showPositionDropdown);
+//waitForKeyElements("span.count",showPositionDropdown);
 
 function showPositionDropdown(retry = true) {
     jQ("#headerSubActionsID").remove();
@@ -844,10 +844,10 @@ function showPositionDropdown(retry = true) {
     var allPositionsRow = jQ(allDOMPaths.PathForPositions);
 
     if (allPositionsRow.length < 1) {
-        debug('sleeping as couldnt find positions');
+        debug('sleeping as couldnt find positions ' + retry);
         //TODO if no positions this will cause loop
         if (retry) {
-            setTimeout(function () { showPositionDropdown(false); }, 1000);
+            //setTimeout(function () { showPositionDropdown(false); }, 1000);
         }
         return;
     }
@@ -1113,7 +1113,9 @@ function simulateSelectBoxEvent() {
                 debug('initiating change event found holdings');
                 tagSelectorP.dispatchEvent(new Event("change"));
             } else {
-                debug('sleeping as couldnt find positions');
+                debug('sleeping as couldnt find positions (simulateSelectBox)');
+                //waitForKeyElements("div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr:nth-child(1)",simulateSelectBoxEvent);
+                //waitForKeyElements("span.count",simulateSelectBoxEvent);
                 //setTimeout(function(){ simulateSelectBoxEvent(); }, 2000);
             }
         }
@@ -1724,9 +1726,12 @@ function main() {
         var currentUrl = window.location.pathname;
         toggleDropdown(currentUrl);
 
-        if (currentUrl.includes('funds')) {
-            waitForKeyElements("#app > div.container.wrapper > div.container-right > div > div.margins > div.row > div:nth-child(1) > div > table > tbody > tr:nth-child(1)", showFundsHelp);
-        }
+        // if (currentUrl.includes('funds')) {
+        //     waitForKeyElements("#app > div.container.wrapper > div.container-right > div > div.margins > div.row > div:nth-child(1) > div > table > tbody > tr:nth-child(1)", showFundsHelp);
+        // }
+        // if (currentUrl.includes('positions')) {
+        //     updatePnl(true);
+        // }
     };
 
     //on click of watchlist tab (1-5)
@@ -2271,7 +2276,7 @@ function sensibull1() {
 //debug(getLastThursday('Jan'));
 
 function getLastThursday(m, year) {
-    
+
     debug(MONTHS.indexOf(m.toUpperCase()));
     var month = MONTHS.indexOf(m.toUpperCase()) + 1;
 
