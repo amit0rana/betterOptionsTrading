@@ -1,7 +1,7 @@
     // ==UserScript==
     // @name         betterTradingeconomics
     // @namespace    https://github.com/amit0rana/betterTradingeconomics
-    // @version      0.02
+    // @version      0.03
     // @description  Introduces small features on top of betterTradingeconomics site
     // @author       Amit
     // @match        https://tradingeconomics.com/*
@@ -21,7 +21,9 @@
 //tradingeconomics.com
     function stockFilter() {
         if (currentUrl.includes('stocks')) {
-            $('div.container > div.row > div.col-lg-8.col-md-9 > div#ctl00_ctl09_AdPanel').hide();
+            const domForAdPanel = '[data-ad=ad-below-menu]';
+            //$('div#ctl00_ctl07_AdPanel').hide();
+            $(domForAdPanel).hide();
 
             //jQ(allDOMPaths.PathForPositions).filter(':has(:checkbox:checked)');
 
@@ -75,7 +77,7 @@
             });
 
             $('#toggleSelectboxID').remove();
-            $('div.container > div.row > div.col-lg-8.col-md-9 > div#ctl00_ctl09_AdPanel').after(selectBox);
+            $(domForAdPanel).after(selectBox);
 
             var refreshBtn = document.createElement("button");
             refreshBtn.id = "refreshID";
@@ -85,7 +87,7 @@
                 stockFilter();
             });
             $('#refreshID').remove();
-            $('div.container > div.row > div.col-lg-8.col-md-9 > div#ctl00_ctl09_AdPanel').after(refreshBtn);
+            $(domForAdPanel).after(refreshBtn);
         }
     }
 
