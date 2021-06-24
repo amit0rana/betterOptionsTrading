@@ -2,8 +2,17 @@
 
 Very simple "userscript" which adds several features to kite.zerodha.com ui
 * Group positions under strategies
+* For a strategy, check how much margin can be freed by taking hedge buy positions
 * See P&L for each strategy
 * See margin utilised for each position or for a strategy
+* Mark trades as reference trade or martingale 
+* See your ROI 
+* Get explanation of various rows in funds page 
+* Filter trades by expiry in sensibull pop-up 
+* Auto group strategy by scrip and expiry 
+* Auto filter Watch list for scrip in positions 
+* Highlight position when you click on scrip in Watch list 
+* Filter mis only, pe online or CE only positions
 * Margin calculation is done by 2 methods. If you use 'baseket' method (this is default) then no further action needed but if youw ant to use 'Margin Calculator' method then you need to enable CORS. Choosing which method is available in settings. 
 * Check this image on enabling CORS:
 ![corsusage](https://dl.dropbox.com/s/mbktrw9dkqu4wl0/corsToggle.png?dl=0)
