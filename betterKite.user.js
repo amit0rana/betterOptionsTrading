@@ -1640,7 +1640,7 @@ function checkMarginSaving() {
 
             calculateMargin(data).then(margin2 => {
                 debug(symbol + ' later ' + formatter.format(margin2));
-                alert(`You can potentially FREE approx ${formatter.format(margin1-margin2)} margin by taking following hedge. BUY ${Math.abs(marginData[symbol+'_pe'])} x ${minStrike}PE and BUY ${Math.abs(marginData[symbol+'_ce'])} x ${maxStrike}CE`)
+                alert(`You can potentially FREE approx ${formatter.format(margin1-margin2)} margin by taking following hedge. BUY ${Math.abs(marginData[symbol+'_pe'])} x ${symbol} ${minStrike}PE and BUY ${symbol} ${Math.abs(marginData[symbol+'_ce'])} x ${maxStrike}CE`)
             });
         });
 
