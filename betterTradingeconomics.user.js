@@ -15,6 +15,7 @@
     // @updateURL    https://github.com/amit0rana/betterOptionsTrading/raw/master/betterTradingeconomics.meta.js
     // ==/UserScript==
 
+    const D_LEVEL = D_LEVEL_NONE;
     var currentUrl = window.location.pathname;
     info(currentUrl);
 

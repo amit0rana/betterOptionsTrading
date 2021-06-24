@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.12
+// @version      3.13
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -25,7 +25,7 @@
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.12";
+const VERSION = "v3.13";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -65,6 +65,18 @@ const g_config = new MonkeyConfig({
         filter_watchlist: {
             type: 'checkbox',
             default: true
+        },
+        nf_hedge: {
+            type: 'number',
+            default: 500
+        },
+        bnf_hedge: {
+            type: 'number',
+            default: 700
+        },
+        stock_hedge: {
+            type: 'number',
+            default: 100
         },
         logging: {
             type: 'select',
@@ -756,7 +768,7 @@ function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
 
 function createMisFilter() {
     debug('createMisFilter');
-    var s = jQ("<span id='headerSubActionsID' class='text-label grey randomClassToHelpHide' >Actions: <span  id='misCoundId' class='text-label red randomClassToHelpHide'>MIS</span></span>");
+    var s = jQ("<span id='headerSubActionsID' class='text-label grey randomClassToHelpHide' ><span  id='misCoundId' class='text-label red randomClassToHelpHide'>MIS</span></span>");
 
     var i = document.createElement("INPUT");
     i.style = 'margin: 5px';
@@ -810,12 +822,21 @@ function createMisFilter() {
     i.id = "selectAllId";
     i.name = 'selectAllId';
     i.value = 'Toggle Selection';
-    i.checked = false;
 
     // jQ(t).append(i);
 
     // jQ(t).append("<span id='peCountId'></span>");
     jQ(s).append(t);
+    jQ(s).append(i);
+
+    //savings button
+    i = document.createElement("INPUT");
+    i.style = 'margin: 5px';
+    i.type = 'button';
+    i.id = "saveMarginBtnId";
+    i.name = 'saveMarginBtnId';
+    i.value = 'Save Margin';
+
     jQ(s).append(i);
 
     return s;
@@ -1243,7 +1264,7 @@ const calculateMarginUsingMarginCalculator = async (selection) => {
             'scrip[]': data.scrip,
             'option_type[]': data.pece,
             'strike_price[]': `${data.strike}`,
-            'qty[]': `${data.quantity}`,
+            'qty[]': `${Math.abs(data.quantity)}`,
             'trade[]': data.transaction_type.toLowerCase()
         });
         payload = `${payload}&${d}`
@@ -1269,7 +1290,7 @@ const calculateMarginUsingBasket = async (selection) => {
             'order_type': 'LIMIT',
             'price': data.price,
             'product': data.product,
-            'quantity': data.quantity,
+            'quantity': Math.abs(data.quantity),
             'squareoff': 0,
             'stoploss': 0,
             'tradingsymbol': data.tradingsymbol,
@@ -1304,12 +1325,14 @@ const calculateMarginUsingBasket = async (selection) => {
 const getMarginCalculationData = (instrument, product, q, price) => {
     // frame payload for SPAN calculation
     var tokens = instrument.replace(/\s+/g, ' ').split(" ");
-    debug(tokens);
+    //debug(tokens);
     var data = {};
     if (tokens[1] === "NSE" || tokens[1] === "BSE") { //buy: OAL BSE HOLDING, sell: OAL NSE SOLD HOLDING
         return null;
     }
-    data.product = product.replace(/\n/g, '').replace(/\t/g, '');
+    data.symbol = tokens[0];
+    data.product = product.replace(/\s/g, '');
+    //data.product = product.replace(/\n/g, '').replace(/\t/g, '').trim();
     if (tokens[2] === "FUT") {
         //NIFTY APR FUT NFO
         data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}FUT`;
@@ -1399,7 +1422,7 @@ function updatePnl(forPositions = true) {
 function onSuCheckboxSelection() {
     tEv("kite", "positionscheckbox", "click", "");
     debug('select su-checkbox changed');
-    var selectedRows = jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr.selected");
+    var selectedRows = jQ(`${allDOMPaths.PathForPositions}.selected`);
 
     var pnl = 0;
     var maxPnl = 0;
@@ -1490,6 +1513,155 @@ function onSuCheckboxSelection() {
 
 }
 
+function getPositionRowObject(row) {
+    //instrument what you see in the
+    //tradingsymbl what you send NIFTY21JUN15750CE
+    //scrip  NIFTY21JUL
+    //eg: NIFTY2140814200CE (NIFTY 8th w APR 14200 CE NFO LABELS)
+    var position = {};
+
+    position.pnl = jQ(jQ(row).find("td")[6]).text().split(",").join("");
+    position.instrument  = jQ(jQ(row).find("td")[2]).text();
+    position.product = jQ(jQ(row).find("td")[1]).text().replace(/\s/g, '');
+    position.quantity = parseFloat(jQ(jQ(row).find("td")[3]).text().split(",").join(""));
+    position.avgPrice = parseFloat(jQ(jQ(row).find("td")[4]).text().split(",").join(""));
+
+    var data = getMarginCalculationData(position.instrument, position.product, position.quantity, position.avgPrice);
+
+    position.exchange = data.exchange;
+    position.pece = data.pece;
+    position.strike = data.strike;
+    position.optfut = data.optfut;
+    position.scrip = data.scrip;
+    position.tradingsymbol = data.tradingsymbol;
+    position.symbol = data.symbol;
+        
+    if (position.quantity > 0) {
+        position.transaction_type = 'BUY';
+    } else {
+        position.transaction_type = 'SELL';
+    }
+    return position;
+}
+
+function checkMarginSaving() {
+    tEv("kite", "checkMarginSaving", "click", "");
+    debug('checkMarginSaving');
+    // var selectedRows = jQ(allDOMPaths.PathForPositions+".selected");
+    var selectedRows = jQ(allDOMPaths.PathForPositions + ":visible");
+
+    var marginData = {};
+    var symbols = [];
+    selectedRows.each(function (rowIndex) {
+        var position = getPositionRowObject(this);
+
+        // if (position.instrument.includes('NSE') || position.instrument.includes('BSE') || (position.symbol != 'NIFTY' && position.symbol != 'BANKNIFTY')) {
+        if (position.instrument.includes('NSE') || position.instrument.includes('BSE') ) {
+            debug('skipping ' + position.symbol);
+            return ;
+        }
+
+        if ( ! symbols.includes(position.symbol)) {
+            symbols.push(position.symbol);
+        }
+        
+
+        if (! marginData.hasOwnProperty(position.symbol+'_md')) {
+            marginData[position.symbol+'_md'] = [];
+            marginData[position.symbol+'_pe'] = 0;
+            marginData[position.symbol+'_ce'] = 0;
+            marginData[position.symbol+'_strikes'] = [];
+            marginData[position.symbol+'_scrip'] = ''; 
+        }
+
+        if (position.pece == 'CE') {
+            marginData[position.symbol+'_ce'] = marginData[position.symbol+'_ce'] + position.quantity;
+        } else if (position.pece == 'PE') {
+            marginData[position.symbol+'_pe'] = marginData[position.symbol+'_pe'] + position.quantity;
+        }
+
+        marginData[position.symbol+'_md'].push(position);
+        marginData[position.symbol+'_strikes'].push(position.strike);
+        marginData[position.symbol+'_scrip'] = position.scrip;
+    });
+
+    debug(marginData);
+
+    symbols.forEach(function(symbol, index) {
+        //debug(symbol);
+
+        var data = marginData[symbol+'_md'];
+
+        calculateMargin(data).then(margin1 => {
+            debug(symbol + ' now ' + formatter.format(margin1));
+
+            var increment = 0;
+            if (symbol == 'NIFTY') {
+                increment = g_config.get('nf_hedge');
+            } else if (symbol == 'BANKNIFTY') {
+                increment = g_config.get('bnf_hedge');
+            } else {
+                increment = g_config.get('stock_hedge');
+            }
+            var minStrike = Math.min(...marginData[symbol+'_strikes']) - parseInt(increment);
+            var maxStrike = Math.max(...marginData[symbol+'_strikes']) + parseInt(increment);
+            
+            var dp = {'order_type':'MARKET','price':0,'product':'NRML','exchange':'NFO','transaction_type':'BUY','trigger_price':0,'optfut':'OPT','scrip':marginData[symbol+'_scrip']};
+            var dc = {'order_type':'MARKET','price':0,'product':'NRML','exchange':'NFO','transaction_type':'BUY','trigger_price':0,'optfut':'OPT','scrip':marginData[symbol+'_scrip']};
+            // d.order_type = 'MARKET';
+            
+            // d.squareoff = 0;
+            // d.stoploss = 0;
+            
+            // variety = 'regular';
+            
+
+            if (marginData[symbol+'_pe'] < 0) {
+                debug(' PE saving possible ' + minStrike);
+                dp.quantity = Math.abs(marginData[symbol+'_pe']);
+                dp.tradingsymbol = dp.scrip+minStrike+'PE';
+                dp.pece = 'PE';
+                dp.strike = minStrike;
+                data.push(dp);
+            }
+
+            if (marginData[symbol+'_ce'] < 0) {
+                debug(' CE saving possible ' + maxStrike);
+                dc.quantity = Math.abs(marginData[symbol+'_ce']);
+                dc.tradingsymbol = dc.scrip+maxStrike+'CE';
+                dc.pece = 'CE';
+                dc.strike = maxStrike;
+                data.push(dc);
+            }
+
+            
+            debug(data);
+
+
+            calculateMargin(data).then(margin2 => {
+                debug(symbol + ' later ' + formatter.format(margin2));
+                alert(`You can potentially FREE approx ${formatter.format(margin1-margin2)} margin by taking following hedge. BUY ${Math.abs(marginData[symbol+'_pe'])} x ${minStrike}PE and BUY ${Math.abs(marginData[symbol+'_ce'])} x ${maxStrike}CE`)
+            });
+        });
+
+        
+    });
+
+    // Object.keys(marginData).forEach(function(symbol) {
+    //     debug(symbol);
+    //     if(symbol.includes('_md')) {
+    //         var data = marginData[symbol];
+    //         debug(data);
+    
+    //         calculateMargin(data).then(margin => {
+    //             debug(symbol + ' ' + formatter.format(margin));
+    //         });
+    //     }
+    // });
+    
+
+}
+
 // all behavior related actions go here.
 function main() {
     GM_registerMenuCommand("Reset Data (WARNING) " + VERSION, function () {
@@ -1548,6 +1720,13 @@ function main() {
         jQ(document).on('change', "input.su-checkbox", onSuCheckboxSelection);
 
         //simulateSelectBoxEvent();
+    });
+    
+
+    //click on save margin button
+    jQ(document).on('click', "#saveMarginBtnId", function () {
+        tEv("kite", "saveMarginBtnId", "click", "");
+        checkMarginSaving();
     });
 
     //click of PE filter
