@@ -868,7 +868,7 @@ function showPositionDropdown(retry = true) {
         debug('sleeping as couldnt find positions ' + retry);
         //TODO if no positions this will cause loop
         if (retry) {
-            //setTimeout(function () { showPositionDropdown(false); }, 1000);
+            setTimeout(function () { showPositionDropdown(false); }, 1000);
         }
         return;
     }
@@ -1284,10 +1284,15 @@ const calculateMarginUsingMarginCalculator = async (selection) => {
 const calculateMarginUsingBasket = async (selection) => {
     let margin = 0
     var payload = []
+    
     selection.forEach(data => {
+        var orderType = 'LIMIT'
+        if (data.hasOwnProperty('order_type')) {
+            orderType = data.order_type;
+        }
         var d = {
             'exchange': data.exchange,
-            'order_type': 'LIMIT',
+            'order_type': orderType,
             'price': data.price,
             'product': data.product,
             'quantity': Math.abs(data.quantity),
