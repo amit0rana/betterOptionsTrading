@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.17
+// @version      3.18
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -25,7 +25,7 @@
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.17";
+const VERSION = "v3.18";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -106,6 +106,7 @@ const allDOMPaths = {
     domPathMainInitiatorLabel: "h3.page-title.small > span",
     domPathTabToChangeWatchlist: "ul.marketwatch-selector.list-flat > li",
     PathForPositions: "div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr",
+    PathForBasketPositions: "div.basket-table > div > table > tbody > tr",
     domPathForPositionsDayHistory: "div.positions > section.day-positions.table-wrapper > div > div > table > tbody > tr",
     positionHeader: "header.row.data-table-header > h3",
     //sensibullRows: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > div > table > tbody > tr",
@@ -1977,6 +1978,7 @@ function main() {
     });
 
     waitForKeyElements("span.margin-value", showRoiNudge);
+    waitForKeyElements("div.value.final-margins-value", showBasketRoiNudge);
 
 }
 
@@ -2025,6 +2027,51 @@ function updateRoiNudge() {
     
     jQ('#nudgepremiumid').remove();
     jQ('footer.footer > div > div:nth-child(1)').append(`<div id="nudgepremiumid" class="row margins"><span class="label">Premium Recvd: </span> <span >${formatter.format(qty * lastPrice)} (ROI: ${(((qty * lastPrice) / margin) * 100).toFixed(2)}%)</span></div>`);
+
+}
+
+function showBasketRoiNudge() {
+    updateBasketRoiNudge();
+    var target = jQ("div.value.final-margins-value")[0];
+    var obs = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+            if (mutation.type == "characterData") {
+                updateBasketRoiNudge();
+            }
+        });
+    });
+
+    // Configuration of the observer:
+    config = {
+        characterData: true,
+        subtree: true
+    };
+
+    // Pass in the target node, as well as the observer options
+    obs.observe(target, config);
+
+    jQ(document).on('change','div.value.dim', function() {
+        updateBasketRoiNudge();
+    });
+
+}
+
+function updateBasketRoiNudge() {
+    var lastPrice = 0;
+    var margin = jQ("div.value.final-margins-value").text().trim().split('₹').join("").split(",").join("");
+    var imargin = jQ("div.value.dim").text().trim().split('₹').join("").split(",").join("");
+    var basketPositions = jQ(allDOMPaths.PathForBasketPositions);
+    var positionArray = [];
+    var premium=0;
+    basketPositions.each(function (rowIndex) {
+        var transactionType = jQ(jQ(this).find("td")[0]).text().trim();
+        var qty = parseFloat(jQ(jQ(this).find("td")[4]).text().split(',').join(''));
+        var price = parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
+        premium += qty*price*(transactionType=='SELL'?1:-1);
+    });
+    debug(margin);
+    jQ('#nudgepremiumid').remove();
+    jQ('div.eight.columns.margins-summary > div > div:nth-child(1)').append(`<div id="nudgepremiumid" class="su-checkbox-group consider-positions"><span class="su-checkbox-value">Premium Recvd: </span> <span >${formatter.format(premium)} (Max ROI: ${((premium / imargin) * 100).toFixed(2)}%)</span></div>`);
 
 }
 
