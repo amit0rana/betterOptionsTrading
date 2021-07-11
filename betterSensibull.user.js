@@ -39,18 +39,20 @@ const g_config = new MonkeyConfig({
 });
 const D_LEVEL = g_config.get('logging');
 
-const allDOMPaths = {
+const SENSIBULL_DOM_PATHS = {
     //document.querySelector("#builder-left-col-scrolling-div > div.style__StrategyTradesCardsWrapper-sc-1t5habn-5.TJqrp > div.style__SecondaryActionWrapper-sc-1t5habn-11.jFcNKY > div.style__LegsHeader-sc-1t5habn-91.kGUWbs")
-    domForPlacingToggleSelectBox: "div.style__LegsHeader-sc-1t5habn-92",
+    domForPlacingToggleSelectBox: "div:contains('Clear all')",
+    // domForPlacingToggleSelectBox: "div.style__LegsHeader-sc-1t5habn-92",
+
     //domForPlacingToggleSelectBox: "div:contains('Clear all')",
     //document.querySelector("#builder-left-col-scrolling-div > div.style__StrategyTradesCardsWrapper-sc-1t5habn-5.TJqrp > div.style__TradeViewWrapper-szonbw-0.gViCde > div:nth-child(2)")
     domForPositionsRows: "#builder-left-col-scrolling-div > div.style__StrategyTradesCardsWrapper-sc-1t5habn-5.TJqrp > div.style__TradeViewWrapper-szonbw-0.gViCde > div.style__StyledCard-szonbw-5.hWWDEJ",
     domForPositionExpiry: 'div:nth-child(1) > div:nth-child(1) > div:nth-child(2)',
-    domForStrategySuggestions: '#app > div > div.page-sidebar-is-open.sn-page--builder.style__AppWrapper-djPJnZ.gvrWYn > div.sn-l__app-content.style__AppContent-haAgYm.korEfl > div.style__ContainerSpacing-kZpkBx.kJeLXd > div > div.style__BuilderWrapper-hHFjHn.nAQhs > div.style__BuilderColRight-jAAkJD.hbmLzB > div.style__BuilderPresetStrategiesWrapper-iJakRq.jDHsHZ',
+    // domForStrategySuggestions: '#app > div > div.page-sidebar-is-open.sn-page--builder.style__AppWrapper-djPJnZ.gvrWYn > div.sn-l__app-content.style__AppContent-haAgYm.korEfl > div.style__ContainerSpacing-kZpkBx.kJeLXd > div > div.style__BuilderWrapper-hHFjHn.nAQhs > div.style__BuilderColRight-jAAkJD.hbmLzB > div.style__BuilderPresetStrategiesWrapper-iJakRq.jDHsHZ',
     domForCheckbox: 'span > span:nth-child(1) > input'
 };
 
-waitForKeyElements(allDOMPaths.domForPlacingToggleSelectBox, function () {
+waitForKeyElements("span:contains('Add new trades')", function () {
     console.log('onwait');
     main();
 });
@@ -65,10 +67,10 @@ $(document).on('click', "#app > div > div.style__AppWrapper-gfb86b-0.kMpPMs.page
 // all behavior related actions go here.
 function main() {
     console.log("bs: main started");
-    $(allDOMPaths.domForStrategySuggestions).remove();
+    // $(SENSIBULL_DOM_PATHS.domForStrategySuggestions).remove();
     $("#toggleSelectboxID").remove();
 
-    var rows = $(allDOMPaths.domForPositionsRows);
+    var rows = $(SENSIBULL_DOM_PATHS.domForPositionsRows);
     console.log('bs: rows: ' + rows.length);
 
     var selectBox = document.createElement("SELECT");
@@ -83,7 +85,7 @@ function main() {
 
     var expiryArray = [];
     rows.each(function (rowIndex) {
-        var t = getExpiryText($(this).find(allDOMPaths.domForPositionExpiry).text());
+        var t = getExpiryText($(this).find(SENSIBULL_DOM_PATHS.domForPositionExpiry).text());
         console.log('bs: t: ' + t);
         if (t && !expiryArray.includes(t)) {
             expiryArray.push(t);
@@ -96,20 +98,20 @@ function main() {
     });
 
     //$('.jss1557').click();
-
-    $(allDOMPaths.domForPlacingToggleSelectBox).after(selectBox);
+    var t = $(SENSIBULL_DOM_PATHS.domForPlacingToggleSelectBox);
+    $(t[t.length - 1]).before(selectBox);
 
     selectBox.addEventListener("click", function () {
         console.log(this.value);
         var selectedItem = this.value;
 
-        var rows = $(allDOMPaths.domForPositionsRows);
+        var rows = $(SENSIBULL_DOM_PATHS.domForPositionsRows);
         rows.each(function (rowIndex) {
-            var t = getExpiryText($(this).find(allDOMPaths.domForPositionExpiry).text());
+            var t = getExpiryText($(this).find(SENSIBULL_DOM_PATHS.domForPositionExpiry).text());
 
             console.log('bs: text to cmp' + t);
             if (selectedItem == 'All' || (t && t == selectedItem)) {
-                var c = $(this).find(allDOMPaths.domForCheckbox);
+                var c = $(this).find(SENSIBULL_DOM_PATHS.domForCheckbox);
                 document.getElementsByClassName($(c[0]).attr('class'))[0].click();
             }
         });
