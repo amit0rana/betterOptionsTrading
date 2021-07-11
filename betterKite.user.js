@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.19
+// @version      3.20
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -25,7 +25,7 @@
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.19";
+const VERSION = "v3.20";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -39,6 +39,10 @@ var g_dropdownDisplay = DD_NONE;
 var g_showOnlyMISPositions = false;
 var g_showOnlyPEPositions = false;
 var g_showOnlyCEPositions = false;
+var g_showOnlyFUTPositions = false;
+var g_showOnlyOPTPositions = false;
+var g_subFilter = false;
+var g_subFilterData = false;
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
 var g_color = ((jQ('html').attr('data-theme') == 'dark') ? '#191919' : 'white');
@@ -528,11 +532,27 @@ function createPositionsDropdown() {
     userGeneratedGroups.text = "---USER GROUPS---";
     userGeneratedGroups.label = "---USER GROUPS---";
 
-    selectBox.addEventListener("change", function () {
-        tEv("kite", "positions", "filter", "");
-        var selectedGroup = this.value;
+    selectBox.addEventListener("change", function (evt) {
+        debug('event: strategy change');
 
-        info("Group selected: " + selectedGroup);
+        tEv("kite", "positions", "filter", "");
+        if (('detail' in evt) && evt.detail.simulated == true) {
+            // jQ('#subFilterDropdownId').val('all');
+        } else {
+            debug('normal event call');
+            g_showOnlyPEPositions = false;
+            g_showOnlyCEPositions = false;
+            g_showOnlyMISPositions = false;
+            g_showOnlyOPTPositions = false;
+            g_showOnlyFUTPositions = false;
+            g_subFilter = false;
+            g_subFilterData = false;
+        }
+
+        var selectedGroup = this.value;
+        var selectedType = jQ('option:selected', this).attr('type');
+
+        info(`Group : ${selectedGroup}, type: ${jQ('option:selected', this).attr('type')}`);
         var selectedPositions = positions[selectedGroup];
 
         var currentUrl = window.location.pathname;
@@ -549,6 +569,8 @@ function createPositionsDropdown() {
             var misCount = 0;
             var ceCount = 0;
             var peCount = 0;
+            var futCount = 0;
+            var optCount = 0;
 
             //logic to hide the rows in positions table not in our list
             var countPositionsDisplaying = 0;
@@ -558,13 +580,32 @@ function createPositionsDropdown() {
             misCount = 0;
             ceCount = 0;
             peCount = 0;
+            futCount = 0;
+            optCount = 0;
 
             var selection = [];
+            var optGrp = document.createElement("optgroup");
+            var optGrpExpiry = document.createElement("optgroup");
+            optGrp.text = "---SCRIP WISE---";
+            optGrp.label = "---SCRIP WISE---";
+            optGrp.id = "subFilterScripGroupId";
+            jQ('#subFilterScripGroupId').remove();
+
+
+            optGrpExpiry.text = "---EXPIRY WISE---";
+            optGrpExpiry.label = "---EXPIRY WISE---";
+            optGrpExpiry.id = "subFilterExpiryGroupId";
+            jQ('#subFilterExpiryGroupId').remove();
+
+
+            var arrForUnique = [];
+            var uniqueExpiryArray = [];
 
             allPositionsRow.each(function (rowIndex) {
                 var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
                 //var p = dataUidInTR.split(".")[1];
 
+                var position = getPositionRowObject(this);
                 var p = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
 
                 var matchFound = false;
@@ -587,7 +628,7 @@ function createPositionsDropdown() {
                         matchFound = true;
                     }
                     // } else if (tradingSymbolText.includes(" " + s + " ")) {
-                        // matchFound = true;
+                    // matchFound = true;
                     // }
                     if (matchFound) {
                         if (!stocksInList.includes(ts)) {
@@ -622,8 +663,37 @@ function createPositionsDropdown() {
                         matchFound = false;
                     }
                 }
+                debug(`${g_showOnlyPEPositions} logic to hide PE ${instrument}`);
                 if (g_showOnlyPEPositions) {
                     if (instrument.includes(' PE')) {
+                        //let filter decision pass
+                    } else {
+                        //overide filter decision and hide.
+                        matchFound = false;
+                    }
+                }
+
+                if (g_showOnlyFUTPositions) {
+                    if (instrument.includes(' FUT')) {
+                        //let filter decision pass
+                    } else {
+                        //overide filter decision and hide.
+                        matchFound = false;
+                    }
+                }
+
+                if (g_showOnlyOPTPositions) {
+                    if (instrument.includes(' NFO') && !instrument.includes(' FUT')) {
+                        //let filter decision pass
+                    } else {
+                        //overide filter decision and hide.
+                        matchFound = false;
+                    }
+                }
+
+                debug(`subfilter ${g_subFilter} d:${g_subFilterData} e:${getExpiryText(p)} s:${position.scrip}`)
+                if (g_subFilter) {
+                    if (getExpiryText(p) == g_subFilterData || position.scrip == g_subFilterData) {
                         //let filter decision pass
                     } else {
                         //overide filter decision and hide.
@@ -650,10 +720,43 @@ function createPositionsDropdown() {
                         peCount++;
                     }
 
+                    if (instrument.includes(' FUT')) {
+                        futCount++;
+                    }
+
+                    if (instrument.includes(' NFO') && !instrument.includes(' FUT')) {
+                        optCount++;
+                    }
+
                     var data = getMarginCalculationData(instrument, product, qty, price);
                     if (data != null) {
                         selection.push(data);
                     }
+
+                    if (selectedType == 'expiry') {
+                        //creating auto generated scrip wise grouping
+                        if (!arrForUnique.includes(position.scrip)) {
+                            var option = document.createElement("option");
+                            option.text = position.scrip;
+                            option.value = position.scrip;
+                            jQ(optGrp).append(option);
+                            arrForUnique.push(position.scrip);
+                        }
+                    }
+
+                    if (selectedType == 'scrip') {
+
+                        //creating auto generated expiry wise grouping
+                        var expiry = getExpiryText(p);
+                        if (!uniqueExpiryArray.includes(expiry)) {
+                            var option2 = document.createElement("option");
+                            option2.text = expiry;
+                            option2.value = expiry;
+                            jQ(optGrpExpiry).append(option2);
+                            uniqueExpiryArray.push(expiry);
+                        }
+                    }
+
                 } else {
                     jQ(this).hide();
                 }
@@ -708,9 +811,35 @@ function createPositionsDropdown() {
                 //END work on Positions Day history AREA
             });
 
-            jQ("#misCoundId").text("MIS (" + misCount + ")");
-            jQ("#peCountId").text("PE (" + peCount + ")");
-            jQ("#ceCountId").text("CE (" + ceCount + ")");
+            // jQ("#misCoundId").text("MIS (" + misCount + ")");
+            jQ("#misFilterId").text("MIS (" + misCount + ")");
+            // jQ("#peCountId").text("PE (" + peCount + ")");
+            jQ("#peFilterId").text("PE (" + peCount + ")");
+            // jQ("#ceCountId").text("CE (" + ceCount + ")");
+            jQ("#ceFilterId").text("CE (" + ceCount + ")");
+            jQ("#optFilterId").text("OPT (" + optCount + ")");
+            jQ("#futFilterId").text("FUT (" + futCount + ")");
+
+            if (selectedType == 'scrip' && uniqueExpiryArray.length > 1) {
+                jQ('#subFilterDropdownId').append(optGrpExpiry);
+            }
+            if (selectedType == 'expiry' && arrForUnique.length > 1) {
+                jQ('#subFilterDropdownId').append(optGrp);
+            }
+
+            if (g_subFilter) {
+                jQ("#misFilterId").hide();
+                jQ("#peFilterId").hide();
+                jQ("#ceFilterId").hide();
+                jQ("#optFilterId").hide();
+                jQ("#futFilterId").hide();
+            } else {
+                jQ("#misFilterId").show();
+                jQ("#peFilterId").show();
+                jQ("#ceFilterId").show();
+                jQ("#optFilterId").show();
+                jQ("#futFilterId").show();
+            }
 
             calculateMargin(selection).then(margin => {
                 updatePositionInfo(countPositionsDisplaying, pnl, margin);
@@ -762,59 +891,90 @@ function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
         if (MARGIN_METHOD == MM_BASKET) {
             display = 'M (B)';
         }
-        jQ("#marginDiv").text(display+": " + formatter.format(margin));
+        jQ("#marginDiv").text(display + ": " + formatter.format(margin));
     }
     jQ("#marginDiv").prop('title', `ROI: ${(pnl / margin * 100).toFixed(2)}%`);
     jQ('title').text(formatter.format(pnl));
 }
 
-function createMisFilter() {
-    debug('createMisFilter');
-    var s = jQ("<span id='headerSubActionsID' class='text-label grey randomClassToHelpHide' ><span  id='misCoundId' class='text-label red randomClassToHelpHide'>MIS</span></span>");
+function createSubFilter() {
+    debug('createSubFilter');
 
-    var i = document.createElement("INPUT");
-    i.style = 'margin: 5px';
-    i.type = 'checkbox';
-    i.id = "misFilterId";
-    i.name = 'misFilter';
-    i.value = 'SHOWMISONLY';
-    i.checked = g_showOnlyMISPositions;
+    var dropDown = jQ("<SELECT id='subFilterDropdownId' class='randomClassToHelpHide' style='margin: 5px 0;font-size: 12px;background-color: var(--color-bg-default)'></SELECT>");
 
-    jQ(s).append(i);
+    var s = jQ("<span id='headerSubActionsID' class='text-label grey randomClassToHelpHide' ></span>");
+
+    var option = document.createElement("option");
+    option.text = "All";
+    option.value = "all";
+    jQ(dropDown).append(option);
+
+    option = document.createElement("option");
+    option.text = "MIS";
+    option.id = 'misFilterId';
+    option.value = "mis";
+    jQ(dropDown).append(option);
+    // i.checked = g_showOnlyMISPositions;
+
+    // jQ(s).append(i);
 
     //jQ(s).append("<span id='misCoundId'></span>");
 
     //PE only
-    var t = jQ("<span id='peCountId' class='text-label red randomClassToHelpHide'>PE</span>");
-    i = document.createElement("INPUT");
-    i.style = 'margin: 5px';
-    i.type = 'checkbox';
-    i.id = "peFilterId";
-    i.name = 'peFilter';
-    i.value = 'SHOWPEONLY';
-    i.checked = g_showOnlyPEPositions;
+    option = document.createElement("option");
+    option.id = 'peFilterId';
+    option.text = "PE";
+    option.value = "pe";
+    jQ(dropDown).append(option);
+    // var t = jQ("<span id='peCountId' class='text-label red randomClassToHelpHide'>PE</span>");
+    // i = document.createElement("INPUT");
+    // i.style = 'margin: 5px';
+    // i.type = 'checkbox';
+    // i.id = "peFilterId";
+    // i.name = 'peFilter';
+    // i.value = 'SHOWPEONLY';
+    // i.checked = g_showOnlyPEPositions;
 
-    // jQ(t).append(i);
+    // // jQ(t).append(i);
 
-    // jQ(t).append("<span id='peCountId'></span>");
-    jQ(s).append(t);
-    jQ(s).append(i);
+    // // jQ(t).append("<span id='peCountId'></span>");
+    // jQ(s).append(t);
+    // jQ(s).append(i);
 
     //CE only
-    t = jQ("<span id='ceCountId' class='text-label red randomClassToHelpHide'>CE</span>");
-    i = document.createElement("INPUT");
-    i.style = 'margin: 5px';
-    i.type = 'checkbox';
-    i.id = "ceFilterId";
-    i.name = 'ceFilter';
-    i.value = 'SHOWCEONLY';
-    i.checked = g_showOnlyCEPositions;
+    option = document.createElement("option");
+    option.text = "CE";
+    option.id = 'ceFilterId';
+    option.value = "ce";
+    jQ(dropDown).append(option);
+    // t = jQ("<span id='ceCountId' class='text-label red randomClassToHelpHide'>CE</span>");
+    // i = document.createElement("INPUT");
+    // i.style = 'margin: 5px';
+    // i.type = 'checkbox';
+    // i.id = "ceFilterId";
+    // i.name = 'ceFilter';
+    // i.value = 'SHOWCEONLY';
+    // i.checked = g_showOnlyCEPositions;
 
     // jQ(t).append(i);
 
     // jQ(t).append("<span id='ceCountId'></span>");
-    jQ(s).append(t);
-    jQ(s).append(i);
+    // jQ(s).append(t);
+    // jQ(s).append(i);
+
+    option = document.createElement("option");
+    option.text = "FUT";
+    option.id = 'futFilterId';
+    option.value = "fut";
+    jQ(dropDown).append(option);
+
+    option = document.createElement("option");
+    option.text = "OPT";
+    option.id = 'optFilterId';
+    option.value = "opt";
+    jQ(dropDown).append(option);
+
+    jQ(s).append(dropDown);
 
     //Select all
     t = jQ("<span id='spanselectAllId' class='text-label red randomClassToHelpHide'>|</span>");
@@ -860,7 +1020,7 @@ function hideDropdown() {
 
 function showPositionDropdown(retry = true) {
     jQ("#headerSubActionsID").remove();
-    jQ("div.positions > section.open-positions.table-wrapper > header > h3").after(createMisFilter());
+    jQ("div.positions > section.open-positions.table-wrapper > header > h3").after(createSubFilter());
 
     debug('showPositionDropdown');
 
@@ -918,6 +1078,8 @@ function showPositionDropdown(retry = true) {
             var option = document.createElement("option");
             option.text = ts;
             option.value = "SPECIAL" + ts;
+            option.setAttribute("data", ts);
+            option.setAttribute("type", 'scrip');
             jQ(optGrp).append(option);
             arrForUnique.push(ts);
         }
@@ -929,6 +1091,8 @@ function showPositionDropdown(retry = true) {
             var option2 = document.createElement("option");
             option2.text = expiry;
             option2.value = "SPECIAL" + expiry;
+            option2.setAttribute("data", expiry);
+            option2.setAttribute("type", 'expiry');
             jQ(optGrpExpiry).append(option2);
             uniqueExpiryArray.push(expiry);
         }
@@ -1133,8 +1297,10 @@ function simulateSelectBoxEvent() {
             //tagSelectorP.style.display = "block";
             var allPositionsRows = jQ(allDOMPaths.PathForPositions);
             if (allPositionsRows.length > 0) {
-                debug('initiating change event found holdings');
-                tagSelectorP.dispatchEvent(new Event("change"));
+                debug('initiating change event found positions');
+                // tagSelectorP.dispatchEvent(new Event("change", {'simulated': true}));
+                tagSelectorP.dispatchEvent(new CustomEvent('change', {'detail': {'simulated': true}}));
+                
             } else {
                 debug('sleeping as couldnt find positions (simulateSelectBox)');
                 //waitForKeyElements("div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr:nth-child(1)",simulateSelectBoxEvent);
@@ -1286,7 +1452,7 @@ const calculateMarginUsingMarginCalculator = async (selection) => {
 const calculateMarginUsingBasket = async (selection) => {
     let margin = 0
     var payload = []
-    
+
     selection.forEach(data => {
         var orderType = 'LIMIT'
         if (data.hasOwnProperty('order_type')) {
@@ -1314,7 +1480,7 @@ const calculateMarginUsingBasket = async (selection) => {
             'Authorization': `enctoken ${Cookies.get('enctoken')}`
         }
     };
-    debug(`config: ${config} payload: ${payload}`)
+    // debug(`config: ${config} payload: ${payload}`)
     return await axios.post(`/oms/margins/basket?consider_positions=${g_config.get('include_existing_positions')}&mode=compact`, payload, config)
         .then(function (response) {
             //margin = response.data.data.initial!=null && response.data.data.initial!==undefined?response.data.data.initial.total:0;
@@ -1528,26 +1694,29 @@ function getPositionRowObject(row) {
     var position = {};
 
     position.pnl = jQ(jQ(row).find("td")[6]).text().split(",").join("");
-    position.instrument  = jQ(jQ(row).find("td")[2]).text();
+    position.instrument = jQ(jQ(row).find("td")[2]).text();
     position.product = jQ(jQ(row).find("td")[1]).text().replace(/\s/g, '');
     position.quantity = parseFloat(jQ(jQ(row).find("td")[3]).text().split(",").join(""));
     position.avgPrice = parseFloat(jQ(jQ(row).find("td")[4]).text().split(",").join(""));
 
-    var data = getMarginCalculationData(position.instrument, position.product, position.quantity, position.avgPrice);
-
-    position.exchange = data.exchange;
-    position.pece = data.pece;
-    position.strike = data.strike;
-    position.optfut = data.optfut;
-    position.scrip = data.scrip;
-    position.tradingsymbol = data.tradingsymbol;
-    position.symbol = data.symbol;
-        
     if (position.quantity > 0) {
         position.transaction_type = 'BUY';
     } else {
         position.transaction_type = 'SELL';
     }
+
+    var data = getMarginCalculationData(position.instrument, position.product, position.quantity, position.avgPrice);
+
+    if (data != null) {
+        position.exchange = data.exchange;
+        position.pece = data.pece;
+        position.strike = data.strike;
+        position.optfut = data.optfut;
+        position.scrip = data.scrip;
+        position.tradingsymbol = data.tradingsymbol;
+        position.symbol = data.symbol;
+    }
+
     return position;
 }
 
@@ -1563,41 +1732,41 @@ function checkMarginSaving() {
         var position = getPositionRowObject(this);
 
         // if (position.instrument.includes('NSE') || position.instrument.includes('BSE') || (position.symbol != 'NIFTY' && position.symbol != 'BANKNIFTY')) {
-        if (position.instrument.includes('NSE') || position.instrument.includes('BSE') ) {
+        if (position.instrument.includes('NSE') || position.instrument.includes('BSE')) {
             debug('skipping ' + position.symbol);
-            return ;
+            return;
         }
 
-        if ( ! symbols.includes(position.symbol)) {
+        if (!symbols.includes(position.symbol)) {
             symbols.push(position.symbol);
         }
-        
 
-        if (! marginData.hasOwnProperty(position.symbol+'_md')) {
-            marginData[position.symbol+'_md'] = [];
-            marginData[position.symbol+'_pe'] = 0;
-            marginData[position.symbol+'_ce'] = 0;
-            marginData[position.symbol+'_strikes'] = [];
-            marginData[position.symbol+'_scrip'] = ''; 
+
+        if (!marginData.hasOwnProperty(position.symbol + '_md')) {
+            marginData[position.symbol + '_md'] = [];
+            marginData[position.symbol + '_pe'] = 0;
+            marginData[position.symbol + '_ce'] = 0;
+            marginData[position.symbol + '_strikes'] = [];
+            marginData[position.symbol + '_scrip'] = '';
         }
 
         if (position.pece == 'CE') {
-            marginData[position.symbol+'_ce'] = marginData[position.symbol+'_ce'] + position.quantity;
+            marginData[position.symbol + '_ce'] = marginData[position.symbol + '_ce'] + position.quantity;
         } else if (position.pece == 'PE') {
-            marginData[position.symbol+'_pe'] = marginData[position.symbol+'_pe'] + position.quantity;
+            marginData[position.symbol + '_pe'] = marginData[position.symbol + '_pe'] + position.quantity;
         }
 
-        marginData[position.symbol+'_md'].push(position);
-        marginData[position.symbol+'_strikes'].push(position.strike);
-        marginData[position.symbol+'_scrip'] = position.scrip;
+        marginData[position.symbol + '_md'].push(position);
+        marginData[position.symbol + '_strikes'].push(position.strike);
+        marginData[position.symbol + '_scrip'] = position.scrip;
     });
 
     debug(marginData);
 
-    symbols.forEach(function(symbol, index) {
+    symbols.forEach(function (symbol, index) {
         //debug(symbol);
 
-        var data = marginData[symbol+'_md'];
+        var data = marginData[symbol + '_md'];
 
         calculateMargin(data).then(margin1 => {
             debug(symbol + ' now ' + formatter.format(margin1));
@@ -1610,48 +1779,48 @@ function checkMarginSaving() {
             } else {
                 increment = g_config.get('stock_hedge');
             }
-            var minStrike = Math.min(...marginData[symbol+'_strikes']) - parseInt(increment);
-            var maxStrike = Math.max(...marginData[symbol+'_strikes']) + parseInt(increment);
-            
-            var dp = {'order_type':'MARKET','price':0,'product':'NRML','exchange':'NFO','transaction_type':'BUY','trigger_price':0,'optfut':'OPT','scrip':marginData[symbol+'_scrip']};
-            var dc = {'order_type':'MARKET','price':0,'product':'NRML','exchange':'NFO','transaction_type':'BUY','trigger_price':0,'optfut':'OPT','scrip':marginData[symbol+'_scrip']};
+            var minStrike = Math.min(...marginData[symbol + '_strikes']) - parseInt(increment);
+            var maxStrike = Math.max(...marginData[symbol + '_strikes']) + parseInt(increment);
+
+            var dp = { 'order_type': 'MARKET', 'price': 0, 'product': 'NRML', 'exchange': 'NFO', 'transaction_type': 'BUY', 'trigger_price': 0, 'optfut': 'OPT', 'scrip': marginData[symbol + '_scrip'] };
+            var dc = { 'order_type': 'MARKET', 'price': 0, 'product': 'NRML', 'exchange': 'NFO', 'transaction_type': 'BUY', 'trigger_price': 0, 'optfut': 'OPT', 'scrip': marginData[symbol + '_scrip'] };
             // d.order_type = 'MARKET';
-            
+
             // d.squareoff = 0;
             // d.stoploss = 0;
-            
-            // variety = 'regular';
-            
 
-            if (marginData[symbol+'_pe'] < 0) {
+            // variety = 'regular';
+
+
+            if (marginData[symbol + '_pe'] < 0) {
                 debug(' PE saving possible ' + minStrike);
-                dp.quantity = Math.abs(marginData[symbol+'_pe']);
-                dp.tradingsymbol = dp.scrip+minStrike+'PE';
+                dp.quantity = Math.abs(marginData[symbol + '_pe']);
+                dp.tradingsymbol = dp.scrip + minStrike + 'PE';
                 dp.pece = 'PE';
                 dp.strike = minStrike;
                 data.push(dp);
             }
 
-            if (marginData[symbol+'_ce'] < 0) {
+            if (marginData[symbol + '_ce'] < 0) {
                 debug(' CE saving possible ' + maxStrike);
-                dc.quantity = Math.abs(marginData[symbol+'_ce']);
-                dc.tradingsymbol = dc.scrip+maxStrike+'CE';
+                dc.quantity = Math.abs(marginData[symbol + '_ce']);
+                dc.tradingsymbol = dc.scrip + maxStrike + 'CE';
                 dc.pece = 'CE';
                 dc.strike = maxStrike;
                 data.push(dc);
             }
 
-            
+
             debug(data);
 
 
             calculateMargin(data).then(margin2 => {
                 debug(symbol + ' later ' + formatter.format(margin2));
-                alert(`You can potentially FREE approx ${formatter.format(margin1-margin2)} margin by taking following hedge. BUY ${Math.abs(marginData[symbol+'_pe'])} x ${symbol} ${minStrike}PE and BUY ${symbol} ${Math.abs(marginData[symbol+'_ce'])} x ${maxStrike}CE`)
+                alert(`You can potentially FREE approx ${formatter.format(margin1 - margin2)} margin by taking following hedge. BUY ${Math.abs(marginData[symbol + '_pe'])} x ${symbol} ${minStrike}PE and BUY ${symbol} ${Math.abs(marginData[symbol + '_ce'])} x ${maxStrike}CE`)
             });
         });
 
-        
+
     });
 
     // Object.keys(marginData).forEach(function(symbol) {
@@ -1659,13 +1828,13 @@ function checkMarginSaving() {
     //     if(symbol.includes('_md')) {
     //         var data = marginData[symbol];
     //         debug(data);
-    
+
     //         calculateMargin(data).then(margin => {
     //             debug(symbol + ' ' + formatter.format(margin));
     //         });
     //     }
     // });
-    
+
 
 }
 
@@ -1686,25 +1855,112 @@ function main() {
 
     }, "r");
 
-    //click of mis filter
-    jQ(document).on('click', "#misFilterId", function () {
-        tEv("kite", "misfilter", "click", "");
+    //sub filter change
+    jQ(document).on('change', "#subFilterDropdownId", function () {
+        tEv("kite", this.id, "click", "");
         var filterValue = this.value;
-        g_showOnlyMISPositions = this.checked;
+        debug(`${filterValue} selected`);
 
-        info(filterValue + g_showOnlyMISPositions);
+        g_showOnlyPEPositions = false;
+        g_showOnlyCEPositions = false;
+        g_showOnlyMISPositions = false;
+        g_showOnlyOPTPositions = false;
+        g_showOnlyFUTPositions = false;
+        g_subFilter = false;
+        g_subFilterData = false;
+
+        // if (filterValue == 'all') {
+        //     simulateSelectBoxEvent();
+        //     return;
+        // }
+
+        // var allVisibleRows = jQ(allDOMPaths.PathForPositions + ":visible");
+
+        // allVisibleRows.each(function (rowIndex) {
+        //     var position = getPositionRowObject(this);
+        //     var p = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
+
+            switch (filterValue) {
+                case 'mis':
+                    g_showOnlyMISPositions = true;
+                    // if (position.product == 'MIS') {
+
+                    // } else {
+                    //     jQ(this).hide();
+                    // }
+                    break;
+                case 'pe':
+                    // if (position.pece == 'PE') {
+
+                    // } else {
+                    //     jQ(this).hide();
+                    // }
+                    g_showOnlyPEPositions = true;
+                    break;
+                case 'ce':
+                    // if (position.pece == 'CE') {
+
+                    // } else {
+                    //     jQ(this).hide();
+                    // }
+                    g_showOnlyCEPositions = true;
+                    break;
+                case 'fut':
+                    // if (position.optfut == 'FUT') {
+
+                    // } else {
+                    //     jQ(this).hide();
+                    // }
+                    g_showOnlyFUTPositions = true;
+                    break;
+                case 'opt':
+                    // if (position.optfut == 'OPT') {
+
+                    // } else {
+                    //     jQ(this).hide();
+                    // }
+                    g_showOnlyOPTPositions = true;
+                    break;
+                case 'all':
+                    break;
+                default:
+                    debug(`setting default`);
+                    g_subFilter = true;
+                    g_subFilterData = this.value;
+                    // if (getExpiryText(p) == filterValue || position.scrip == filterValue) {
+                    //     //let filter decision pass
+                    // } else {
+                    //     //overide filter decision and hide.
+                    //     jQ(this).hide();
+                    // }
+                    
+                // code block
+            }
+        // });
+
+        // info(filterValue + g_showOnlyPEPositions);
         simulateSelectBoxEvent();
     });
+
+    //click of mis filter
+    // jQ(document).on('click', "#misFilterId", function () {
+    //     tEv("kite", "misfilter", "click", "");
+    //     var filterValue = this.value;
+    //     g_showOnlyMISPositions = this.checked;
+
+    //     info(filterValue + g_showOnlyMISPositions);
+    //     simulateSelectBoxEvent();
+    // });
 
     //click of CE filter
-    jQ(document).on('click', "#ceFilterId", function () {
-        tEv("kite", "cefilter", "click", "");
-        var filterValue = this.value;
-        g_showOnlyCEPositions = this.checked;
+    // jQ(document).on('click', "#ceFilterId", function () {
+    //     tEv("kite", "cefilter", "click", "");
+    //     var filterValue = this.value;
+    //     g_showOnlyCEPositions = this.checked;
 
-        info(filterValue + g_showOnlyCEPositions);
-        simulateSelectBoxEvent();
-    });
+    //     info(filterValue + g_showOnlyCEPositions);
+    //     simulateSelectBoxEvent();
+    // });
 
     //click of select all filter
     jQ(document).on('click', "#selectAllId", function () {
@@ -1728,7 +1984,7 @@ function main() {
 
         //simulateSelectBoxEvent();
     });
-    
+
 
     //click on save margin button
     jQ(document).on('click', "#saveMarginBtnId", function () {
@@ -1737,14 +1993,14 @@ function main() {
     });
 
     //click of PE filter
-    jQ(document).on('click', "#peFilterId", function () {
-        tEv("kite", "pefilter", "click", "");
-        var filterValue = this.value;
-        g_showOnlyPEPositions = this.checked;
+    // jQ(document).on('click', "#peFilterId", function () {
+    //     tEv("kite", "pefilter", "click", "");
+    //     var filterValue = this.value;
+    //     g_showOnlyPEPositions = this.checked;
 
-        info(filterValue + g_showOnlyPEPositions);
-        simulateSelectBoxEvent();
-    });
+    //     info(filterValue + g_showOnlyPEPositions);
+    //     simulateSelectBoxEvent();
+    // });
 
     //click of watchlist filter
     jQ(document).on('click', "#watchlistFilterId", function () {
@@ -1832,15 +2088,15 @@ function main() {
         tEv("kite", "positionsaddtag", "add", "");
 
         jQ(this).parents()
-            .map(function() {
-                if( this.tagName == 'TR') {
+            .map(function () {
+                if (this.tagName == 'TR') {
                     var positionSpan = jQ(this).find("span.exchange.text-xxsmall.dim");
                     var color = userTag.split(".")[1];
                     var tn = userTag.split(".")[0];
                     jQ(positionSpan).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForPositionTagDeleteAction' tag='" + userTag + "' position='" + position + "' class='text-label " + color + " randomClassToHelpHide'>" + tn + "</span>");
                 }
             });
-        
+
 
         // window.location.reload();
     });
@@ -2003,7 +2259,7 @@ function showRoiNudge() {
         // Pass in the target node, as well as the observer options
         obs.observe(target, config);
 
-        jQ(document).on('change','input[label="Price"]', function() {
+        jQ(document).on('change', 'input[label="Price"]', function () {
             updateRoiNudge();
         });
     }
@@ -2013,7 +2269,7 @@ function updateRoiNudge() {
     var lastPrice = 0;
     var margin = jQ("span.margin-value").text().trim().split('₹').join("").split(",").join("");
     var qty = jQ('input[label="Qty."]').val();
-    
+
     if (jQ('input[value="MARKET"]').prop('checked') == true) {
         lastPrice = jQ('div > span.last-price').text().trim().split('₹').join("").split(",").join("");
     }
@@ -2024,7 +2280,7 @@ function updateRoiNudge() {
     debug(lastPrice);
     debug(qty);
     debug(qty * lastPrice);
-    
+
     jQ('#nudgepremiumid').remove();
     jQ('footer.footer > div > div:nth-child(1)').append(`<div id="nudgepremiumid" class="row margins"><span class="label">Premium Recvd: </span> <span >${formatter.format(qty * lastPrice)} (ROI: ${(((qty * lastPrice) / margin) * 100).toFixed(2)}%)</span></div>`);
 
@@ -2050,7 +2306,7 @@ function showBasketRoiNudge() {
     // Pass in the target node, as well as the observer options
     obs.observe(target, config);
 
-    jQ(document).on('change','div.value.dim', function() {
+    jQ(document).on('change', 'div.value.dim', function () {
         updateBasketRoiNudge();
     });
 
@@ -2060,12 +2316,12 @@ function updateBasketRoiNudge() {
     var finalMargin = jQ("div.value.final-margins-value").text().trim().split('₹').join("").split(",").join("");
     var requiredMargin = jQ("div.value.dim").text().trim().split('₹').join("").split(",").join("");
     var basketPositions = jQ(allDOMPaths.PathForBasketPositions);
-    var premium=0;
+    var premium = 0;
     basketPositions.each(function (rowIndex) {
         var transactionType = jQ(jQ(this).find("td")[0]).text().trim();
         var qty = parseFloat(jQ(jQ(this).find("td")[4]).text().split(',').join(''));
         var price = parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
-        premium += qty*price*(transactionType=='SELL'?1:-1);
+        premium += qty * price * (transactionType == 'SELL' ? 1 : -1);
     });
     debug(finalMargin);
     jQ('#basketnudgepremiumid').remove();
