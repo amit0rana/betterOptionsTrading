@@ -2675,7 +2675,6 @@ function introducePnlFilter() {
 
 //sensibull inside kite
 //watching for 'do more with strategy builder' link
-//waitForKeyElements ('.style__BuilderRedirectLink-t0trse-30', sensibull);
 waitForKeyElements("a:contains('Do more with Strategy Builder')", sensibull);
 
 var previousArray = [];
@@ -2800,11 +2799,11 @@ function arrayEquals(a, b) {
 }
 
 //div.InstrumentPickerSymbolWrapper
-waitForKeyElements('div[role=menu]', listenToSymbolChange);
+waitForKeyElements('div[role=combobox]', listenToSymbolChange);
 function listenToSymbolChange() {
     debug('listenToSymbolChange');
-    jQ(document).off('click', "div[role=menu]", handleSymbolClick);
-    jQ(document).on('click', "div[role=menu]", handleSymbolClick);
+    jQ(document).off('click', "div[role=combobox]", handleSymbolClick);
+    jQ(document).on('click', "div[role=combobox]", handleSymbolClick);
 }
 
 function handleSymbolClick(event) {
