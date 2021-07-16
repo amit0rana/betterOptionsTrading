@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.21
+// @version      3.22
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -24,7 +24,7 @@
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.21";
+const VERSION = "v3.22";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -539,13 +539,7 @@ function createPositionsDropdown() {
             // jQ('#subFilterDropdownId').val('all');
         } else {
             debug('normal event call');
-            g_showOnlyPEPositions = false;
-            g_showOnlyCEPositions = false;
-            g_showOnlyMISPositions = false;
-            g_showOnlyOPTPositions = false;
-            g_showOnlyFUTPositions = false;
-            g_subFilter = false;
-            g_subFilterData = false;
+            resetSubFilter();
         }
 
         var selectedGroup = this.value;
@@ -832,12 +826,14 @@ function createPositionsDropdown() {
                 jQ("#ceFilterId").hide();
                 jQ("#optFilterId").hide();
                 jQ("#futFilterId").hide();
+                jQ("#resetSubId").show();
             } else {
                 jQ("#misFilterId").show();
                 jQ("#peFilterId").show();
                 jQ("#ceFilterId").show();
                 jQ("#optFilterId").show();
                 jQ("#futFilterId").show();
+                jQ("#resetSubId").hide();
             }
 
             calculateMargin(selection).then(margin => {
@@ -971,6 +967,12 @@ function createSubFilter() {
     option.text = "OPT";
     option.id = 'optFilterId';
     option.value = "opt";
+    jQ(dropDown).append(option);
+
+    option = document.createElement("option");
+    option.text = "Reset";
+    option.id = 'resetSubId';
+    option.value = "reset";
     jQ(dropDown).append(option);
 
     jQ(s).append(dropDown);
@@ -1837,6 +1839,16 @@ function checkMarginSaving() {
 
 }
 
+function resetSubFilter() {
+    g_showOnlyPEPositions = false;
+    g_showOnlyCEPositions = false;
+    g_showOnlyMISPositions = false;
+    g_showOnlyOPTPositions = false;
+    g_showOnlyFUTPositions = false;
+    g_subFilter = false;
+    g_subFilterData = false;
+}
+
 // all behavior related actions go here.
 function main() {
     GM_registerMenuCommand("Reset Data (WARNING) " + VERSION, function () {
@@ -1860,13 +1872,7 @@ function main() {
         var filterValue = this.value;
         debug(`${filterValue} selected`);
 
-        g_showOnlyPEPositions = false;
-        g_showOnlyCEPositions = false;
-        g_showOnlyMISPositions = false;
-        g_showOnlyOPTPositions = false;
-        g_showOnlyFUTPositions = false;
-        g_subFilter = false;
-        g_subFilterData = false;
+        resetSubFilter();
 
         // if (filterValue == 'all') {
         //     simulateSelectBoxEvent();
@@ -1921,6 +1927,9 @@ function main() {
                     g_showOnlyOPTPositions = true;
                     break;
                 case 'all':
+                    break;
+                case 'reset':
+                    jQ('#subFilterDropdownId').val('all');
                     break;
                 default:
                     debug(`setting default`);
