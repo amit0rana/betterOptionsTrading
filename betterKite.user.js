@@ -891,7 +891,8 @@ function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
     debug('updatePositionInfo ' + textDisplay);
     var topDisplay = jQ("#stocksInTagCount");
     topDisplay.text(textDisplay);
-    topDisplay.prop('title', `ROI: ${(pnl / margin * 100).toFixed(2)}%`);
+    var roi = (pnl / margin * 100).toFixed(2);
+    topDisplay.prop('title', `ROI: ${roi}%`);
 
     topDisplay.removeClass("text-green");
     topDisplay.removeClass("text-red");
@@ -992,7 +993,7 @@ function createSubFilter() {
 
     jQ(s).append(i);
 
-    t = jQ("<span id='spanBuyCountId' class='text-label randomClassToHelpHide'></span></span>");
+    t = jQ("<span id='spanBuyCountId' class='text-label randomClassToHelpHide' data-balloon-length='large' data-balloon-pos='right' data-balloon='Zerodha allows same number of longs as shorts irrespective of calls or puts. So, if you have 4 pe shorts, you can buy 4 calls even though buying calls is not a hedge position for 4 lots of put shorts, so one need to add all longs across calls and puts and add all shorts across calls and puts.'></span></span>");
     jQ(s).append(t);
 
     return s;
