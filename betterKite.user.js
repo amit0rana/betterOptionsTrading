@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.27
+// @version      3.28
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -24,7 +24,7 @@
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.27";
+const VERSION = "v3.28";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -151,7 +151,7 @@ function initHoldings() {
     var defaultHoldings = {
         "Dividend": ["SJVN", "VEDL"],
         "Wealth Creators": ["WHIRLPOOL", "ICICIBANK",],
-        "Sell On profit": ["LUMAXIND", "RADICO", "M&amp;M"]
+        "Sell On profit": ["LUMAXIND", "RADICO"]
     };
     var holdings = GM_getValue(GM_HOLDINGS_NAME, defaultHoldings);
 
@@ -345,16 +345,16 @@ function assignHoldingTags() {
     if (tagNameSpans.length < 1) {
 
         //add label indicating category of stock
-        jQ("td.instrument.right-border > span:nth-child(1)").each(function (rowIndex) {
+        // jQ("td.instrument.right-border > span:nth-child(1)").each(function (rowIndex) {
+        jQ(allDOMPaths.rowsFromHoldingsTable).each(function (rowIndex) {
 
-            var displayedStockName = this.innerHTML;
-            if (displayedStockName.includes("-BE")) {
-                displayedStockName = displayedStockName.split("-BE")[0];
-            }
-
+            //var displayedStockName = removeExtraCharsFromStockName(this.innerHTML);
+            var displayedStockName = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
+        
             for (var categoryName in holdings) {
+                debug(`holdings[categoryName].includes(displayedStockName)`);
                 if (holdings[categoryName].includes(displayedStockName)) {
-                    jQ(this).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForTagDeleteAction' class='text-label blue randomClassToHelpHide' tag='" + categoryName + "' stock='" + displayedStockName + "'>" + categoryName + "</span>");
+                    jQ(this).find("td.instrument.right-border > span").append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForTagDeleteAction' class='text-label blue randomClassToHelpHide' tag='" + categoryName + "' stock='" + displayedStockName + "'>" + categoryName + "</span>");
                 }
             }
 
@@ -362,13 +362,16 @@ function assignHoldingTags() {
     } else { debug('tags found'); }
 }
 
-function removeExtraCharsFromStockName(dataUidInTR, selectedCat) {
+function removeExtraCharsFromStockName(dataUidInTR) {
     if (dataUidInTR.includes("-BE")) {
         dataUidInTR = dataUidInTR.split("-BE")[0];
     } else if (dataUidInTR.includes("NSE")) {
         dataUidInTR = dataUidInTR.split("NSE")[0];
     } else if (dataUidInTR.includes("BSE")) {
         dataUidInTR = dataUidInTR.split("BSE")[0];
+    }
+    if (dataUidInTR.includes("*")) {
+        dataUidInTR = dataUidInTR.split("*")[0];
     }
 
     return dataUidInTR;
