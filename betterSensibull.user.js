@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterSensibull
 // @namespace    https://github.com/amit0rana/betterSensibull
-// @version      0.12
+// @version      0.13
 // @description  Introduces small features on top of sensibull
 // @author       Amit
 // @match        https://web.sensibull.com/*
@@ -21,7 +21,7 @@ console.log("bs: script load");
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 //window.jQ=jQuery.noConflict(true);
-const VERSION = "v0.12";
+const VERSION = "v0.13";
 const PRO_MODE = false;
 
 const g_config = new MonkeyConfig({
@@ -40,19 +40,14 @@ const g_config = new MonkeyConfig({
 const D_LEVEL = g_config.get('logging');
 
 const SENSIBULL_DOM_PATHS = {
-    //document.querySelector("#builder-left-col-scrolling-div > div.style__StrategyTradesCardsWrapper-sc-1t5habn-5.TJqrp > div.style__SecondaryActionWrapper-sc-1t5habn-11.jFcNKY > div.style__LegsHeader-sc-1t5habn-91.kGUWbs")
-    domForPlacingToggleSelectBox: "div:contains('Clear positions')",
-    // domForPlacingToggleSelectBox: "div.style__LegsHeader-sc-1t5habn-92",
-
-    //domForPlacingToggleSelectBox: "div:contains('Clear all')",
-    //document.querySelector("#builder-left-col-scrolling-div > div.style__StrategyTradesCardsWrapper-sc-1t5habn-5.TJqrp > div.style__TradeViewWrapper-szonbw-0.gViCde > div:nth-child(2)")
-    domForPositionsRows: "#builder-left-col-scrolling-div > div.style__StrategyTradesCardsWrapper-sc-1t5habn-5.TJqrp > div.style__TradeViewWrapper-szonbw-0.gViCde > div.style__StyledCard-szonbw-5.hWWDEJ",
-    domForPositionExpiry: 'div:nth-child(1) > div:nth-child(1) > div:nth-child(2)',
+    domForPlacingToggleSelectBox: "button:contains('Clear Positions')",
+    domForPositionsRows: "div.style__TradeTableRow-szonbw-7",
+    domForPositionExpiry: 'div:nth-child(1) > div:nth-child(2) > div > div:nth-child(2)',
     // domForStrategySuggestions: '#app > div > div.page-sidebar-is-open.sn-page--builder.style__AppWrapper-djPJnZ.gvrWYn > div.sn-l__app-content.style__AppContent-haAgYm.korEfl > div.style__ContainerSpacing-kZpkBx.kJeLXd > div > div.style__BuilderWrapper-hHFjHn.nAQhs > div.style__BuilderColRight-jAAkJD.hbmLzB > div.style__BuilderPresetStrategiesWrapper-iJakRq.jDHsHZ',
     domForCheckbox: 'span > span:nth-child(1) > input'
 };
 
-waitForKeyElements("span:contains('Add new trades')", function () {
+waitForKeyElements("button:contains('Add New Trade')", function () {
     console.log('onwait');
     main();
 });
@@ -111,8 +106,11 @@ function main() {
 
             console.log('bs: text to cmp' + t);
             if (selectedItem == 'All' || (t && t == selectedItem)) {
-                var c = $(this).find(SENSIBULL_DOM_PATHS.domForCheckbox);
-                document.getElementsByClassName($(c[0]).attr('class'))[0].click();
+                console.log('match found ' + t);
+                var c = $(this).find(SENSIBULL_DOM_PATHS.domForCheckbox)[0].click();
+                console.log(c);
+                //console.log($(c[0]).attr('class'));
+                //document.getElementsByClassName($(c[0]).attr('class'))[0].click();
             }
         });
 
@@ -122,10 +120,10 @@ function main() {
 }
 
 function getExpiryText(fullText) {
-    var expiry = fullText.split(' ');
-    var t = expiry[0] + ' ' + expiry[1];
+    //var expiry = fullText.split(' ');
+    //var t = expiry[0] + ' ' + expiry[1];
 
-    return t;
+    return fullText;
 }
 
 tEv("sensibull", "visit", "main", "");
