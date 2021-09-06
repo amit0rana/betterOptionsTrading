@@ -41,7 +41,7 @@ const D_LEVEL = g_config.get('logging');
 
 const SENSIBULL_DOM_PATHS = {
     domForPlacingToggleSelectBox: "button:contains('Clear Positions')",
-    domForPositionsRows: "div.style__TradeTableRow-szonbw-7",
+    domForPositionsRows: "div.style__TradeTableRow-sc-szonbw-7",
     domForPositionExpiry: 'div:nth-child(1) > div:nth-child(2) > div > div:nth-child(2)',
     // domForStrategySuggestions: '#app > div > div.page-sidebar-is-open.sn-page--builder.style__AppWrapper-djPJnZ.gvrWYn > div.sn-l__app-content.style__AppContent-haAgYm.korEfl > div.style__ContainerSpacing-kZpkBx.kJeLXd > div > div.style__BuilderWrapper-hHFjHn.nAQhs > div.style__BuilderColRight-jAAkJD.hbmLzB > div.style__BuilderPresetStrategiesWrapper-iJakRq.jDHsHZ',
     domForCheckbox: 'span > span:nth-child(1) > input'
