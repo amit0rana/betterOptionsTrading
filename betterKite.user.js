@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.28
+// @version      3.29
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -24,7 +24,7 @@
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.28";
+const VERSION = "v3.29  ";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -927,7 +927,7 @@ function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
 function createSubFilter() {
     debug('createSubFilter');
 
-    var dropDown = jQ("<SELECT id='subFilterDropdownId' class='randomClassToHelpHide' style='margin: 5px 0;font-size: 12px;background-color: var(--color-bg-default)'></SELECT>");
+    var dropDown = jQ("<SELECT id='subFilterDropdownId' class='randomClassToHelpHide' style='margin: 2px 0;font-size: 10px;background-color: var(--color-bg-default)'></SELECT>");
 
     var s = jQ("<span id='headerSubActionsID' class='text-label grey randomClassToHelpHide' ></span>");
 
@@ -980,24 +980,42 @@ function createSubFilter() {
     //Select all
     t = jQ("<span id='spanselectAllId' class='text-label red randomClassToHelpHide'>|</span>");
     i = document.createElement("INPUT");
-    i.style = 'margin: 5px';
+    i.style = 'margin: 2px';
     i.type = 'button';
     i.id = "selectAllId";
     i.name = 'selectAllId';
-    i.value = 'Toggle Selection';
+    i.value = 'Toggle Sel.';
 
-    jQ(s).append(t);
+    //jQ(s).append(t);
     jQ(s).append(i);
 
     //savings button
     i = document.createElement("INPUT");
-    i.style = 'margin: 5px';
+    i.style = 'margin: 2px';
     i.type = 'button';
     i.id = "saveMarginBtnId";
     i.name = 'saveMarginBtnId';
     i.value = 'Save Margin';
 
     jQ(s).append(i);
+
+    i = document.createElement("INPUT");
+    i.style = 'margin: 2px';
+    i.type = 'button';
+    i.id = "hideRestId";
+    i.name = 'hideRestId';
+    i.value = 'Hide Sel.';
+    jQ(s).append(i);
+
+    i = document.createElement("INPUT");
+    i.style = 'margin: 2px';
+    i.type = 'button';
+    i.id = "resetRowsId";
+    i.name = 'resetRowsId';
+    i.value = 'Reset';
+    jQ(s).append(i);
+
+    
 
     t = jQ("<span id='spanBuyCountId' class='text-label randomClassToHelpHide' data-balloon-length='large' data-balloon-pos='right' data-balloon='Select a Scrip from the strategy filter dropdown.'></span></span>");
     jQ(s).append(t);
@@ -1992,6 +2010,21 @@ function main() {
         jQ(document).on('change', "input.su-checkbox", onSuCheckboxSelection);
 
         //simulateSelectBoxEvent();
+    });
+
+    jQ(document).on('click', "#hideRestId", function () {
+        tEv("kite", "hideRestFilter", "click", "");
+        //var allVisibleRows = jQ(allDOMPaths.PathForPositions + ":not(.selected)").hide();
+        var allVisibleRows = jQ(allDOMPaths.PathForPositions + ".selected").hide();
+        jQ(jQ(allDOMPaths.PathForPositions + ".selected")).find('input.su-checkbox').click();
+        setTimeout(onSuCheckboxSelection, 10);
+    });
+
+    jQ(document).on('click', "#resetRowsId", function () {
+        tEv("kite", "restSubFilterFilter", "click", "");
+        resetSubFilter();
+        jQ('#subFilterDropdownId').val('all');
+        simulateSelectBoxEvent();
     });
 
 
