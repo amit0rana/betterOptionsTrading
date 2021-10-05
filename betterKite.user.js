@@ -1537,12 +1537,13 @@ const getMarginCalculationData = (instrument, product, q, price) => {
         data.optfut = 'OPT';
         if (tokens[2] === "w") {
             //eg: NIFTY2140814200CE (NIFTY 8th w APR 14200 CE NFO LABELS)
+            const MONTHS_FOR_WEEKLY = ["1","2","3","4","5","6","7","8","9","O","N","D"];
 
             data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${moment(new Date(tokens[3] + ' 1 ' + (new Date()).getFullYear())).format("M")}${tokens[1].match(/\d+/)[0].padStart(2, 0)}${tokens[4]}${tokens[5]}`;
             data.exchange = `${tokens[6]}`;
             data.pece = `${tokens[5]}`;
             data.strike = `${tokens[4]}`;
-            data.scrip = `${tokens[0]}${moment(new Date()).format("YY")}${MONTHS.indexOf(tokens[3]) + 1}${tokens[1].replace(/\D/g, "")}`
+            data.scrip = `${tokens[0]}${moment(new Date()).format("YY")}${MONTHS_FOR_WEEKLY[MONTHS.indexOf(tokens[3])]}${tokens[1].replace(/\D/g, "")}`
         } else {
             //eg: NIFTY21APR14200PE (NIFTY APR 14200 PE NFO LABELS)
             data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}${tokens[2]}${tokens[3]}`;
