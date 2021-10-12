@@ -73,8 +73,24 @@
         jQ("#clearFilter").remove();
         jQ('#positionsTable_filter > label:nth-child(1) > input:nth-child(1)').after("<a id='clearFilter' href='#'>r</a>");
         jQ('#positionsTable_filter > label:nth-child(1) > input:nth-child(1)').val(jQ(event.target).text()).trigger('change').click().focus().keydown().keypress().keyup();
+        addFilters();
     });
     //})();
+
+    waitForKeyElements("#positions-body", addFilters);
+
+    function addFilters() {
+        var allVisibleRows = jQ("#positions-body > tr");
+        var symbols = [];
+        allVisibleRows.each(function (rowIndex) {
+            var symbol = jQ(this).find('td:nth-child(1)');
+            if (!symbols.contains(symbol)) {
+                symbols.push(symbol);
+            }
+        });
+
+        console.log(symbols);
+    }
     
     
     jQ.fn.exists = function () {
