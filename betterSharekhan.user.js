@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterSharekhan
 // @namespace    https://github.com/amit0rana/betterSharekhan
-// @version      0.06
+// @version      0.07
 // @description  Introduces small features on top of newtrade.sharekhan.com
 // @author       Amit
 // @match        https://newtrade.sharekhan.com/*
@@ -22,7 +22,7 @@
 var context=window,options="{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}";const hhistory=context.history,doc=document,nav=navigator||{},storage=localStorage,encode=encodeURIComponent,pushState=hhistory.pushState,typeException="exception",generateId=()=>Math.random().toString(36),getId=()=>(storage.cid||(storage.cid=generateId()),storage.cid),serialize=e=>{var t=[];for(var o in e)e.hasOwnProperty(o)&&void 0!==e[o]&&t.push(encode(o)+"="+encode(e[o]));return t.join("&")},track=(e,t,o,n,i,a,r)=>{const c="https://www.google-analytics.com/collect",s=serialize({v:"1",ds:"web",aip:options.anonymizeIp?1:void 0,tid:"UA-176741575-1",cid:getId(),t:e||"pageview",sd:options.colorDepth&&screen.colorDepth?`${screen.colorDepth}-bits`:void 0,dr:doc.referrer||void 0,dt:doc.title,dl:doc.location.origin+doc.location.pathname+doc.location.search,ul:options.language?(nav.language||"").toLowerCase():void 0,de:options.characterSet?doc.characterSet:void 0,sr:options.screenSize?`${(context.screen||{}).width}x${(context.screen||{}).height}`:void 0,vp:options.screenSize&&context.visualViewport?`${(context.visualViewport||{}).width}x${(context.visualViewport||{}).height}`:void 0,ec:t||void 0,ea:o||void 0,el:n||void 0,ev:i||void 0,exd:a||void 0,exf:void 0!==r&&!1==!!r?0:void 0});if(nav.sendBeacon)nav.sendBeacon(c,s);else{var d=new XMLHttpRequest;d.open("POST",c,!0),d.send(s)}},tEv=(e,t,o,n)=>track("event",e,t,o,n),tEx=(e,t)=>track(typeException,null,null,null,null,e,t);hhistory.pushState=function(e){return"function"==typeof history.onpushstate&&hhistory.onpushstate({state:e}),setTimeout(track,options.delay||10),pushState.apply(hhistory,arguments)},track(),context.ma={tEv:tEv,tEx:tEx};
 
 window.jQ=jQuery.noConflict(true);
-const VERSION = "v0.06";
+const VERSION = "v0.07";
 const GMPositionsName = "BK_POSITIONS";
 const D_LEVEL = D_LEVEL_DEBUG;
 
@@ -172,9 +172,11 @@ function createPositionsDropdown() {
                     var params = JSON.parse(jQ(span).attr('params'));
                     debug(params);
 
+                    var paramSplit = params.detail.contract.split(" ");
+
                     var contract = params.detail.contract;
-                    var exp =  params.detail.contract.split(" ")[1];
-                    var scrip = params.scripcode;
+                    var exp =  paramSplit[1];
+                    var scrip = paramSplit[0];
 
                     if (selectedGroup === "All") {
                         matchFound = true;
@@ -314,11 +316,47 @@ function showPositionDropdown(retry = true) {
         debug(span);
        try{
         var params = JSON.parse(jQ(span).attr('params'));
+        /*
+        {
+            "ex": "NSEFO",
+            "scripcode": "NIFTY 09Dec2021 CE 19000",
+            "token": "43403",
+            "detail": {
+                "netqty": 650,
+                "netrate": 3.96,
+                "invsttype": "INVST",
+                "contract": "NIFTY 09Dec2021 CE 19000",
+                "scripcode": "NIFTY 09Dec2021 CE 19000",
+                "ltp": "2.30",
+                "pricefactor": 1,
+                "diff": "-0.45",
+                "prevcloserate": "2.75",
+                "totalbpl": "0.00",
+                "acctype": "Bullish",
+                "sellqty": 0,
+                "buyrate": 2.4,
+                "token": "43403",
+                "settledmtm": "-804.00",
+                "openrate": 4.09,
+                "netopenmtm": -803.9999999999999,
+                "buyqty": 50,
+                "totalmtm": "-1079.00",
+                "tdymtm": "-275.00",
+                "openqty": 600,
+                "exchange": "NSEFO",
+                "sellrate": 0,
+                "tdybpl": "0.00"
+            }
+        }
+        */
         debug(params);
         debug(params.scripcode);
 
+        var arr = params.detail.contract.split(" ");
+
         //creating auto generated script wise grouping
-        var ts = params.scripcode;
+        // var ts = params.scripcode;
+        var ts = arr[0];
         if (!arrForUnique.includes(ts)) {
             var option = document.createElement("option");
             option.text = ts;
@@ -328,7 +366,7 @@ function showPositionDropdown(retry = true) {
         }
 
         //creating auto generated expiry wise grouping
-        var arr = params.detail.contract.split(" ");
+        
 
         //NIFTY 17Jun2021 PE 14500
         var ex = arr[1];
