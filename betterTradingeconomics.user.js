@@ -1,7 +1,7 @@
     // ==UserScript==
     // @name         betterTradingeconomics
     // @namespace    https://github.com/amit0rana/betterTradingeconomics
-    // @version      0.03
+    // @version      0.04
     // @description  Introduces small features on top of betterTradingeconomics site
     // @author       Amit
     // @match        https://tradingeconomics.com/*
@@ -17,7 +17,7 @@
 
     const D_LEVEL = D_LEVEL_NONE;
     var currentUrl = window.location.pathname;
-    info(currentUrl);
+    console.log(currentUrl);
 
 //tradingeconomics.com
     function stockFilter() {
@@ -40,7 +40,7 @@
             selectBox.add(option);
 
             var statusesRows = $('td#session > span');
-            debug(statusesRows.length);
+            console.log(statusesRows.length);
             statusesRows.each(function(rowIndex) {
                 var title = $(this).attr('title');
                 if (!statuses.includes(title)) {
@@ -53,7 +53,7 @@
                 }
 
             });
-            debug(statuses);
+            console.log(statuses);
 
             selectBox.addEventListener("change", function() {
                 var selectedItem = this.value;
@@ -78,7 +78,8 @@
             });
 
             $('#toggleSelectboxID').remove();
-            $(domForAdPanel).after(selectBox);
+            //$(domForAdPanel).after(selectBox);
+            $(".col-lg-10 > div:nth-child(5)").before(selectBox);
 
             var refreshBtn = document.createElement("button");
             refreshBtn.id = "refreshID";
