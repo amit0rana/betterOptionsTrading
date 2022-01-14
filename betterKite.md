@@ -1,6 +1,7 @@
 # betterKite
 
 Very simple "userscript" which adds several features to kite.zerodha.com ui
+* Avoid quantity freeze limitation, breaks bigger order into multiple orders
 * Group positions under strategies
 * For a strategy, check how much margin can be freed by taking hedge buy positions
 * See P&L for each strategy
@@ -46,6 +47,10 @@ Follow below mentioned steps
 
 ------
 # https://kite.zerodha.com/positions page
+* To enable quantity freeze go to settings. Once enabled, checkbox will show below 'Sell' or 'Buy' button, enable it and place orders
+![QuantityFeeze](https://dl.dropbox.com/s/h55i2gkk6gj5y6j/qtyFreeze.png?dl=0)
+![QuantityFeeze1](https://dl.dropbox.com/s/n4jd45bpzl6dh1p/qtySetings.png?dl=0)
+![QuantityFeeze2](https://dl.dropbox.com/s/sc4xd7wsofz9zdp/qtySettings-2.png?dl=0)
 * Strategies are grouped in 3 ways.
   * (1) Strategies are auto grouped by script name. So all INFY strategies will be auto grouped under 'INFY'
   * (2) Strategies are auto grouped by expiry.
