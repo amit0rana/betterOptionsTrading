@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.33
+// @version      3.34
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -10,6 +10,7 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_addStyle
+// @grant        GM_getResourceText
 // @grant        GM_registerMenuCommand
 // @require      https://raw.githubusercontent.com/amit0rana/betterOptionsTrading/master/betterCommon.js
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
@@ -17,18 +18,25 @@
 // @require      https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js
 // @require      https://raw.githubusercontent.com/kawanet/qs-lite/master/dist/qs-lite.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js
-// @require      https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js
+// @require      https://cdn.jsdelivr.net/npm/toastify-js
+// @resource     TOASTIFY_CSS https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css
 // @downloadURL  https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js
 // @updateURL    https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.meta.js
 // ==/UserScript==
 
+const my_css = GM_getResourceText("TOASTIFY_CSS");
+GM_addStyle(my_css);
+
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.33";
+const VERSION = "v3.34";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
+
+const BANKNIFTY_QTY_FREEZE = 1200;
+const NIFTY_QTY_FREEZE = 1800;
 
 const DD_NONE = '';
 const DD_HOLDINGS = 'H';
@@ -89,6 +97,10 @@ const g_config = new MonkeyConfig({
             default: D_LEVEL_NONE
         },
         overide_qty_freeze: {
+            type: 'checkbox',
+            default: false
+        },
+        smart_limit: {
             type: 'checkbox',
             default: false
         },
@@ -2903,15 +2915,20 @@ var open = window.XMLHttpRequest.prototype.open,
     send = window.XMLHttpRequest.prototype.send,
     oldReadyStateChange;
 const BASE_URL = "https://kite.zerodha.com";
-var _orderModified, _newOrder, _overrideQtyFreeze = false;
+//var _orderModified, 
+var _newOrder;
+var _overrideQtyFreeze = false, _smartLimit = false;
 var orderDom = "form.order-window";
-var _interceptedReq;
+// var _interceptedReq;
 waitForKeyElements(orderDom, addOverrideOption);
 
 function addOverrideOption() {
     debug('addOverrideOption');
-
-    if ( g_config.get('overide_qty_freeze') === true && (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell")) {
+    
+    if ( g_config.get('overide_qty_freeze') === true && 
+    (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
+    (jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY"))
+    ) {
         var div = document.createElement("div");
 
         var i = document.createElement("INPUT");
@@ -2919,7 +2936,7 @@ function addOverrideOption() {
         i.name = 'overQtyFreezeCb';
         i.value = 'true';
         i.id = 'overQtyFreezeCb';
-        i.style = 'width: 20px; height: 20px; margin-top: 2px';
+        i.style = 'width: 18px; height: 18px; margin-top: 2px; vertical-align : middle';
         //i.classList.add('button');
         //i.classList.add('button-outline');
 
@@ -2930,6 +2947,7 @@ function addOverrideOption() {
         l.innerHTML = label;
         l.classList.add('text-label');
         l.classList.add('text-label-outline');
+        l.style = 'margin-top: 2px;';
 
 
         i.onclick = function () {
@@ -2942,16 +2960,27 @@ function addOverrideOption() {
         div.appendChild(l);
         jQ("button.button-outline.cancel").after(div);
     }
+
+    if ( g_config.get('smart_limit') === true && 
+    (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
+    (jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY"))
+    ) {
+        var insert = `
+    <div class="su-radio-wrap" tooltip-pos="down" data-balloon-pos="down" data-balloon="Sell/buy at a 05p below first offer price">
+        <input type="radio" name="orderType" label="Smart Limit" class="su-radio" id="smartLimit" value="SMARTLIMIT"
+        title="Sell/buy at a 05p below first offer price"> 
+        <label class="su-radio-label" for="smartLimit">Smart Limit</label>
+    </div>
+    `;
+    
+        //jQ("div.su-radio-group.order-type").append(insert);
+        jQ("div.four.columns.price > div.su-radio-group.order-type").append(insert);
+    }
+    
 }
 
 function openReplacement(method, url, async, user, password) {
-    //check for url
-    //POST /oms/orders/regular
-    if (method === 'PUT' && url.includes('/oms/orders/regular')) {
-        _orderModified = true;
-    } else {
-        _orderModified = false;
-    }
+
     if (method === 'POST' && url.includes('/oms/orders/regular')) {
         _newOrder = true;
     } else {
@@ -2961,54 +2990,70 @@ function openReplacement(method, url, async, user, password) {
 }
 
 function sendReplacement(data) {
-    //get the DATA
-    // if (_orderModified === true) {
-    //     console.warn('order modified : ', data);
-
-    //     if (_overrideQtyFreeze === true) {
-    //         _overrideQtyFreeze = false;
-    //         //sendModifyOrderRequest();
-    //     }
-    // }
     if (_newOrder === true) {
-        _interceptedReq = data;
-    } else {
-        _interceptedReq = "";
-    }
+        var order = queryStringToJSON(data);
+    //     _interceptedReq = order;
+    // } else {
+    //     _interceptedReq = "";
+    // }
 
-    
+        if (jQ("#smartLimit").is(":checked") ||
+        (jQ("#overQtyFreezeCb").is(':checked') && 
+        (
+            (order.tradingsymbol.startsWith("BANKNIFTY") && order.quantity > BANKNIFTY_QTY_FREEZE) ||
+            (order.tradingsymbol.startsWith("NIFTY") && order.quantity > NIFTY_QTY_FREEZE)
+        )
+        )) {
+            setTimeout(() => {
+                var button = jQ("button:contains('Cancel')");
+                button.click();
+            }, 0);
+            
+            console.log('aborting send ' + data);
 
-    if (this.onreadystatechange) {
-        oldReadyStateChange = this.onreadystatechange;
+            this.abort();
+            
+            if (jQ("#smartLimit").is(":checked")) {
+                _smartLimit = true;
+                jQ("#smartLimit").prop('checked', false);
+
+                // throw new Error("Smart Limit Order is executed in the background, Check orders. Check betterKite message");
+            }  else {
+                _smartLimit = false;
+            }
+            
+            if (jQ("#overQtyFreezeCb").is(':checked') && 
+            (
+                (order.tradingsymbol.startsWith("BANKNIFTY") && order.quantity > BANKNIFTY_QTY_FREEZE) ||
+                (order.tradingsymbol.startsWith("NIFTY") && order.quantity > NIFTY_QTY_FREEZE)
+            )
+            ) {
+                _overrideQtyFreeze = true;
+                jQ("#overQtyFreezeCb").prop('checked', false);
+                
+
+                // throw new Error("Quantity is greater than allowed quantity, zerodha won't execute this order. Check betterKite message");
+            } else {
+                _overrideQtyFreeze = false;
+            }
+
+            if (_smartLimit === true || _overrideQtyFreeze == true) {
+                sendPlaceNewOrderRequest(order);
+
+                throw new Error("Zerodha order stopped. betterKite order sent. Check orders / betterKite message");
+            }
+        
+        } 
     }
-    this.onreadystatechange = onReadyStateChangeReplacement;
 
     return send.apply(this, arguments);
-}
-
-function onReadyStateChangeReplacement() {
-    console.warn('HTTP request ready state changed : ' + this.readyState + " " + this.status);
-
-    if (_newOrder === true && this.status === 400 && this.readyState === 2) {
-        console.warn(`${_overrideQtyFreeze} new order req : `, _interceptedReq);
     
-        if (_overrideQtyFreeze === true) {
-            _overrideQtyFreeze = false;
-            sendPlaceNewOrderRequest(_interceptedReq);
-        }
-    }
-
-    if (this.onreadystatechange) {
-        return oldReadyStateChange.apply(this, arguments);
-    }
 }
 
 window.XMLHttpRequest.prototype.open = openReplacement;
 window.XMLHttpRequest.prototype.send = sendReplacement;
 
 function queryStringToJSON(qs) {
-    qs = qs ;
-
     var pairs = qs.split('&');
     var result = {};
     pairs.forEach(function(p) {
@@ -3030,20 +3075,82 @@ function queryStringToJSON(qs) {
     return JSON.parse(JSON.stringify(result));
 };
 
-function sendPlaceNewOrderRequest(data) {
+function getToast(message) {
+    return Toastify({
+        text: "<span>betterKte</br>"+message+"</span>",
+        duration: 6000,
+        close: true,
+        offset: "60px",
+        style: {top: "60px",display: "grid", "grid-template-columns": "15fr 1fr"},
+        escapeMarkup: false
+    });
+}
+
+function sendPlaceNewOrderRequest(order) {
     debug('sendPlaceNewOrderRequest');
 
-    var order = queryStringToJSON(data);
+    jQ.ajaxSetup({
+        headers: {
+            'Authorization': `enctoken ${getCookie('enctoken')}`
+        }
+    });
+    debug("11111");
+    if (_smartLimit === true) {
+        order.order_type = "LIMIT";
 
+        if (order.transaction_type === "SELL") {
+            order.price = 10000; //on safer side, keeping a random high price
+        }
+        if (order.transaction_type === "BUY") {
+            order.price = 0.05; //on safer side, keeping a random low price
+        }
+
+        jQ.ajax({
+            url: BASE_URL + `/oms/quote?i=${order.exchange}:${order.tradingsymbol}`,
+            type: 'GET',
+            async: false,
+            cache: false,
+            error: function(xhr, status, error) {
+                debug(error);
+                debug(xhr.responseText);
+                getToast(`${status} :: ${error} :: ${xhr.responseText}`).showToast();
+
+                throw new Error("Not able to get best offer/bid price. " + error);
+            },
+            success: function (response, status) {
+                debug("22222");
+                debug("Data: " + JSON.stringify(response) + "\nStatus: " + status);
+                debug(order);
+                var newPrice = response.data[`${order.exchange}:${order.tradingsymbol}`].depth[order.transaction_type.toString().toLowerCase()][0].price;
+                if (order.transaction_type === 'BUY') {
+                    newPrice = newPrice + 0.05;
+                } else if (order.transaction_type === 'SELL') {
+                    newPrice = newPrice - 0.05;
+                }
+    
+                order.price = newPrice;
+            },
+            complete: function() {
+                debug("33333");
+            }
+        });
+    }
+    debug("44444");
+
+    
     var qty = order.quantity;
     var remainigQty = qty;
 
     var limit = qty; //we don't slice anything else other than nifty and banknifty
 
-    if (order.tradingsymbol.startsWith("BANKNIFTY")) {
-        limit = 1200; //old 2500
-    } else if (order.tradingsymbol.startsWith("NIFTY")) {
-        limit = 1800;
+    if (_overrideQtyFreeze === true) {
+        if (order.tradingsymbol.startsWith("BANKNIFTY")) {
+            limit = BANKNIFTY_QTY_FREEZE; //old 2500
+        } else if (order.tradingsymbol.startsWith("NIFTY")) {
+            limit = NIFTY_QTY_FREEZE;
+        }
+    } else {
+        limit = qty;
     }
 
     for (let index = 0; index < (qty / limit); index++) {
@@ -3054,29 +3161,51 @@ function sendPlaceNewOrderRequest(data) {
         }
         order.quantity = q;
 
-        jQ.ajaxSetup({
-            headers: {
-                'Authorization': `enctoken ${getCookie('enctoken')}`
-            }
-        });
         jQ.post(BASE_URL + "/oms/orders/regular",
             order,
             function (data, status) {
+                 debug("5555");
+
                 debug("Data: " + data + "\nStatus: " + status);
-                jQ(".su-toast-item").notify(`betterKite :: ${status}`, { position:"top", className: "success" });
-                //jQ(".popup").notify(status, "success");
+                getToast(`${status}`).showToast();
+            })
+            .fail(function(xhr, status, error) {
+                debug("666");
+                var resp = JSON.parse(xhr.responseText);
+                
+                getToast(`${status} :: ${resp.message}`).showToast();
+                
             });
 
         remainigQty = remainigQty - q;
 
     }
 
-    
+    debug("99999");
 };
 
 function sendModifyOrderRequest() {
     debug('sendModifyOrderRequest');
 };
+
+const menuDom = "ul.context-menu-list.list-flat.layer-2";
+//waitForKeyElements(menuDom, menuShown);
+
+function menuShown() {
+    var insert = `
+    <li class="addon-menu separator">
+        <ul class="list-flat">
+        <li ><a id="exitSmartlyItem" href="javascript:void(0);"><span class="icon icon-minus"></span> Exit Smartly</a></li>
+        </ul>
+    </li>
+    `;
+    debug('menuShown');
+    jQ(menuDom).append(insert);
+    jQ("#exitSmartlyItem").click(function(evt) {
+        debug('exitSmartlyItem clicked');
+        evt.stopPropagation();
+    });
+}
 
 jQ.fn.exists = function () {
     return this.length !== 0;
