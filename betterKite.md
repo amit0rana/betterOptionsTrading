@@ -1,6 +1,7 @@
 # betterKite
 
 Very simple "userscript" which adds several features to kite.zerodha.com ui
+* 'Smart Limit' Place LIMIT orders at best offer/bid price.
 * Avoid quantity freeze limitation, breaks bigger order into multiple orders
 * Group positions under strategies
 * For a strategy, check how much margin can be freed by taking hedge buy positions
@@ -47,7 +48,9 @@ Follow below mentioned steps
 
 ------
 # https://kite.zerodha.com/positions page
-* To enable quantity freeze go to settings. Once enabled, checkbox will show below 'Sell' or 'Buy' button, enable it and place orders
+* 'Smart Limit' Finds the best offer/bid price then ether adds or subtracts 0.05p (depending on buy or sell order) and places a LIMIT order.
+![SmartLimit](https://dl.dropbox.com/s/b02kq0vjxscw3p2/smartLimit.png?dl=0)
+* You can easily execute/exit quantities higher than freeze quantity. To enable quantity freeze go to settings. Once enabled, checkbox will show below 'Sell' or 'Buy' button, enable it and place orders
 ![QuantityFeeze](https://dl.dropbox.com/s/h55i2gkk6gj5y6j/qtyFreeze.png?dl=0)
 ![QuantityFeeze1](https://dl.dropbox.com/s/n4jd45bpzl6dh1p/qtySetings.png?dl=0)
 ![QuantityFeeze2](https://dl.dropbox.com/s/sc4xd7wsofz9zdp/qtySettings-2.png?dl=0)
