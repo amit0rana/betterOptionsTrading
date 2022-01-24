@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.35
+// @version      3.36
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -55,13 +55,10 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.35";
+const VERSION = "v3.36";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
-
-const BANKNIFTY_QTY_FREEZE = 1200;
-const NIFTY_QTY_FREEZE = 1800;
 
 const DD_NONE = '';
 const DD_HOLDINGS = 'H';
@@ -137,11 +134,22 @@ const g_config = new MonkeyConfig({
             type: 'checkbox',
             default: true
         },
+        nifty_freeze_quantity: {
+            type: 'number',
+            default: 1800
+        },
+        banknifty_freeze_quantity: {
+            type: 'number',
+            default: 1200
+        },
     }
 });
 const D_LEVEL = g_config.get('logging');
 const PRO_MODE = g_config.get('pro_mode');
 const MARGIN_METHOD = g_config.get('margin_method');
+
+const BANKNIFTY_QTY_FREEZE = g_config.get('banknifty_freeze_quantity');
+const NIFTY_QTY_FREEZE = g_config.get('nifty_freeze_quantity');
 
 const allDOMPaths = {
     rowsFromHoldingsTable: "div.holdings > section > div > div > table > tbody > tr",
@@ -161,7 +169,8 @@ const allDOMPaths = {
     //sensibullRows: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > div > table > tbody > tr",
     sensibullRows: "tr.jss32.jss33",
     sensibullRowCheckbox: "th > div > span > span > input",
-    sensibullScriptSelected: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(1) > div > div"
+    sensibullScriptSelected: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(1) > div > div",
+    domContextMenuButton: "span.context-menu-button"
 };
 //sensibullScriptSelected: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(1) > div > button > span.MuiButton-label"
 //("#app > div > div > div > div > div > div > div.style__LeftContentWrapper-t0trse-21.kQiWSc > div.style__SearchableInstrumentWrapper-t0trse-10.duNZzV > div > button > span.MuiButton-label")
@@ -1674,6 +1683,7 @@ function onSuCheckboxSelection() {
     var selectedRows = jQ(`${allDOMPaths.PathForPositions}.selected`);
 
     var pnl = 0;
+    var realPnl = 0;
     var maxPnl = 0;
     var peQ = 0;
     var ceQ = 0;
@@ -1681,6 +1691,10 @@ function onSuCheckboxSelection() {
     var selection = [];
     debug(`su- selected rows: ${selectedRows.length}`);
     selectedRows.each(function (rowIndex) {
+        var positionRow = getPositionRowObject(this);
+
+        realPnl = realPnl - (positionRow.quantity * (positionRow.avgPrice - positionRow.ltp));
+
         var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
 
         pnl += parseFloat(v);
@@ -1735,8 +1749,10 @@ function onSuCheckboxSelection() {
                 var pnlText = "";
                 if (pnl > 0) {
                     pnlText = "<span random-att='temppnl' class='text-green open pnl randomClassToHelpHide'>P&L: " + formatter.format(pnl);
+                    // pnlText = "<span random-att='temppnl' class='text-green open pnl randomClassToHelpHide'>P&L: " + formatter.format(pnl) + " Real: " + formatter.format(realPnl);
                 } else {
                     pnlText = "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: " + formatter.format(pnl);
+                    // pnlText = "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: " + formatter.format(pnl) + " Real: " + formatter.format(realPnl);
 
                 }
                 pnlText += "<br><span class='text-label randomClassToHelpHide'>Max Profit: " + formatter.format(maxPnl) + " / " + (maxPnl / margin * 100).toFixed(2) + "%</span>";
@@ -1754,7 +1770,8 @@ function onSuCheckboxSelection() {
                 mTag = jQ("span[random-att='temppnl']");
                 if (mTag.length > 0) {
                     mTag.remove();
-                } jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append("<span random-att='marginsave' class='pnl randomClassToHelpHide'> " + t + " (Points: " + formatter.format(points) + ")</span>");
+                } 
+                jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append("<span random-att='marginsave' class='pnl randomClassToHelpHide'> " + t + " (Points: " + formatter.format(points) + ")</span>");
                 jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append(pnlText);
             }
         });
@@ -1774,6 +1791,7 @@ function getPositionRowObject(row) {
     position.product = jQ(jQ(row).find("td")[1]).text().replace(/\s/g, '');
     position.quantity = parseFloat(jQ(jQ(row).find("td")[3]).text().split(",").join(""));
     position.avgPrice = parseFloat(jQ(jQ(row).find("td")[4]).text().split(",").join(""));
+    position.ltp = parseFloat(jQ(jQ(row).find("td")[5]).text().split(",").join(""));
 
     if (position.quantity > 0) {
         position.transaction_type = 'BUY';
@@ -2255,21 +2273,28 @@ function main() {
 
     //click of Positions row to copy pos id
     jQ(document).on('click', allDOMPaths.PathForPositions, function () {
-        var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+        setTimeout(() => {
+            onSuCheckboxSelection();
+        }, 0);
+        // var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
 
         //var text = dataUidInTR.split(".")[1];
 
-        var text = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
-        navigator.clipboard.writeText(text).then(function () {
-            debug('Async: Copying to clipboard was successful!');
-        }, function (err) {
-            debug('Async: Could not copy text: ', err);
-        });
+        // var text = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
+        // navigator.clipboard.writeText(text).then(function () {
+        //     debug('Async: Copying to clipboard was successful!');
+        // }, function (err) {
+        //     debug('Async: Could not copy text: ', err);
+        // });
     });
 
 
     //whenever selection in position row changes.
     jQ(document).on('change', "input.su-checkbox", onSuCheckboxSelection);
+
+    // waitForKeyElements(allDOMPaths.domContextMenuButton, saveContextMenuRow);
+    //to capture click on context menu
+    
 
     //fire hide/show logic if history/url changes.
     var pushState = history.pushState;
@@ -2335,6 +2360,51 @@ function main() {
     waitForKeyElements("span.margin-value", showRoiNudge);
     waitForKeyElements("div.value.final-margins-value", showBasketRoiNudge);
 
+}
+
+var _currentContextMenuRow;
+
+
+function saveContextMenuRow() {
+    debug('saveContextMenuRow');
+    _currentContextMenuRow = jQ(allDOMPaths.domContextMenuButton).closest('tr');
+
+    // jQ(document).on('click', "div.context-menu.table", function () {
+    //     var currentUrl = window.location.pathname;
+    //     if (currentUrl.includes('order')) {
+    //         debug('clicked on context menu in order screen');
+    //         tEv("kite", "orders", "context-menu", "");
+    //     }
+        
+        
+    // });
+
+
+}
+
+const menuDom = "ul.context-menu-list.list-flat.layer-2";
+// waitForKeyElements(menuDom, menuShown);
+
+function menuShown() {
+    var currentUrl = window.location.pathname;
+    if (currentUrl.includes('orders')) {
+        debug('clicked on context menu in order screen');
+        tEv("kite", "orders", "context-menu", "");
+    }
+    var insert = `
+    <li class="addon-menu separator">
+        <ul class="list-flat">
+        <li ><a id="bumpOrderButtonId" href="javascript:void(0);"><span class="icon icon-swap_vert"></span> Bump Order</a></li>
+        </ul>
+    </li>
+    `;
+    debug('menuShown');
+    jQ(menuDom).append(insert);
+    jQ("#bumpOrderButtonId").click(function(evt) {
+        debug('bumpOrderButtonId clicked');
+        debug(getPositionRowObject(_currentContextMenuRow));
+        evt.stopPropagation();
+    });
 }
 
 function showRoiNudge() {
@@ -3120,7 +3190,7 @@ function queryStringToJSON(qs) {
 function getToast(message) {
     return Toastify({
         text: "<span>betterKte</br>"+message+"</span>",
-        duration: 7000,
+        duration: 5000,
         close: true,
         offset: "60px",
         style: {top: "60px",display: "grid", "grid-template-columns": "15fr 1fr"},
@@ -3229,25 +3299,6 @@ function sendPlaceNewOrderRequest(order) {
 function sendModifyOrderRequest() {
     debug('sendModifyOrderRequest');
 };
-
-const menuDom = "ul.context-menu-list.list-flat.layer-2";
-//waitForKeyElements(menuDom, menuShown);
-
-function menuShown() {
-    var insert = `
-    <li class="addon-menu separator">
-        <ul class="list-flat">
-        <li ><a id="exitSmartlyItem" href="javascript:void(0);"><span class="icon icon-minus"></span> Exit Smartly</a></li>
-        </ul>
-    </li>
-    `;
-    debug('menuShown');
-    jQ(menuDom).append(insert);
-    jQ("#exitSmartlyItem").click(function(evt) {
-        debug('exitSmartlyItem clicked');
-        evt.stopPropagation();
-    });
-}
 
 jQ.fn.exists = function () {
     return this.length !== 0;
