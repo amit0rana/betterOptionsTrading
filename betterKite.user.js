@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.37
+// @version      3.38
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -55,7 +55,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.37";
+const VERSION = "v3.38";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -141,6 +141,10 @@ const g_config = new MonkeyConfig({
         banknifty_freeze_quantity: {
             type: 'number',
             default: 1200
+        },
+        enable_nifty_monthly_weekly_range: {
+            type: 'checkbox',
+            default: true
         },
     }
 });
@@ -2113,6 +2117,92 @@ function main() {
             
         }
     });
+
+    jQ(document).on('click', "div.instrument-widget:nth-child(1) > span:nth-child(2) > span:nth-child(1)", function () {
+
+        if (g_config.get('enable_nifty_monthly_weekly_range') == true) {
+            tEv("kite", "showVixRangeMonthly", "click", "");
+
+            var attr = jQ(this).attr('data-balloon');
+
+            var symbol = jQ(this).closest("div").find("span.tradingsymbol.link-chart").text().trim();
+
+            if (symbol == "NIFTY 50") {
+                if (typeof attr !== 'undefined' && attr !== false) {
+                    jQ(this).removeAttr('tooltip');
+                    jQ(this).removeAttr('data-balloon-pos');
+                    jQ(this).removeAttr('data-balloon');
+                } else {
+                    var iv = jQ("div.info > span.symbol > span > span.nice-name:contains('INDIA')");
+                    debug(iv.length);
+                    if (iv.length > 0) {
+                        var strike = jQ(this).text().trim();
+                        //jQ("div.vddl-draggable:nth-child(1) > div:nth-child(1) > div:nth-child(1) > span:nth-child(2) > span:nth-child(3)")
+                        var vix = jQ(iv).closest("div").find("span.price > span.last-price").text().trim();
+                        var chg = vix / Math.sqrt(12);
+                        var range = strike * chg / 100;
+                        var lNift = strike - range;
+                        var uNift = parseFloat(strike) + parseFloat(range);
+                        jQ(this).attr('tooltip', 'down');
+                        jQ(this).attr('data-balloon-pos', 'down');
+                        jQ(this).attr('data-balloon', `${lNift.toFixed(2)} - ${uNift.toFixed(2)}`);
+                        
+                        //debug(jQ("div.vddl-draggable:nth-child(1) > div:nth-child(1) > div:nth-child(1) > span:nth-child(2) > span:nth-child(3)"));
+                    } else {
+                        getToast('Cannot find INDIA VIX in watchlist. Please add it.').showToast();
+                    }
+                } 
+            } else {
+                getToast('Works only on NIFTY 50.').showToast();
+            }
+        }
+
+        
+    });
+
+    jQ(document).on('click', "div.instrument-widget:nth-child(1) > span:nth-child(2) > span:nth-child(2) > span:nth-child(1)", function () {
+        if (g_config.get('enable_nifty_monthly_weekly_range') == true) {
+            tEv("kite", "showVixRangeWeekly", "click", "");
+
+            var attr = jQ(this).attr('data-balloon');
+
+            var symbol = jQ(this).closest("div").find("span.tradingsymbol.link-chart").text().trim();
+
+            if (symbol == "NIFTY 50") {
+
+                if (typeof attr !== 'undefined' && attr !== false) {
+                    jQ(this).removeAttr('tooltip');
+                    jQ(this).removeAttr('data-balloon-pos');
+                    jQ(this).removeAttr('data-balloon');
+                } else {
+                    var iv = jQ("div.info > span.symbol > span > span.nice-name:contains('INDIA')");
+                    if (iv.length > 0) {
+                        var strike = jQ("div.instrument-widget:nth-child(1) > span:nth-child(2) > span:nth-child(1)").text().trim();
+                        //jQ("div.vddl-draggable:nth-child(1) > div:nth-child(1) > div:nth-child(1) > span:nth-child(2) > span:nth-child(3)")
+                        var vix = jQ(iv).closest("div").find("span.price > span.last-price").text().trim();
+                        var chg = vix / Math.sqrt(52);
+                        var range = strike * chg / 100;
+                        var lNift = strike - range;
+                        var uNift = parseFloat(strike) + parseFloat(range);
+                        jQ(this).attr('tooltip', 'down');
+                        jQ(this).attr('data-balloon-pos', 'down');
+                        jQ(this).attr('data-balloon', `${lNift.toFixed(2)} - ${uNift.toFixed(2)}`);
+                        
+                        //debug(jQ("div.vddl-draggable:nth-child(1) > div:nth-child(1) > div:nth-child(1) > span:nth-child(2) > span:nth-child(3)"));
+                    } else {
+                        getToast('Cannot find INDIA VIX in watchlist. Please add it.').showToast();
+                    }
+                } 
+            }
+            else {
+                getToast('Works only on NIFTY 50.').showToast();
+            }
+        } 
+    });
+
+    
+    
+    
 
 
     jQ(document).on('click', "#hideRestId", function () {
