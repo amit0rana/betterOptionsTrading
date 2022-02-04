@@ -2145,7 +2145,7 @@ function main() {
                         var uNift = parseFloat(strike) + parseFloat(range);
                         jQ(this).attr('tooltip', 'down');
                         jQ(this).attr('data-balloon-pos', 'down');
-                        jQ(this).attr('data-balloon', `${lNift.toFixed(2)} - ${uNift.toFixed(2)}`);
+                        jQ(this).attr('data-balloon', `(M) ${lNift.toFixed(2)} - ${uNift.toFixed(2)}`);
                         
                         //debug(jQ("div.vddl-draggable:nth-child(1) > div:nth-child(1) > div:nth-child(1) > span:nth-child(2) > span:nth-child(3)"));
                     } else {
@@ -2186,7 +2186,7 @@ function main() {
                         var uNift = parseFloat(strike) + parseFloat(range);
                         jQ(this).attr('tooltip', 'down');
                         jQ(this).attr('data-balloon-pos', 'down');
-                        jQ(this).attr('data-balloon', `${lNift.toFixed(2)} - ${uNift.toFixed(2)}`);
+                        jQ(this).attr('data-balloon', `(W) ${lNift.toFixed(2)} - ${uNift.toFixed(2)}`);
                         
                         //debug(jQ("div.vddl-draggable:nth-child(1) > div:nth-child(1) > div:nth-child(1) > span:nth-child(2) > span:nth-child(3)"));
                     } else {
