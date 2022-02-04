@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.36
+// @version      3.37
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -55,7 +55,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.36";
+const VERSION = "v3.37";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -2086,6 +2086,34 @@ function main() {
 
         //simulateSelectBoxEvent();
     });
+    jQ(document).on('click', "td.quantity.right", function () {
+        tEv("kite", "showLots", "click", "");
+
+        var attr = jQ(this).attr('data-balloon');
+
+        if (typeof attr !== 'undefined' && attr !== false) {
+            jQ(this).removeAttr('tooltip');
+            jQ(this).removeAttr('data-balloon-pos');
+            jQ(this).removeAttr('data-balloon');
+        } else {
+            var q = jQ(this).text().trim();
+            var tr = jQ(this).closest('tr');
+            var pos = getPositionRowObject(tr);
+            var lot = 0;
+            if (pos.instrument.startsWith("NIFTY")) {
+                lot = Math.abs(pos.quantity / 50);
+            } else if (pos.instrument.startsWith("BANKNIFTY")) {
+                lot = Math.abs(pos.quantity / 25);
+            }
+            //jQ(this).text(`${pos.quantity} (${lot})`);
+            //tooltip-pos="down" data-balloon-pos="down" data-balloon="Sell/buy at a 05p below first offer price"
+            jQ(this).attr('tooltip', 'down');
+            jQ(this).attr('data-balloon-pos', 'down');
+            jQ(this).attr('data-balloon', `${lot} lots`);
+            
+        }
+    });
+
 
     jQ(document).on('click', "#hideRestId", function () {
         tEv("kite", "hideRestFilter", "click", "");
@@ -3146,6 +3174,7 @@ function sendReplacement(data) {
 
                 // throw new Error("Quantity is greater than allowed quantity, zerodha won't execute this order. Check betterKite message");
             } else {
+                debug('setting qty freeze to false');
                 _overrideQtyFreeze = false;
             }
 
