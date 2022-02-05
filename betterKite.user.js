@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.38
+// @version      3.39
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -18,6 +18,9 @@
 // @require      https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js
 // @require      https://raw.githubusercontent.com/kawanet/qs-lite/master/dist/qs-lite.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js
+// @require      https://unpkg.com/@popperjs/core@2
+// @require      https://unpkg.com/tippy.js@6
+// @require      https://cdn.jsdelivr.net/npm/sweetalert2@11
 // @require      https://cdn.jsdelivr.net/npm/toastify-js
 // @resource     TOASTIFY_CSS https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css
 // @downloadURL  https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js
@@ -55,7 +58,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.38";
+const VERSION = "v3.39";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -190,6 +193,118 @@ var g_tradingBasket = new Array();
 const BASE_PNL_REPORT = "#app > div.wrapper > div > div > h1";
 
 main();
+
+
+
+function showSuccessToast(msg) {
+    showToast(msg, "success");
+}
+function showErrorToast(msg) {
+    showToast(msg, "error"); //warning, info, question
+}
+function showToast(msg, type) {
+    Swal.fire({
+        title: msg,
+        icon: type,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        allowEscapeKey: true,
+        showCloseButton: true,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+          toast.addEventListener('mouseenter', Swal.stopTimer)
+          toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+      });
+
+}
+function showMessage(msg) {
+    Swal.fire({
+        title: 'betterKite',
+        html: msg,
+        //icon: type,
+        //toast: true,
+        //position: 'top-end',
+        showConfirmButton: false,
+        allowEscapeKey: true,
+        showCloseButton: true,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+          toast.addEventListener('mouseenter', Swal.stopTimer)
+          toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+      });
+
+}
+
+function getToast(message) {
+    return Toastify({
+        text: "<span>betterKte</br>"+message+"</span>",
+        duration: 5000,
+        close: true,
+        offset: "60px",
+        style: {top: "60px",display: "grid", "grid-template-columns": "15fr 1fr"},
+        escapeMarkup: false
+    });
+}
+
+const hideOnEsc = {
+    name: 'hideOnEsc',
+    defaultValue: true,
+    fn({hide}) {
+      function onKeyDown(event) {
+        if (event.keyCode === 27) {
+          hide();
+        }
+      }
+  
+      return {
+        onShow() {
+          document.addEventListener('keydown', onKeyDown);
+        },
+        onHide() {
+          document.removeEventListener('keydown', onKeyDown);
+        },
+      };
+    },
+  };
+
+function showTippy(target, msg) {
+    var t = tippy(target, {
+        content: msg,
+        allowHTML: true,
+        hideOnClick: true,
+        trigger: "click",
+        plugins: [hideOnEsc],
+        showOnCreate: true,
+        onHidden(instance) {
+            debug('onHide');
+            instance.destroy();
+          },
+    });
+    // t[0].show();
+}
+
+function showTippyToast(target, msg) {
+    var t = tippy(target, {
+        content: msg,
+        allowHTML: true,
+        showOnCreate: true,
+        interactive: true,
+        duration: [0, 5000], 
+        hideOnClick: true,
+        trigger: "manual",
+        plugins: [hideOnEsc],
+        onHidden(instance) {
+            debug('onHide');
+            instance.destroy();
+          },
+    });
+    // t[0].show();
+}
 
 function addStyle() {
     var style = document.createElement("style");
@@ -414,7 +529,7 @@ function assignHoldingTags() {
 
             //var displayedStockName = removeExtraCharsFromStockName(this.innerHTML);
             var displayedStockName = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
-        
+
             for (var categoryName in holdings) {
                 debug(`holdings[categoryName].includes(displayedStockName)`);
                 if (holdings[categoryName].includes(displayedStockName)) {
@@ -641,7 +756,7 @@ function createPositionsDropdown() {
             var countPositionsDisplaying = 0;
             allPositionsRow.addClass("allHiddenRows");
 
-            
+
             // misCount = 0;
             // ceCount = 0;
             // peCount = 0;
@@ -907,7 +1022,7 @@ function createPositionsDropdown() {
                 } else {
                     jQ('#spanBuyCountId').addClass("red");
                     jQ('#spanBuyCountId').html("BUY : Not Possible");
-                }                
+                }
             } else {
                 jQ('#spanBuyCountId').attr('data-balloon','Select a Scrip from the strategy filter dropdown.');
                 jQ('#spanBuyCountId').html("");
@@ -921,7 +1036,7 @@ function createPositionsDropdown() {
                 jQ("#futFilterId").hide();
                 jQ("#resetSubId").show();
                 jQ('#allSubFilterId').prop('text', g_subFilterData);
-                
+
             } else {
                 jQ("#misFilterId").show();
                 jQ("#peFilterId").show();
@@ -1079,7 +1194,7 @@ function createSubFilter() {
     i.value = 'Reset';
     jQ(s).append(i);
 
-    
+
 
     t = jQ("<span id='spanBuyCountId' class='text-label randomClassToHelpHide' data-balloon-length='large' data-balloon-pos='right' data-balloon='Select a Scrip from the strategy filter dropdown.'></span></span>");
     jQ(s).append(t);
@@ -1383,7 +1498,7 @@ function simulateSelectBoxEvent() {
                 debug('initiating change event found positions');
                 // tagSelectorP.dispatchEvent(new Event("change", {'simulated': true}));
                 tagSelectorP.dispatchEvent(new CustomEvent('change', {'detail': {'simulated': true}}));
-                
+
             } else {
                 debug('sleeping as couldnt find positions (simulateSelectBox)');
                 //waitForKeyElements("div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr:nth-child(1)",simulateSelectBoxEvent);
@@ -1615,7 +1730,7 @@ const getMarginCalculationData = (instrument, product, q, price) => {
             } else {
                 data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}${tokens[2]}${tokens[3]}`;
             }
-    
+
             data.exchange = `${tokens[4]}`;
             data.pece = `${tokens[3]}`;
             data.strike = `${tokens[2]}`;
@@ -1774,7 +1889,7 @@ function onSuCheckboxSelection() {
                 mTag = jQ("span[random-att='temppnl']");
                 if (mTag.length > 0) {
                     mTag.remove();
-                } 
+                }
                 jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append("<span random-att='marginsave' class='pnl randomClassToHelpHide'> " + t + " (Points: " + formatter.format(points) + ")</span>");
                 jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[0]).append(pnlText);
             }
@@ -2039,7 +2154,7 @@ function main() {
                     //     //overide filter decision and hide.
                     //     jQ(this).hide();
                     // }
-                    
+
                 // code block
             }
         // });
@@ -2114,11 +2229,12 @@ function main() {
             jQ(this).attr('tooltip', 'down');
             jQ(this).attr('data-balloon-pos', 'down');
             jQ(this).attr('data-balloon', `${lot} lots`);
-            
+
         }
     });
 
-    jQ(document).on('click', "div.instrument-widget:nth-child(1) > span:nth-child(2) > span:nth-child(1)", function () {
+    const PIN1_TARGET = 'div.instrument-widget:nth-child(1) > span:nth-child(2) > span:nth-child(1)';
+    jQ(document).on('click', PIN1_TARGET, function () {
 
         if (g_config.get('enable_nifty_monthly_weekly_range') == true) {
             tEv("kite", "showVixRangeMonthly", "click", "");
@@ -2128,11 +2244,11 @@ function main() {
             var symbol = jQ(this).closest("div").find("span.tradingsymbol.link-chart").text().trim();
 
             if (symbol == "NIFTY 50") {
-                if (typeof attr !== 'undefined' && attr !== false) {
-                    jQ(this).removeAttr('tooltip');
-                    jQ(this).removeAttr('data-balloon-pos');
-                    jQ(this).removeAttr('data-balloon');
-                } else {
+                // if (typeof attr !== 'undefined' && attr !== false) {
+                //     jQ(this).removeAttr('tooltip');
+                //     jQ(this).removeAttr('data-balloon-pos');
+                //     jQ(this).removeAttr('data-balloon');
+                // } else {
                     var iv = jQ("div.info > span.symbol > span > span.nice-name:contains('INDIA')");
                     debug(iv.length);
                     if (iv.length > 0) {
@@ -2143,67 +2259,37 @@ function main() {
                         var range = strike * chg / 100;
                         var lNift = strike - range;
                         var uNift = parseFloat(strike) + parseFloat(range);
-                        jQ(this).attr('tooltip', 'down');
-                        jQ(this).attr('data-balloon-pos', 'down');
-                        jQ(this).attr('data-balloon', `(M) ${lNift.toFixed(2)} - ${uNift.toFixed(2)}`);
-                        
+                        // jQ(this).attr('tooltip', 'down');
+                        // jQ(this).attr('data-balloon-pos', 'down');
+                        // jQ(this).attr('data-balloon', `(M) ${lNift.toFixed(2)} - ${uNift.toFixed(2)}`);
+
+                        chg = vix / Math.sqrt(52);
+                        range = strike * chg / 100;
+                        var wlNift = strike - range;
+                        var wuNift = parseFloat(strike) + parseFloat(range);
+
+                        chg = vix / Math.sqrt(365-104-13);
+                        range = strike * chg / 100;
+                        debug(range);
+                        var dlNift = strike - range;
+                        var duNift = parseFloat(strike) + parseFloat(range);
+
+                        showTippy(PIN1_TARGET, `(M) ${lNift.toFixed(2)} - ${uNift.toFixed(2)}<br>(W) ${wlNift.toFixed(2)} - ${wuNift.toFixed(2)}<br>(D) ${dlNift.toFixed(2)} - ${duNift.toFixed(2)}`);
                         //debug(jQ("div.vddl-draggable:nth-child(1) > div:nth-child(1) > div:nth-child(1) > span:nth-child(2) > span:nth-child(3)"));
                     } else {
-                        getToast('Cannot find INDIA VIX in watchlist. Please add it.').showToast();
+                        // getToast('Cannot find INDIA VIX in watchlist. Please add it.').showToast();
+                        // showErrorToast('Cannot find INDIA VIX in watchlist. Please add it.');
+                        showTippy(PIN1_TARGET, 'Cannot find INDIA VIX in watchlist. Please add it.');
                     }
-                } 
+                // }
             } else {
-                getToast('Works only on NIFTY 50.').showToast();
+                // getToast('Works only on NIFTY 50.').showToast();
+                showTippy(PIN1_TARGET,'Works only on NIFTY 50.');
             }
         }
 
-        
+
     });
-
-    jQ(document).on('click', "div.instrument-widget:nth-child(1) > span:nth-child(2) > span:nth-child(2) > span:nth-child(1)", function () {
-        if (g_config.get('enable_nifty_monthly_weekly_range') == true) {
-            tEv("kite", "showVixRangeWeekly", "click", "");
-
-            var attr = jQ(this).attr('data-balloon');
-
-            var symbol = jQ(this).closest("div").find("span.tradingsymbol.link-chart").text().trim();
-
-            if (symbol == "NIFTY 50") {
-
-                if (typeof attr !== 'undefined' && attr !== false) {
-                    jQ(this).removeAttr('tooltip');
-                    jQ(this).removeAttr('data-balloon-pos');
-                    jQ(this).removeAttr('data-balloon');
-                } else {
-                    var iv = jQ("div.info > span.symbol > span > span.nice-name:contains('INDIA')");
-                    if (iv.length > 0) {
-                        var strike = jQ("div.instrument-widget:nth-child(1) > span:nth-child(2) > span:nth-child(1)").text().trim();
-                        //jQ("div.vddl-draggable:nth-child(1) > div:nth-child(1) > div:nth-child(1) > span:nth-child(2) > span:nth-child(3)")
-                        var vix = jQ(iv).closest("div").find("span.price > span.last-price").text().trim();
-                        var chg = vix / Math.sqrt(52);
-                        var range = strike * chg / 100;
-                        var lNift = strike - range;
-                        var uNift = parseFloat(strike) + parseFloat(range);
-                        jQ(this).attr('tooltip', 'down');
-                        jQ(this).attr('data-balloon-pos', 'down');
-                        jQ(this).attr('data-balloon', `(W) ${lNift.toFixed(2)} - ${uNift.toFixed(2)}`);
-                        
-                        //debug(jQ("div.vddl-draggable:nth-child(1) > div:nth-child(1) > div:nth-child(1) > span:nth-child(2) > span:nth-child(3)"));
-                    } else {
-                        getToast('Cannot find INDIA VIX in watchlist. Please add it.').showToast();
-                    }
-                } 
-            }
-            else {
-                getToast('Works only on NIFTY 50.').showToast();
-            }
-        } 
-    });
-
-    
-    
-    
-
 
     jQ(document).on('click', "#hideRestId", function () {
         tEv("kite", "hideRestFilter", "click", "");
@@ -2412,7 +2498,7 @@ function main() {
 
     // waitForKeyElements(allDOMPaths.domContextMenuButton, saveContextMenuRow);
     //to capture click on context menu
-    
+
 
     //fire hide/show logic if history/url changes.
     var pushState = history.pushState;
@@ -2493,8 +2579,8 @@ function saveContextMenuRow() {
     //         debug('clicked on context menu in order screen');
     //         tEv("kite", "orders", "context-menu", "");
     //     }
-        
-        
+
+
     // });
 
 
@@ -3043,7 +3129,7 @@ function sensibull(firstTry = true) {
 
     jQ('#userStrategiesId').remove();
     jQ(".style__StyledBrandLogo-t0trse-8").before(strategySelectBox);
-    
+
 
     strategySelectBox.addEventListener("change", function () {
         tEv("kite", "positions", "sensibull", "strategy-filter");
@@ -3131,7 +3217,7 @@ var open = window.XMLHttpRequest.prototype.open,
     send = window.XMLHttpRequest.prototype.send,
     oldReadyStateChange;
 const BASE_URL = "https://kite.zerodha.com";
-//var _orderModified, 
+//var _orderModified,
 var _newOrder;
 var _overrideQtyFreeze = false, _smartLimit = false;
 var orderDom = "form.order-window";
@@ -3140,8 +3226,8 @@ waitForKeyElements(orderDom, addOverrideOption);
 
 function addOverrideOption() {
     debug('addOverrideOption');
-    
-    if ( g_config.get('overide_qty_freeze_check_to_enable') === true && 
+
+    if ( g_config.get('overide_qty_freeze_check_to_enable') === true &&
     (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
     (jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY"))
     ) {
@@ -3173,7 +3259,7 @@ function addOverrideOption() {
             if (g_config.get('qty_freeze_warning') === true) {
                 con = confirm(`You are placing order for ${jQ("div.quantity > div:nth-child(1) > input:nth-child(2)").val()} Quantity. Are you sure?`);
             }
-            
+
             if (con === true) {
                 _overrideQtyFreeze = jQ("#overQtyFreezeCb").is(':checked');
                 tEv("kite", "place-order", "override-qt-freeze", "");
@@ -3182,7 +3268,7 @@ function addOverrideOption() {
                     jQ("#overQtyFreezeCb").prop('checked', false);
                 }, 0);
             }
-            
+
         };
 
         _overrideQtyFreeze = false;
@@ -3191,22 +3277,22 @@ function addOverrideOption() {
         jQ("button.button-outline.cancel").after(div);
     }
 
-    if ( g_config.get('smart_limit_check_to_enable') === true && 
+    if ( g_config.get('smart_limit_check_to_enable') === true &&
     (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
     (jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY"))
     ) {
         var insert = `
     <div class="su-radio-wrap" tooltip-pos="down" data-balloon-pos="down" data-balloon="Sell/buy at a 05p below first offer price">
         <input type="radio" name="orderType" label="Smart Limit" class="su-radio" id="smartLimit" value="SMARTLIMIT"
-        title="Sell/buy at a 05p below first offer price"> 
+        title="Sell/buy at a 05p below first offer price">
         <label class="su-radio-label" for="smartLimit">Smart Limit</label>
     </div>
     `;
-    
+
         //jQ("div.su-radio-group.order-type").append(insert);
         jQ("div.four.columns.price > div.su-radio-group.order-type").append(insert);
     }
-    
+
 }
 
 function openReplacement(method, url, async, user, password) {
@@ -3228,7 +3314,7 @@ function sendReplacement(data) {
     // }
 
         if (jQ("#smartLimit").is(":checked") ||
-        (jQ("#overQtyFreezeCb").is(':checked') && 
+        (jQ("#overQtyFreezeCb").is(':checked') &&
         (
             (order.tradingsymbol.startsWith("BANKNIFTY") && order.quantity > BANKNIFTY_QTY_FREEZE) ||
             (order.tradingsymbol.startsWith("NIFTY") && order.quantity > NIFTY_QTY_FREEZE)
@@ -3238,11 +3324,11 @@ function sendReplacement(data) {
                 var button = jQ("button:contains('Cancel')");
                 button.click();
             }, 0);
-            
+
             console.log('aborting send ');
 
             this.abort();
-            
+
             if (jQ("#smartLimit").is(":checked")) {
                 _smartLimit = true;
                 jQ("#smartLimit").prop('checked', false);
@@ -3251,8 +3337,8 @@ function sendReplacement(data) {
             }  else {
                 _smartLimit = false;
             }
-            
-            if (jQ("#overQtyFreezeCb").is(':checked') && 
+
+            if (jQ("#overQtyFreezeCb").is(':checked') &&
             (
                 (order.tradingsymbol.startsWith("BANKNIFTY") && order.quantity > BANKNIFTY_QTY_FREEZE) ||
                 (order.tradingsymbol.startsWith("NIFTY") && order.quantity > NIFTY_QTY_FREEZE)
@@ -3260,7 +3346,7 @@ function sendReplacement(data) {
             ) {
                 _overrideQtyFreeze = true;
                 jQ("#overQtyFreezeCb").prop('checked', false);
-                
+
 
                 // throw new Error("Quantity is greater than allowed quantity, zerodha won't execute this order. Check betterKite message");
             } else {
@@ -3273,12 +3359,12 @@ function sendReplacement(data) {
 
                 throw new Error("Zerodha order stopped. betterKite order sent. Check orders / betterKite message");
             }
-        
-        } 
+
+        }
     }
 
     return send.apply(this, arguments);
-    
+
 }
 
 window.XMLHttpRequest.prototype.open = openReplacement;
@@ -3305,17 +3391,6 @@ function queryStringToJSON(qs) {
 
     return JSON.parse(JSON.stringify(result));
 };
-
-function getToast(message) {
-    return Toastify({
-        text: "<span>betterKte</br>"+message+"</span>",
-        duration: 5000,
-        close: true,
-        offset: "60px",
-        style: {top: "60px",display: "grid", "grid-template-columns": "15fr 1fr"},
-        escapeMarkup: false
-    });
-}
 
 function sendPlaceNewOrderRequest(order) {
     debug('sendPlaceNewOrderRequest');
@@ -3358,7 +3433,7 @@ function sendPlaceNewOrderRequest(order) {
                 } else if (order.transaction_type === 'SELL') {
                     newPrice = newPrice - 0.05;
                 }
-    
+
                 order.price = newPrice;
             },
             complete: function() {
@@ -3368,7 +3443,7 @@ function sendPlaceNewOrderRequest(order) {
     }
     debug("44444");
 
-    
+
     var qty = order.quantity;
     var remainigQty = qty;
 
@@ -3403,9 +3478,9 @@ function sendPlaceNewOrderRequest(order) {
             .fail(function(xhr, status, error) {
                 debug("666");
                 var resp = JSON.parse(xhr.responseText);
-                
+
                 getToast(`${status} :: ${resp.message}`).showToast();
-                
+
             });
 
         remainigQty = remainigQty - q;
@@ -3430,13 +3505,13 @@ tEv("kite", "visit", "main", VERSION);
 
 // KIND ATTENTION TO ALL USERS
 
-// Disclaimer from Developers as per SEBI norms: Equity Investment are subject to 100% 
+// Disclaimer from Developers as per SEBI norms: Equity Investment are subject to 100%
 // market risks. Refer your financial consultant advice before Investing. This code is
-//  only for Educational and Learning, Knowledge Purposes. Developers have no 
-// responsibility for your intended decision & financial losses. Keep calculated & always 
+//  only for Educational and Learning, Knowledge Purposes. Developers have no
+// responsibility for your intended decision & financial losses. Keep calculated & always
 // analyzed your cash osition and risk bearing capacity before following any advise.
-//  Stock market investments and using this script are VERY RISKY and using ths code, you 
-// agree that you understand the Market risks involved. Profits and Losses are part of Share market. 
+//  Stock market investments and using this script are VERY RISKY and using ths code, you
+// agree that you understand the Market risks involved. Profits and Losses are part of Share market.
 //  Kindly understand and act wisely.
 
 // Disclaimer/ disclosure
