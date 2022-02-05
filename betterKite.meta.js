@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.39
+// @version      3.40
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -10,6 +10,7 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_addStyle
+// @grant        GM_getResourceText
 // @grant        GM_registerMenuCommand
 // @require      https://raw.githubusercontent.com/amit0rana/betterOptionsTrading/master/betterCommon.js
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
@@ -17,7 +18,11 @@
 // @require      https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js
 // @require      https://raw.githubusercontent.com/kawanet/qs-lite/master/dist/qs-lite.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js
-// @require      https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js
+// @require      https://unpkg.com/@popperjs/core@2
+// @require      https://unpkg.com/tippy.js@6
+// @require      https://cdn.jsdelivr.net/npm/sweetalert2@11
+// @require      https://cdn.jsdelivr.net/npm/toastify-js
+// @resource     TOASTIFY_CSS https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css
 // @downloadURL  https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js
 // @updateURL    https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.meta.js
 // ==/UserScript==
