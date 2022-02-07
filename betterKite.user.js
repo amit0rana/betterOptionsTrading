@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.44
+// @version      3.45
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -58,7 +58,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.44";
+const VERSION = "v3.45";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -148,6 +148,18 @@ const g_config = new MonkeyConfig({
         enable_nifty_monthly_weekly_range: {
             type: 'checkbox',
             default: true
+        },
+        nifty_vix_range_monthly_sqroot: {
+            type: 'number',
+            default: 12
+        },
+        nifty_vix_range_weekly_sqroot: {
+            type: 'number',
+            default: 52
+        },
+        nifty_vix_range_daily_sqroot: {
+            type: 'number',
+            default: 365
         },
     }
 });
@@ -2310,31 +2322,58 @@ function main() {
         } else {
             showLotsTippy("td.quantity.right", "test");
         }
-        // var attr = jQ(this).attr('data-balloon');
+    });
+    jQ(document).on('click', "section.open-positions.table-wrapper > div > div > table > tfoot > tr > td:nth-child(4)", function () {
+        tEv("kite", "showRealisedPnL", "click", "");
 
-        // if (typeof attr !== 'undefined' && attr !== false) {
-        //     jQ(this).removeAttr('tooltip');
-        //     jQ(this).removeAttr('data-balloon-pos');
-        //     jQ(this).removeAttr('data-balloon');
-        // } else {
-        //     var q = jQ(this).text().trim();
-        //     var tr = jQ(this).closest('tr');
-        //     var pos = getPositionRowObject(tr);
-        //     var lot = 0;
-        //     if (pos.instrument.startsWith("NIFTY")) {
-        //         lot = Math.abs(pos.quantity / 50);
-        //     } else if (pos.instrument.startsWith("BANKNIFTY")) {
-        //         lot = Math.abs(pos.quantity / 25);
-        //     }
-        //     //jQ(this).text(`${pos.quantity} (${lot})`);
-        //     //tooltip-pos="down" data-balloon-pos="down" data-balloon="Sell/buy at a 05p below first offer price"
-        //     jQ(this).attr('tooltip', 'down');
-        //     jQ(this).attr('data-balloon-pos', 'down');
-        //     jQ(this).attr('data-balloon', `${lot} lots`);
-            
-        // }
+        debug('clicked');
+        var t = tippy("section.open-positions.table-wrapper > div > div > table > tfoot > tr > td:nth-child(4)", {
+            content: "",
+            allowHTML: true,
+            offset: [0, -8],
+            showOnCreate: true,
+            // plugins: [lotsGlobalStore],
+            onShow(instance) {
+                var pnlTd = instance.reference;
+                
+                var allClosed = jQ(allDOMPaths.PathForPositions).filter(':has("td.closed")');
+                var pnl = 0;
+                allClosed.each(function (rowIndex) {
+                    var row = getPositionRowObject(this);
+                    // debug(row.pnl);
+                    pnl = parseFloat(pnl) + parseFloat(row.pnl);
+                    // debug(pnl);
+
+                });
+
+                var allOpen = jQ(allDOMPaths.PathForPositions).filter(':has("td.open")');
+                debug(allOpen.length);
+                debug(allOpen);
+                var realPnl = 0;
+                allOpen.each(function (rowIndex) {
+                    var row = getPositionRowObject(this);
+                    // debug(row.quantity);
+                    // realPnl = parseFloat(realPnl) +  parseFloat(row.pnl - (row.quantity * (row.avgPrice - row.ltp)));
+                    // realPnl = parseFloat(realPnl) +  parseFloat(row.pnl - (-(row.quantity * (row.avgPrice - row.ltp))));
+
+                    realPnl = parseFloat(row.pnl).toFixed(2) - parseFloat((row.quantity * (row.ltp - row.avgPrice))).toFixed(2);
+                    // debug(parseFloat(row.pnl).toFixed(2));
+                    // debug(parseFloat(realPnl).toFixed(2));
+                    pnl = pnl + realPnl;
+
+                    // debug(parseFloat(row.pnl - (-(row.quantity * (row.avgPrice - row.ltp)))));
+                    // debug(realPnl);
+                    // pnl = parseFloat(pnl) + parseFloat(realPnl);
+                    // debug(pnl);
+
+                });
+    
+                instance.setContent(`Realised P&L ${formatter.format(pnl)}`);
+              },
+        });
         
     });
+    
 
     jQ(document).on('click', "td.open.pnl.right", function () {
         tEv("kite", "showActualProit", "click", "");
@@ -2389,7 +2428,7 @@ function main() {
                         var strike = jQ(this).text().trim();
                         //jQ("div.vddl-draggable:nth-child(1) > div:nth-child(1) > div:nth-child(1) > span:nth-child(2) > span:nth-child(3)")
                         var vix = jQ(iv).closest("div").find("span.price > span.last-price").text().trim();
-                        var chg = vix / Math.sqrt(12);
+                        var chg = vix / Math.sqrt(12); //g_config.get('nifty_vix_range_monthly_sqroot');
                         var range = strike * chg / 100;
                         var lNift = strike - range;
                         var uNift = parseFloat(strike) + parseFloat(range);
@@ -2397,12 +2436,12 @@ function main() {
                         // jQ(this).attr('data-balloon-pos', 'down');
                         // jQ(this).attr('data-balloon', `(M) ${lNift.toFixed(2)} - ${uNift.toFixed(2)}`);
 
-                        chg = vix / Math.sqrt(52);
+                        chg = vix / Math.sqrt(52); ////g_config.get('nifty_vix_range_weekly_sqroot');
                         range = strike * chg / 100;
                         var wlNift = strike - range;
                         var wuNift = parseFloat(strike) + parseFloat(range);
 
-                        chg = vix / Math.sqrt(365-104-13);
+                        chg = vix / Math.sqrt(365-104-13); ////g_config.get('nifty_vix_range_daily_sqroot');
                         range = strike * chg / 100;
                         debug(range);
                         var dlNift = strike - range;
