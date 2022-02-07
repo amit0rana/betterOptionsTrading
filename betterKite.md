@@ -15,6 +15,7 @@ Very simple "userscript" which adds several features to kite.zerodha.com ui
 * See quantities in lots
 * See real profit based on currently holding quantity
 * See possible Nifty monthly and weekly range based on INDIA VIX
+* See realised p&l for the day
 * Avoid quantity freeze limitation, breaks bigger order into multiple orders
 * Group positions under strategies
 * For a strategy, check how much margin can be freed by taking hedge buy positions
@@ -72,6 +73,7 @@ Follow below mentioned steps
 * Step 1: Add Nifty 50 to Pin 1, click on Nifty value to see monthly range, click on change value to see weekly range 
 ![Monthly](https://dl.dropbox.com/s/vr1x6b8llju46ng/monthlyRangeVix.png?dl=0)
 ![Weekly](https://dl.dropbox.com/s/l28p58dc2dr2w4u/WeeklyRangeVix.png?dl=0)
+* Click on Total P&L to start seeting 'Realised P&L' ![realised](https://dl.dropbox.com/s/b6q7b6zn5jimkvd/realisedPnlForTheDay.png?dl=0)
 * Strategies are grouped in 3 ways.
   * (1) Strategies are auto grouped by script name. So all INFY strategies will be auto grouped under 'INFY'
   * (2) Strategies are auto grouped by expiry.
