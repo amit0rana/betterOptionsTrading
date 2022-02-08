@@ -62,3 +62,10 @@ const getCookie = function (name) {
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(';').shift();
 }
+
+const getFunctionName = function () {
+    // var me = arguments.callee.toString();
+    // me = me.substr('function '.length);     
+    // me = me.substr(0, me.indexOf('('));
+    return getFunctionName.caller.name;
+}
