@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.46
+// @version      3.47
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -3167,11 +3167,16 @@ async function updateOrderButtons() {
 
 //div holding ready-made strategies.
 //div.modal-mask.positios-info-container.positions-info-modal > div.modal-wrapper > div.modal-container.layer-2
-waitForKeyElements(BASE_ORDERINFO_DOM, orderInfo);
+//waitForKeyElements(BASE_ORDERINFO_DOM, orderInfo);
 
 function changePnLFilter() {
     debug('changePnLFilter');
     document.getElementsByTagName('select')[0].selectedIndex = 2; //FO
+    
+    document.querySelector("div.two:nth-child(1) > select:nth-child(2)").click();
+    console.log(document.querySelector("div.two:nth-child(1) > select:nth-child(2)"));
+    // div.two:nth-child(1) > select:nth-child(2)
+    document.querySelector("option[value='FO']").click();
     document.querySelector("input[name='date']").click();
 
     var today = new Date();
@@ -3204,7 +3209,8 @@ function introducePnlFilter() {
 
 }
 
-//NOT WORKING waitForKeyElements (BASE_PNL_REPORT, introducePnlFilter);
+//NOT WORKING 
+waitForKeyElements (BASE_PNL_REPORT, introducePnlFilter);
 
 //sensibull inside kite
 //watching for 'do more with strategy builder' link
@@ -3622,11 +3628,12 @@ function sendPlaceNewOrderRequest(order) {
     for (let index = 0; index < (qty / limit); index++) {
 
         var q = limit;
-        if (q > remainigQty) {
+        if (parseInt(q) > parseInt(remainigQty)) {
             q = remainigQty;
         }
         order.quantity = q;
 
+        console.log(`placing order for ${q}`);
         jQ.post(BASE_URL + "/oms/orders/regular",
             order,
             function (data, status) {
