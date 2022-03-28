@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.47
+// @version      3.48
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -3171,25 +3171,30 @@ async function updateOrderButtons() {
 
 function changePnLFilter() {
     debug('changePnLFilter');
-    document.getElementsByTagName('select')[0].selectedIndex = 2; //FO
+    setTimeout(function(){
+        document.getElementsByTagName('select')[0].selectedIndex = 2; //FO
     
-    document.querySelector("div.two:nth-child(1) > select:nth-child(2)").click();
-    console.log(document.querySelector("div.two:nth-child(1) > select:nth-child(2)"));
-    // div.two:nth-child(1) > select:nth-child(2)
-    document.querySelector("option[value='FO']").click();
-    document.querySelector("input[name='date']").click();
+        document.getElementsByTagName('select')[0].focus();
+        document.getElementsByTagName('select')[0].click();
+        // document.querySelector("div.two:nth-child(1) > select:nth-child(2)").click();
+        // console.log(document.querySelector("div.two:nth-child(1) > select:nth-child(2)"));
+        // // div.two:nth-child(1) > select:nth-child(2)
+        // document.querySelector("option[value='FO']").click();
+        document.querySelector("input[name='date']").click();
 
-    var today = new Date();
-    var mm = today.getMonth() + 1;
-    var yyyy = today.getFullYear();
+        var today = new Date();
+        var mm = today.getMonth() + 1;
+        var yyyy = today.getFullYear();
 
-    if (mm < 10) {
-        mm = '0' + mm;
-    }
-    var monthStart = yyyy + '-' + mm + '-01';
+        if (mm < 10) {
+            mm = '0' + mm;
+        }
+        var monthStart = yyyy + '-' + mm + '-01';
 
-    document.querySelector("td[title='" + monthStart + "']").click();
-    document.querySelector('#app > div.wrapper > div > div > div > form > div > div.one.columns > button').click()
+        document.querySelector("td[title='" + monthStart + "']").click();
+        document.querySelector('#app > div.wrapper > div > div > div > form > div > div.one.columns > button').click()
+    }, 0);
+    
     //2021-02-03 ~ 2021-03-01
 }
 
@@ -3202,7 +3207,12 @@ function introducePnlFilter() {
     spanForFilter.id = 'customFilter';
     spanForFilter.addEventListener("click", () => changePnLFilter());
 
-    jQ(BASE_PNL_REPORT).after(spanForFilter);
+    // jQ(BASE_PNL_REPORT).after(spanForFilter);
+    jQ('div.two:nth-child(1)').append(spanForFilter);
+    tippy('#customFilter', {
+        content: "First select FO from dropdown then click here",
+        placement: 'bottom',
+      });
 
     // jQ(document).on('click', "#customPnlFilter", function () {
     // }
@@ -3210,7 +3220,14 @@ function introducePnlFilter() {
 }
 
 //NOT WORKING 
-waitForKeyElements (BASE_PNL_REPORT, introducePnlFilter);
+waitForKeyElements ("h1:contains('P&L')", introducePnlFilter);
+
+function addPnlMenu() {
+    jQ('.dropdown-nav-list').prepend("<li><a target='_blank' href='https://console.zerodha.com/reports/pnl'><span class='icon icon-console'></span> P&L<span class='text-lightest'> / betterKite</span></a></li>");
+}
+
+waitForKeyElements(".dropdown-nav", addPnlMenu);
+
 
 //sensibull inside kite
 //watching for 'do more with strategy builder' link
