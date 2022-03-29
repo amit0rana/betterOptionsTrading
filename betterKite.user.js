@@ -3226,7 +3226,7 @@ function addPnlMenu() {
     jQ('.dropdown-nav-list').prepend("<li><a target='_blank' href='https://console.zerodha.com/reports/pnl'><span class='icon icon-console'></span> P&L<span class='text-lightest'> / betterKite</span></a></li>");
 }
 
-waitForKeyElements(".dropdown-nav", addPnlMenu);
+waitForKeyElements(".dropdown-nav.layer-2", addPnlMenu);
 
 
 //sensibull inside kite
