@@ -10,7 +10,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 For more information, please refer to [<https://unlicense.org>](https://unlicense.org)
 
-Very simple "userscript" which adds several features to kite.zerodha.com ui
+Very simple "userscript" which adds several features to kite.zerodha.com ui (screenshots below)
+* Automatically create SL order, then 'trail' and 'save profit' by just one click.
 * 'Smart Limit' Place LIMIT orders at best offer/bid price.
 * See quantities in lots
 * See real profit based on currently holding quantity
@@ -62,6 +63,12 @@ Follow below mentioned steps
 
 ------
 # https://kite.zerodha.com/positions page
+* Enable 'Auto SL order' feature from settings. You will get option to auto create SL order when placing a new order. Once SL order is placed, in pending order section you will get button to 'trali' or 'save profit'. Trail simply increases or decreases trigger price for 'trail points'. Save profit is used when market has moved in your favor and you want to protect profit, in this case trigger price of SL trigger pending order is moved to make atleast 'save profit points'.
+![OrderScreen](https://dl.dropbox.com/s/x9kaheg26hdsuc0/sl_create_sl_order.png?dl=0)
+![pendingORder](https://dl.dropbox.com/s/11vrrzch6bi9ysd/sl_trail_save_profit_btn.png?dl=0)
+![settings](https://dl.dropbox.com/s/sbuqqclaerljpva/sl_order_settings.png?dl=0)
+![help1](https://dl.dropbox.com/s/u83bs5ec9gdl2t8/sl_save_profit_help.png?dl=0)
+![help2](https://dl.dropbox.com/s/ot3rjkhnvid0fee/sl_trail_help.png?dl=0)
 * 'Smart Limit' Finds the best offer/bid price then ether adds or subtracts 0.05p (depending on buy or sell order) and places a LIMIT order.
 ![SmartLimit](https://dl.dropbox.com/s/b02kq0vjxscw3p2/smartLimit.png?dl=0)
 * You can easily execute/exit quantities higher than freeze quantity. To enable quantity freeze go to settings. Once enabled, checkbox will show below 'Sell' or 'Buy' button, enable it and place orders

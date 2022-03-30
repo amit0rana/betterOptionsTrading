@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.48
+// @version      3.49
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -160,6 +160,22 @@ const g_config = new MonkeyConfig({
         nifty_vix_range_daily_sqroot: {
             type: 'number',
             default: 365
+        },
+        auto_sl_order: {
+            type: 'checkbox',
+            default: false
+        },
+        auto_sl_points: {
+            type: 'number',
+            default: 20
+        },
+        auto_save_profit_points: {
+            type: 'number',
+            default: 20
+        },
+        auto_trail_points: {
+            type: 'number',
+            default: 3
         },
     }
 });
@@ -2312,6 +2328,123 @@ function main() {
 
         //simulateSelectBoxEvent();
     });
+    
+    jQ(document).on('click', "#trailButtonId", function (e) {
+        tEv("kite", "trail", "click", "");
+
+        e.stopImmediatePropagation();
+
+        var data = this.getAttribute("data");
+        debug(data);
+        var spl = data.split("|");
+        var order = {};
+        order.order_id = spl[1];
+
+        order.price = spl[2];
+        order.trigger_price = spl[3];
+        var transaction_type = spl[4];
+
+        if (transaction_type == "SELL") {
+            order.price = parseFloat(order.price) + parseFloat(g_config.get('auto_trail_points'));
+            order.trigger_price = parseFloat(order.trigger_price) + parseFloat(g_config.get('auto_trail_points'));
+        } else if (transaction_type == "BUY") {
+            order.price = parseFloat(order.price) - parseFloat(g_config.get('auto_trail_points'));
+            order.trigger_price = parseFloat(order.trigger_price) - parseFloat(g_config.get('auto_trail_points'));
+        }
+
+        debug(order);
+
+        jQ.ajaxSetup({
+            headers: {
+                'Authorization': `enctoken ${getCookie('enctoken')}`
+            }
+        });
+        jQ.ajax({
+            url: BASE_URL + `/oms/orders/regular/${order.order_id}`,
+            type: 'PUT',
+            data: order,
+            async: false,
+            cache: false,
+            error: function(xhr, status, error) {
+                debug(error);
+                debug(xhr.responseText);
+                getToast(`${status} :: ${error} :: ${xhr.responseText}`).showToast();
+
+                throw new Error("Not able to trail. " + error);
+            },
+            success: function (response, status) {
+                debug("22222");
+                debug("Data: " + JSON.stringify(response) + "\nStatus: " + status);
+                getToast(`Trail Successful. Reloading.`).showToast();
+                reloadPage();
+            },
+            complete: function() {
+                debug("33333");
+            }
+        });
+
+
+        return false;
+    });
+
+    jQ(document).on('click', "#saveProfitButtonId", function (e) {
+        tEv("kite", "saveProfit", "click", "");
+
+        e.stopImmediatePropagation();
+
+        var data = this.getAttribute("data");
+        debug(data);
+        var spl = data.split("|");
+        var order = {};
+        order.order_id = spl[1];
+
+        order.price = spl[2];
+        order.trigger_price = spl[3];
+        var transaction_type = spl[4];
+
+        if (transaction_type == "SELL") {
+            order.price = parseFloat(order.price) + parseFloat(g_config.get('auto_save_profit_points')) + parseFloat(g_config.get('auto_sl_points'));
+            order.trigger_price = order.price;
+        } else if (transaction_type == "BUY") {
+            order.price = parseFloat(order.price) - parseFloat(g_config.get('auto_save_profit_points')) - parseFloat(g_config.get('auto_sl_points'));
+            order.trigger_price = order.price;
+        }
+
+        debug(order);
+
+        jQ.ajaxSetup({
+            headers: {
+                'Authorization': `enctoken ${getCookie('enctoken')}`
+            }
+        });
+        jQ.ajax({
+            url: BASE_URL + `/oms/orders/regular/${order.order_id}`,
+            type: 'PUT',
+            data: order,
+            async: false,
+            cache: false,
+            error: function(xhr, status, error) {
+                debug(error);
+                debug(xhr.responseText);
+                getToast(`${status} :: ${error} :: ${xhr.responseText}`).showToast();
+
+                throw new Error("Not able to trail. " + error);
+            },
+            success: function (response, status) {
+                debug("22222");
+                debug("Data: " + JSON.stringify(response) + "\nStatus: " + status);
+                getToast(`Trail Successful. Reloading.`).showToast();
+                reloadPage();
+            },
+            complete: function() {
+                debug("33333");
+            }
+        });
+
+
+        return false;
+    });
+
     jQ(document).on('click', "td.quantity.right", function () {
         tEv("kite", "showLots", "click", "");
 
@@ -3396,19 +3529,96 @@ function getLastThursday(m, year) {
     return da + mo;
 }
 
+//code for SL trail
+waitForKeyElements("div.pending-orders > div > table > tbody", trailOrderButton);
+
+function trailOrderButton() {
+    var allPendingOrderRows = jQ(allDOMPaths.domPathPendingOrdersTR);
+
+    info("pending orders: " + allPendingOrderRows.length);
+
+    allPendingOrderRows.each(function (rowIndex) {
+        var workingRow = this;
+        var status = jQ(workingRow).find("td.order-status > span > span").text();
+        var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+        if (status == "TRIGGER PENDING") {
+            debug('addig trail button');
+
+            var prices = jQ(this).find("td.average-price > span").text();
+            var split = prices.split('/');
+            var price = split[0].trim();
+            var tPrice = split[1].split("t")[0].trim();
+            debug(`price : ${price}`);
+            debug(`tPrice : ${tPrice}`);
+            var orderId = dataUidInTR.split("NFO")[1];
+
+            var transaction_type = jQ(this).find("td.transaction-type > span").text();
+            jQ(this).find("td.average-price").append(`<span id='trailButtonId' data='${dataUidInTR}|${orderId}|${price}|${tPrice}|${transaction_type}' class='text-label small order-status-label'><span>TRAIL</span></span>`);
+            tippy('#trailButtonId', {
+                content: `This will change (inc. for sell, dec. for buy) the trigger price and price by ${g_config.get("auto_trail_points")} 'Auto trail points' in settings.`,
+                placement: 'bottom',
+              });
+
+              jQ(this).find("td.average-price").append(`<span id='saveProfitButtonId' style="margin-left: 2px;" data='${dataUidInTR}|${orderId}|${price}|${tPrice}|${transaction_type}' class='text-label small order-status-label'><span>Save Profit</span></span>`);
+            tippy('#saveProfitButtonId', {
+                content: `This will change (inc. for sell, dec. for buy) the trigger price and price by ${g_config.get("auto_sl_points")} 'Auto sl points' + ${g_config.get("auto_save_profit_points")} 'Auto save profit points' in settings.`,
+                placement: 'bottom',
+              });
+        }
+
+    });
+
+    
+}
+
 var open = window.XMLHttpRequest.prototype.open,
     send = window.XMLHttpRequest.prototype.send,
     oldReadyStateChange;
 const BASE_URL = "https://kite.zerodha.com";
 //var _orderModified,
 var _newOrder;
-var _overrideQtyFreeze = false, _smartLimit = false;
+var _overrideQtyFreeze = false, _smartLimit = false, _auto_sl_order = false;
 var orderDom = "form.order-window";
 // var _interceptedReq;
 waitForKeyElements(orderDom, addOverrideOption);
 
 function addOverrideOption() {
     debug('addOverrideOption');
+
+    if ( g_config.get('auto_sl_order') === true &&
+    (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
+    (jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY"))
+    ) {
+        var div = document.createElement("div");
+
+        var i = document.createElement("INPUT");
+        i.type = 'checkbox';
+        i.name = 'autoSlOrderCb';
+        i.value = 'true';
+        i.id = 'autoSlOrderCb';
+        i.style = 'width: 18px; height: 18px; margin-top: 2px; vertical-align : middle';
+        //i.classList.add('button');
+        //i.classList.add('button-outline');
+
+        i.onclick = function () {
+            _auto_sl_order = jQ("#autoSlOrderCb").is(':checked');
+            tEv("kite", "place-order", "auto-sl-order", "");
+        };
+        _auto_sl_order = false;
+
+        var label = 'Create SL Order';
+        var l = document.createElement("LABEL");
+        l.id = 'autoSlOrderLbl';
+        l.for = 'autoSlOrderCb';
+        l.innerHTML = label;
+        l.classList.add('text-label');
+        l.classList.add('text-label-outline');
+        l.style = 'margin-top: 2px;';
+
+        div.appendChild(i);
+        div.appendChild(l);
+        jQ("button.button-outline.cancel").after(div);
+    }
 
     if ( g_config.get('overide_qty_freeze_check_to_enable') === true &&
     (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
@@ -3465,9 +3675,9 @@ function addOverrideOption() {
     (jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY"))
     ) {
         var insert = `
-    <div class="su-radio-wrap" tooltip-pos="down" data-balloon-pos="down" data-balloon="Sell/buy at a 05p below first offer price">
+    <div class="su-radio-wrap" tooltip-pos="down" data-balloon-pos="down" data-balloon="Sell/buy at a 05p betrer than first offer/bid price">
         <input type="radio" name="orderType" label="Smart Limit" class="su-radio" id="smartLimit" value="SMARTLIMIT"
-        title="Sell/buy at a 05p below first offer price">
+        title="Sell/buy at a 05p better than first offer/bid price">
         <label class="su-radio-label" for="smartLimit">Smart Limit</label>
     </div>
     `;
@@ -3495,8 +3705,10 @@ function sendReplacement(data) {
     // } else {
     //     _interceptedReq = "";
     // }
+        debug(`smartLiit ${jQ("#smartLimit").is(":checked")}`);
+        debug(`overQtyFreezeCb ${jQ("#overQtyFreezeCb").is(':checked')}`);
 
-        if (jQ("#smartLimit").is(":checked") ||
+        if (jQ("#autoSlOrderCb").is(":checked") || jQ("#smartLimit").is(":checked") ||
         (jQ("#overQtyFreezeCb").is(':checked') &&
         (
             (order.tradingsymbol.startsWith("BANKNIFTY") && order.quantity > BANKNIFTY_QTY_FREEZE) ||
@@ -3537,7 +3749,12 @@ function sendReplacement(data) {
                 _overrideQtyFreeze = false;
             }
 
-            if (_smartLimit === true || _overrideQtyFreeze == true) {
+            if (jQ("#autoSlOrderCb").is(":checked")) {
+                _auto_sl_order = true;
+                jQ("#autoSlOrderCb").prop('checked', false);
+            }
+
+            if (_smartLimit === true || _overrideQtyFreeze == true || _auto_sl_order == true) {
                 sendPlaceNewOrderRequest(order);
 
                 throw new Error("Zerodha order stopped. betterKite order sent. Check orders / betterKite message");
@@ -3658,6 +3875,45 @@ function sendPlaceNewOrderRequest(order) {
 
                 debug("Data: " + data + "\nStatus: " + status);
                 getToast(`${status}`).showToast();
+
+                //place SL order
+                if (_auto_sl_order == true) {
+                    debug('placing SL order');
+                    debug(order);
+                    if (order.transaction_type == "SELL") {
+                        order.transaction_type = "BUY";
+                        order.price = (order.price + g_config.get("auto_sl_points")).toString();
+                        order.trigger_price = order.price;
+                        order.trailing_stoploss = (g_config.get("auto_trail_points")).toString();
+                    } else if (order.transaction_type == "BUY") {
+                        order.transaction_type = "SELL";
+                        order.price = (order.price - g_config.get("auto_sl_points")).toString();
+                        order.trigger_price = order.price;
+                        order.trailing_stoploss = (g_config.get("auto_trail_points")).toString();
+                    }
+                    
+                    order.order_type="SL";
+                    debug(order);
+
+                    jQ.post(BASE_URL + "/oms/orders/regular",
+                        order,
+                        function (data, status) {
+                            debug("AAAAAA");
+
+                            debug("Data: " + data + "\nStatus: " + status);
+                            getToast(`SL Order ${status}`).showToast();
+                        })
+                        .fail(function(xhr, status, error) {
+                            debug("BBBB");
+                            var resp = JSON.parse(xhr.responseText);
+
+                            getToast(`SL Order ${status} :: ${resp.message}`).showToast();
+
+                        });
+
+                }
+
+
             })
             .fail(function(xhr, status, error) {
                 debug("666");
