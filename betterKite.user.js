@@ -608,7 +608,9 @@ function assignHoldingTags() {
     jQ(allDOMPaths.rowsFromHoldingsTable).hover(
         function () {
             if (jQ(this).find("span[random-att='tagAddBtn']").length < 1) {
-                var displayedStockName = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
+                var holdingRow = getHoldingRowObject(this);
+                //var displayedStockName = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
+                var displayedStockName = holdingRow.instrument;
                 jQ(this).find(".instrument.right-border").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='tagAddIcon' class='text-label grey randomClassToHelpHide' value='" + displayedStockName + "'>+</span></span>");
             }
         },
@@ -627,9 +629,12 @@ function assignHoldingTags() {
         jQ(allDOMPaths.rowsFromHoldingsTable).each(function (rowIndex) {
 
             //var displayedStockName = removeExtraCharsFromStockName(this.innerHTML);
-            var displayedStockName = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
+            //var displayedStockName = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
+            var holdingRow = getHoldingRowObject(this);
+            var displayedStockName = holdingRow.instrument;
 
             for (var categoryName in holdings) {
+                debug(displayedStockName + ' ading tag: ' + categoryName);
                 if (holdings[categoryName].includes(displayedStockName)) {
                     // debug(displayedStockName + ' ading tag: ' + categoryName);
                     jQ(this).find("td.instrument.right-border").append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForTagDeleteAction' class='text-label blue randomClassToHelpHide' tag='" + categoryName + "' stock='" + displayedStockName + "'>" + categoryName + "</span>");
@@ -721,10 +726,12 @@ function createHoldingsDropdown() {
 
                 var pnl = 0;
                 allHoldingrows.each(function (rowIndex) {
-                    var dataUidInTR = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
+                    //var dataUidInTR = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
+                    var holdingRow = getHoldingRowObject(this);
+                    var displayedStockName = holdingRow.instrument;
 
                     var matchFound = false;
-                    matchFound = selectedStocks.includes(dataUidInTR);
+                    matchFound = selectedStocks.includes(displayedStockName);
 
                     if (matchFound) {
                         //dont do anything, let the row be shown.
@@ -886,7 +893,7 @@ function createPositionsDropdown() {
             var uniqueExpiryArray = [];
 
             allPositionsRow.each(function (rowIndex) {
-                var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+                //var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
                 //var p = dataUidInTR.split(".")[1];
 
                 var position = getPositionRowObject(this);
@@ -1064,7 +1071,7 @@ function createPositionsDropdown() {
             allPositionsDayHistoryDomTRs.addClass("allHiddenRows");
 
             allPositionsDayHistoryDomTRs.each(function (rowIndex) {
-                var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+                //var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
                 //var p = dataUidInTR.split(".")[1];
                 debug('3');
                 var p = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[1]).text());
@@ -2039,6 +2046,19 @@ function createPnlText(pnl, maxPnl, margin) {
     return pnlText;
 }
 
+function getHoldingRowObject(row) {
+    var holding = {};
+
+    holding.instrument = jQ(jQ(jQ(row).find("td")[0]).find("span")[0]).text().trim();
+    holding.quantity = parseInt(jQ(jQ(row).find("td")[1]).text());
+    holding.avgCost = parseFloat(jQ(jQ(row).find("td")[2]).text().split(",").join(""));
+    holding.ltp = parseFloat(jQ(jQ(row).find("td")[3]).text().split(",").join(""));
+    holding.pnl = parseFloat(jQ(jQ(row).find("td")[5]).text().split(",").join(""));
+   
+    debug(holding);
+    return holding;
+}
+
 function getPositionRowObject(row) {
     //instrument what you see in the
     //tradingsymbl what you send NIFTY21JUN15750CE
@@ -2865,7 +2885,8 @@ function main() {
         if (watchlistStock.indexOf('&') >= 0) {
             watchlistStock = watchlistStock.slice(0, watchlistStock.indexOf('&amp;')) + '&' + watchlistStock.slice(watchlistStock.indexOf('&amp;') + 5, watchlistStock.length);
         }
-        var holdingStockTR = jQ("tr:regex(" + allDOMPaths.attrNameForInstrumentTR + ", ^" + watchlistStock + ".*)");
+        // var holdingStockTR = jQ("tr:regex(" + allDOMPaths.attrNameForInstrumentTR + ", ^" + watchlistStock + ".*)");
+        var holdingStockTR = jQ("tr:contains('" + watchlistStock + "')");
 
         if (holdingStockTR.length > 0) {
             debug("found holding row for scrolling : " + holdingStockTR);
