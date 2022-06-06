@@ -524,7 +524,7 @@ function initPositions() {
 
         var positionArray = [];
         selectedPositions.each(function (rowIndex) {
-            var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+            //var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
 
             var text = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
             //return;
@@ -764,8 +764,10 @@ function assignPositionTags() {
     jQ(allDOMPaths.PathForPositions).hover(
         function () {
             if (jQ(this).find("span[random-att='tagAddBtn']").length < 1) {
-                var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
-                var p = dataUidInTR.split(".")[1];
+                //var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+                //var p = dataUidInTR.split(".")[1];
+                var positionRow = getPositionRowObject(this);
+                var p = positionRow.instrument;
 
                 jQ(this).find(".open.instrument").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='" + p + "'>+</span></span>");
             }
@@ -781,8 +783,11 @@ function assignPositionTags() {
     if (tagNameSpans.length < 1) {
         var allPositionsRow = jQ(allDOMPaths.PathForPositions);
         allPositionsRow.each(function (rowIndex) {
-            var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
-            var p = dataUidInTR.split(".")[1];
+            var positionRow = getPositionRowObject(this);
+            var p = positionRow.instrument;
+
+            //var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
+            //var p = dataUidInTR.split(".")[1];
 
             var positionSpan = jQ(this).find("span.exchange.text-xxsmall.dim");
 
@@ -885,6 +890,7 @@ function createPositionsDropdown() {
                 //var p = dataUidInTR.split(".")[1];
 
                 var position = getPositionRowObject(this);
+                debug("STATE : " + position.state);
                 var p = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
 
                 var matchFound = false;
@@ -1257,33 +1263,47 @@ function createSubFilter() {
 
     //Select all
     t = jQ("<span id='spanselectAllId' class='text-label red randomClassToHelpHide'>|</span>");
-    i = document.createElement("INPUT");
-    i.style = 'margin: 2px';
+    i = document.createElement("Button");
+    i.style = 'margin: 2px; padding: 2px;';
     i.type = 'button';
     i.id = "selectAllId";
     i.name = 'selectAllId';
-    i.value = 'Toggle Sel.';
+    i.innerHTML = 'TS';
+    i.setAttribute('data-balloon','Toggle Selection of Positions');
+    i.setAttribute('data-balloon-pos','up');
+    i.setAttribute('data-balloon-length','medium');
+    i.setAttribute("class","button-small button-grey");
 
     //jQ(s).append(t);
     jQ(s).append(i);
 
     //savings button
-    i = document.createElement("INPUT");
-    i.style = 'margin: 2px';
+    i = document.createElement("Button");
+    i.style = 'margin: 2px; padding: 2px;';
     i.type = 'button';
     i.id = "saveMarginBtnId";
     i.name = 'saveMarginBtnId';
-    i.value = 'Save Margin';
+    i.innerHTML = 'SM';
+    i.setAttribute('data-balloon','Save Margin');
+    i.setAttribute('data-balloon-pos','up');
+    i.setAttribute('data-balloon-length','small');
+    i.setAttribute("class","button-small button-grey");
 
     jQ(s).append(i);
 
-    i = document.createElement("INPUT");
-    i.style = 'margin: 2px';
+    i = document.createElement("Button");
+    i.style = 'margin: 2px; padding: 2px;';
     i.type = 'button';
     i.id = "hideRestId";
     i.name = 'hideRestId';
-    i.value = 'Hide Sel.';
+    i.innerHTML = 'HS';
+    i.setAttribute('data-balloon','Hide Selected Positions');
+    i.setAttribute('data-balloon-pos','up');
+    i.setAttribute('data-balloon-length','small');
+    i.setAttribute("class","button-small button-grey");
     jQ(s).append(i);
+    
+    
 
     i = document.createElement("INPUT");
     i.style = 'margin: 2px';
@@ -2029,6 +2049,7 @@ function getPositionRowObject(row) {
     position.pnl = jQ(jQ(row).find("td")[6]).text().split(",").join("");
     position.instrument = jQ(jQ(row).find("td")[2]).text();
     position.product = jQ(jQ(row).find("td")[1]).text().replace(/\s/g, '');
+    position.state = jQ(jQ(row).find("td")[1]).attr("class").split(" ")[0];
     position.quantity = parseFloat(jQ(jQ(row).find("td")[3]).text().split(",").join(""));
     position.avgPrice = parseFloat(jQ(jQ(row).find("td")[4]).text().split(",").join(""));
     position.ltp = parseFloat(jQ(jQ(row).find("td")[5]).text().split(",").join(""));
@@ -2605,6 +2626,7 @@ function main() {
         jQ(jQ(allDOMPaths.PathForPositions + ".selected")).find('input.su-checkbox').click();
         setTimeout(onSuCheckboxSelection, 10);
     });
+    
 
     jQ(document).on('click', "#resetRowsId", function () {
         tEv("kite", "restSubFilterFilter", "click", "");
@@ -3364,7 +3386,9 @@ waitForKeyElements(".dropdown-nav.layer-2", addPnlMenu);
 
 //sensibull inside kite
 //watching for 'do more with strategy builder' link
-waitForKeyElements("a:contains('Do more with Strategy Builder')", sensibull);
+//changed to span:Try it Now
+// waitForKeyElements("a:contains('Do more with Strategy Builder')", sensibull);
+waitForKeyElements("span:contains('Try it Now')", sensibull);
 
 var previousArray = [];
 function sensibull(firstTry = true) {
