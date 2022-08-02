@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.51
+// @version      3.52
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -145,6 +145,10 @@ const g_config = new MonkeyConfig({
             type: 'number',
             default: 1200
         },
+        finnifty_freeze_quantity: {
+            type: 'number',
+            default: 1800
+        },
         enable_nifty_monthly_weekly_range: {
             type: 'checkbox',
             default: true
@@ -185,6 +189,7 @@ const MARGIN_METHOD = g_config.get('margin_method');
 
 const BANKNIFTY_QTY_FREEZE = g_config.get('banknifty_freeze_quantity');
 const NIFTY_QTY_FREEZE = g_config.get('nifty_freeze_quantity');
+const FINNIFTY_QTY_FREEZE = g_config.get('finnifty_freeze_quantity');
 
 const allDOMPaths = {
     rowsFromHoldingsTable: "div.holdings > section > div > div > table > tbody > tr",
@@ -3667,7 +3672,7 @@ function addOverrideOption() {
 
     if ( g_config.get('overide_qty_freeze_check_to_enable') === true &&
     (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
-    (jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY"))
+    (jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("FINNIFTY"))
     ) {
         var div = document.createElement("div");
 
@@ -3757,7 +3762,8 @@ function sendReplacement(data) {
         (jQ("#overQtyFreezeCb").is(':checked') &&
         (
             (order.tradingsymbol.startsWith("BANKNIFTY") && order.quantity > BANKNIFTY_QTY_FREEZE) ||
-            (order.tradingsymbol.startsWith("NIFTY") && order.quantity > NIFTY_QTY_FREEZE)
+            (order.tradingsymbol.startsWith("NIFTY") && order.quantity > NIFTY_QTY_FREEZE) ||
+            (order.tradingsymbol.startsWith("FINNIFTY") && order.quantity > FINNIFTY_QTY_FREEZE)
         )
         )) {
             setTimeout(() => {
@@ -3781,7 +3787,8 @@ function sendReplacement(data) {
             if (jQ("#overQtyFreezeCb").is(':checked') &&
             (
                 (order.tradingsymbol.startsWith("BANKNIFTY") && order.quantity > BANKNIFTY_QTY_FREEZE) ||
-                (order.tradingsymbol.startsWith("NIFTY") && order.quantity > NIFTY_QTY_FREEZE)
+                (order.tradingsymbol.startsWith("NIFTY") && order.quantity > NIFTY_QTY_FREEZE) ||
+                (order.tradingsymbol.startsWith("FINNIFTY") && order.quantity > FINNIFTY_QTY_FREEZE)
             )
             ) {
                 _overrideQtyFreeze = true;
@@ -3899,6 +3906,8 @@ function sendPlaceNewOrderRequest(order) {
             limit = BANKNIFTY_QTY_FREEZE; //old 2500
         } else if (order.tradingsymbol.startsWith("NIFTY")) {
             limit = NIFTY_QTY_FREEZE;
+        } else if (order.tradingsymbol.startsWith("FINNIFTY")) {
+            limit = FINNIFTY_QTY_FREEZE;
         }
     } else {
         limit = qty;
