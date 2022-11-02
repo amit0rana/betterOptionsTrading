@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.52
+// @version      3.53
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -12,6 +12,8 @@
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // @grant        GM_registerMenuCommand
+// @grant        GM_setClipboard
+// @grant        GM_getClipboard
 // @require      https://raw.githubusercontent.com/amit0rana/betterOptionsTrading/master/betterCommon.js
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
 // @require      https://raw.githubusercontent.com/amit0rana/MonkeyConfig/master/monkeyconfig.js
@@ -187,9 +189,9 @@ const D_LEVEL = g_config.get('logging');
 const PRO_MODE = g_config.get('pro_mode');
 const MARGIN_METHOD = g_config.get('margin_method');
 
-const BANKNIFTY_QTY_FREEZE = g_config.get('banknifty_freeze_quantity');
-const NIFTY_QTY_FREEZE = g_config.get('nifty_freeze_quantity');
-const FINNIFTY_QTY_FREEZE = g_config.get('finnifty_freeze_quantity');
+const BANKNIFTY_QTY_FREEZE = parseInt(g_config.get('banknifty_freeze_quantity'));
+const NIFTY_QTY_FREEZE = parseInt(g_config.get('nifty_freeze_quantity'));
+const FINNIFTY_QTY_FREEZE = parseInt(g_config.get('finnifty_freeze_quantity'));
 
 const allDOMPaths = {
     rowsFromHoldingsTable: "div.holdings > section > div > div > table > tbody > tr",
@@ -1594,7 +1596,7 @@ function toggleDropdown(currentUrl) {
         //     updateOrderButtons();
         // } else {
         //     debug('showing send order form');
-        //     showSendOrderButton();
+            // showSendOrderButton();
         // }
     }
 }
@@ -3233,6 +3235,7 @@ jQ(document).on('click', 'section.completed-orders-wrap.table-wrapper > div > di
 function showSendOrderButton() {
     var div = document.createElement("DIV");
     div.style = 'float:right';
+    div.id = 'bkSendOrderDiv';
 
     var form = document.createElement("FORM");
     form.method = 'post';
@@ -3305,6 +3308,8 @@ function showSendOrderButton() {
         updateOrderButtons();
         tEv("kite", "order", "resetOrder", "");
     });
+    jQ('#bkSendOrderDiv').remove();
+    jQ(".page-nav").append(div);
     if (jQ("div.container.wrapper > div.container-right > div.page-nav").length < 1) {
         debug('sleeping as couldnt find order div');
 
@@ -3348,7 +3353,7 @@ async function updateOrderButtons() {
 
 //div holding ready-made strategies.
 //div.modal-mask.positios-info-container.positions-info-modal > div.modal-wrapper > div.modal-container.layer-2
-//waitForKeyElements(BASE_ORDERINFO_DOM, orderInfo);
+// waitForKeyElements(BASE_ORDERINFO_DOM, orderInfo);
 
 function changePnLFilter() {
     debug('changePnLFilter');
@@ -3757,6 +3762,11 @@ function sendReplacement(data) {
     // }
         debug(`smartLiit ${jQ("#smartLimit").is(":checked")}`);
         debug(`overQtyFreezeCb ${jQ("#overQtyFreezeCb").is(':checked')}`);
+        debug(order.tradingsymbol.startsWith("BANKNIFTY"));
+        debug(`${order.quantity} > ${BANKNIFTY_QTY_FREEZE} ${order.quantity > BANKNIFTY_QTY_FREEZE}`);
+        debug(
+            (order.tradingsymbol.startsWith("BANKNIFTY") && order.quantity > BANKNIFTY_QTY_FREEZE
+            ));
 
         if (jQ("#autoSlOrderCb").is(":checked") || jQ("#smartLimit").is(":checked") ||
         (jQ("#overQtyFreezeCb").is(':checked') &&
@@ -3771,7 +3781,7 @@ function sendReplacement(data) {
                 button.click();
             }, 0);
 
-            console.log('aborting send ');
+            debug('aborting send ');
 
             this.abort();
 
@@ -3812,6 +3822,9 @@ function sendReplacement(data) {
                 throw new Error("Zerodha order stopped. betterKite order sent. Check orders / betterKite message");
             }
 
+        } else {
+            debug('order didnt fulfil condition');
+            debug(`${order.tradingsymbol} ${order.quantity}`);
         }
     }
 
