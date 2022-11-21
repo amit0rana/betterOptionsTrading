@@ -1844,6 +1844,8 @@ const calculateMarginUsingBasket = async (selection) => {
 }
 
 const getMarginCalculationData = (instrument, product, q, price) => {
+
+    if (instrument=="") return null;
     // frame payload for SPAN calculation
     var tokens = instrument.replace(/\s+/g, ' ').split(" ");
     //debug(tokens);
