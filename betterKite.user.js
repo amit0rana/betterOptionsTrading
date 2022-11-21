@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.53
+// @version      3.54
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -60,7 +60,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.51";
+const VERSION = "v3.54";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -348,6 +348,7 @@ function showPnlTippy(target, msg) {
             var pnlTd = instance.reference;
             var row = jQ(pnlTd).closest("tr");
             var pos = getPositionRowObject(row);
+            if (pos.instrument == "") return;
             // instance.setProps({content : "amit"});
             instance.setContent(formatter.format(-(pos.quantity * (pos.avgPrice - pos.ltp))));
           },
@@ -379,6 +380,7 @@ function showLotsTippy(target, msg) {
             var qtyTd = instance.reference;
             var row = jQ(qtyTd).closest("tr");
             var pos = getPositionRowObject(row);
+            if (pos.instrument == "") return;
             
             var lot = 0;
             if (pos.instrument.startsWith("NIFTY")) {
@@ -782,6 +784,7 @@ function assignPositionTags() {
                 //var p = dataUidInTR.split(".")[1];
                 var positionRow = getPositionRowObject(this);
                 var p = positionRow.instrument;
+                if (p == "") return;
 
                 jQ(this).find(".open.instrument").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='" + p + "'>+</span></span>");
             }
@@ -799,6 +802,7 @@ function assignPositionTags() {
         allPositionsRow.each(function (rowIndex) {
             var positionRow = getPositionRowObject(this);
             var p = positionRow.instrument;
+            if (p == "") return;
 
             //var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
             //var p = dataUidInTR.split(".")[1];
@@ -904,6 +908,8 @@ function createPositionsDropdown() {
                 //var p = dataUidInTR.split(".")[1];
 
                 var position = getPositionRowObject(this);
+                if (position.instrument == "") return;
+
                 debug("STATE : " + position.state);
                 var p = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
 
@@ -1400,8 +1406,13 @@ function showPositionDropdown(retry = true) {
     var uniqueExpiryArray = [];
     allPositionsRow.each(function (rowIndex) {
 
-        var text = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
+        // debug('before calling getSensibullZerodhaTradingSymbol ' + jQ(jQ(this).find('td')[2]).text())
+        // debug('before calling getSensibullZerodhaTradingSymbol ' + jQ(jQ(this).find('span.tradingsymbol')).text())
+        // var text = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('span.tradingsymbol')).text());
+        // var text = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
         var tradingSymbol = jQ(this).find("td.instrument > span.tradingsymbol").text();
+        if (tradingSymbol == "") return;
+        var text = getSensibullZerodhaTradingSymbol(tradingSymbol);
 
         //creating auto generated script wise grouping
         var ts = tradingSymbol.split(" ")[0];
@@ -1944,6 +1955,7 @@ function onSuCheckboxSelection() {
     debug(`su- selected rows: ${selectedRows.length}`);
     selectedRows.each(function (rowIndex) {
         var positionRow = getPositionRowObject(this);
+        if (positionRow.instrument == "") return;
 
         realPnl = realPnl - (positionRow.quantity * (positionRow.avgPrice - positionRow.ltp));
 
@@ -2073,8 +2085,13 @@ function getPositionRowObject(row) {
     //eg: NIFTY2140814200CE (NIFTY 8th w APR 14200 CE NFO LABELS)
     var position = {};
 
+
     position.pnl = jQ(jQ(row).find("td")[6]).text().split(",").join("");
     position.instrument = jQ(jQ(row).find("td")[2]).text();
+
+    debug('position row ' + position.instrument);
+
+
     position.product = jQ(jQ(row).find("td")[1]).text().replace(/\s/g, '');
     position.state = jQ(jQ(row).find("td")[1]).attr("class").split(" ")[0];
     position.quantity = parseFloat(jQ(jQ(row).find("td")[3]).text().split(",").join(""));
@@ -2087,16 +2104,18 @@ function getPositionRowObject(row) {
         position.transaction_type = 'SELL';
     }
 
-    var data = getMarginCalculationData(position.instrument, position.product, position.quantity, position.avgPrice);
+    if (position.instrument != "") {
+        var data = getMarginCalculationData(position.instrument, position.product, position.quantity, position.avgPrice);
 
-    if (data != null) {
-        position.exchange = data.exchange;
-        position.pece = data.pece;
-        position.strike = data.strike;
-        position.optfut = data.optfut;
-        position.scrip = data.scrip;
-        position.tradingsymbol = data.tradingsymbol;
-        position.symbol = data.symbol;
+        if (data != null) {
+            position.exchange = data.exchange;
+            position.pece = data.pece;
+            position.strike = data.strike;
+            position.optfut = data.optfut;
+            position.scrip = data.scrip;
+            position.tradingsymbol = data.tradingsymbol;
+            position.symbol = data.symbol;
+        }
     }
 
     return position;
@@ -2114,7 +2133,7 @@ function checkMarginSaving() {
         var position = getPositionRowObject(this);
 
         // if (position.instrument.includes('NSE') || position.instrument.includes('BSE') || (position.symbol != 'NIFTY' && position.symbol != 'BANKNIFTY')) {
-        if (position.instrument.includes('NSE') || position.instrument.includes('BSE')) {
+        if (position.instrument == "" || position.instrument.includes('NSE') || position.instrument.includes('BSE')) {
             debug('skipping ' + position.symbol);
             return;
         }
@@ -2522,6 +2541,9 @@ function main() {
                 var pnl = 0;
                 allClosed.each(function (rowIndex) {
                     var row = getPositionRowObject(this);
+
+                    if (row.instrument == "") return;
+
                     // debug(row.pnl);
                     pnl = parseFloat(pnl) + parseFloat(row.pnl);
                     // debug(pnl);
@@ -2534,6 +2556,7 @@ function main() {
                 var realPnl = 0;
                 allOpen.each(function (rowIndex) {
                     var row = getPositionRowObject(this);
+                    if (row.instrument == "") return;
                     // debug(row.quantity);
                     // realPnl = parseFloat(realPnl) +  parseFloat(row.pnl - (row.quantity * (row.avgPrice - row.ltp)));
                     // realPnl = parseFloat(realPnl) +  parseFloat(row.pnl - (-(row.quantity * (row.avgPrice - row.ltp))));
