@@ -664,10 +664,7 @@ function assignHoldingTags() {
                 jQ(tds[3]).append(`<div class="randomClassToHelpHide">&nbsp;</div>`);
                 jQ(tds[4]).append(`<div class="text-label grey randomClassToHelpHide">${formatter.format(totalQ*holdingRow.ltp)}</div>`);
                 jQ(tds[5]).append(`<div class="text-label grey randomClassToHelpHide">${formatter.format((holdingRow.ltp - holdingRow.avgCost)*totalQ)}</div>`);
-                jQ(tds[6]).append(`<div class="text-label grey randomClassToHelpHide">${
-                    ((((holdingRow.ltp - holdingRow.avgCost)*totalQ) 
-                        / 
-                        (totalQ*holdingRow.avgCost))*100).toFixed(2)}%</div>`);
+                jQ(tds[6]).append(`<div class="randomClassToHelpHide">&nbsp;</div>`);
                 jQ(tds[7]).append(`<div class="randomClassToHelpHide">&nbsp;</div>`);
             }
 
