@@ -11,6 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 For more information, please refer to [<https://unlicense.org>](https://unlicense.org)
 
 Very simple "userscript" which adds several features to kite.zerodha.com ui (screenshots below)
+* See P&L and current value 'including' pledged stocks
 * Automatically create SL order, then 'trail' and 'save profit' by just one click.
 * 'Smart Limit' Place LIMIT orders at best offer/bid price.
 * See quantities in lots
@@ -105,6 +106,8 @@ Follow below mentioned steps
 
 ------
 # https://kite.zerodha.com/holdings page
+* See P&L and current value 'including' pledged stocks
+![pledged](https://dl.dropbox.com/s/mnhx9efdjpo5d2m/pledgedPnl.png?dl=0)
 * Group your holdings in 'categories' or 'tags'
 * Small tag is shown next to your stock name indicating which category it belongs to.
 ![tags](https://dl.dropbox.com/s/ygk9id8c21b3mi8/HoldingsWithTags.png?dl=0)
