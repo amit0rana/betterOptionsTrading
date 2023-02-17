@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.6
+// @version      3.7
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -60,7 +60,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.6";
+const VERSION = "v3.7";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -2592,7 +2592,6 @@ function main() {
                     // debug(pnl);
 
                 });
-
                 var allOpen = jQ(allDOMPaths.PathForPositions).filter(':has("td.open")');
                 debug(allOpen.length);
                 debug(allOpen);
@@ -2615,7 +2614,6 @@ function main() {
                     // debug(pnl);
 
                 });
-    
                 instance.setContent(`Realised P&L ${formatter.format(pnl)}`);
               },
         });
@@ -2971,7 +2969,7 @@ function main() {
         }
     });
 
-    waitForKeyElements("span.margin-value", showRoiNudge);
+    waitForKeyElements("span.value", showRoiNudge);
     waitForKeyElements("div.value.final-margins-value", showBasketRoiNudge);
 
 }
@@ -3024,7 +3022,7 @@ function menuShown() {
 function showRoiNudge() {
     if (jQ("div.instrument > span.transaction-type").text().trim() == 'Sell') {
         updateRoiNudge();
-        var target = jQ("span.margin-value")[0];
+        var target = jQ("span.value")[0];
         var obs = new MutationObserver(function (mutations) {
             mutations.forEach(function (mutation) {
                 if (mutation.type == "characterData") {
@@ -3050,19 +3048,20 @@ function showRoiNudge() {
 
 function updateRoiNudge() {
     var lastPrice = 0;
-    var margin = jQ("span.margin-value").text().trim().split('₹').join("").split(",").join("");
+    var margin = jQ("span.value").text().trim().split('₹').join("").split(",").join("");
     var qty = jQ('input[label="Qty."]').val();
 
     if (jQ('input[value="MARKET"]').prop('checked') == true) {
-        lastPrice = jQ('div > span.last-price').text().trim().split('₹').join("").split(",").join("");
+        lastPrice = parseFloat(jQ('div > span.last-price').text().trim().split('₹').join("").split(",").join(""));
     }
     if (jQ('input[value="LIMIT"]').prop('checked') == true) {
         debug();
-        lastPrice = jQ('input[label="Price"]').val();
+        lastPrice = parseFloat(jQ('input[label="Price"]').val());
     }
     debug(lastPrice);
     debug(qty);
     debug(qty * lastPrice);
+    debug(margin);
 
     jQ('#nudgepremiumid').remove();
     jQ('footer.footer > div > div:nth-child(1)').append(`<div id="nudgepremiumid" class="row margins"><span class="label">Premium Recvd: </span> <span >${formatter.format(qty * lastPrice)} (ROI: ${(((qty * lastPrice) / margin) * 100).toFixed(2)}%)</span></div>`);
