@@ -208,6 +208,7 @@ const allDOMPaths = {
     PathForBasketPositions: "div.basket-table > div > table > tbody > tr",
     domPathForPositionsDayHistory: "div.positions > section.day-positions.table-wrapper > div > div > table > tbody > tr",
     positionHeader: "header.row.data-table-header > h3",
+    dayPnLSelector : "section.day-positions.table-wrapper div div table tfoot tr td:nth-child(3)",
     //sensibullRows: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > div > table > tbody > tr",
     sensibullRows: "tr.jss32.jss33",
     sensibullRowCheckbox: "th > div > span > span > input",
@@ -387,6 +388,8 @@ function showLotsTippy(target, msg) {
                 lot = Math.abs(pos.quantity / 50);
             } else if (pos.instrument.startsWith("BANKNIFTY")) {
                 lot = Math.abs(pos.quantity / 25);
+            } else if (pos.instrument.startsWith("FINNIFTY")) {
+                lot = Math.abs(pos.quantity / 40);
             }
 
             instance.setContent(`${lot} lots`);
@@ -644,7 +647,6 @@ function assignHoldingTags() {
             //var displayedStockName = removeExtraCharsFromStockName(this.innerHTML);
             //var displayedStockName = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
             var holdingRow = getHoldingRowObject(this);
-
             var displayedStockName = holdingRow.instrument;
 
             for (var categoryName in holdings) {
@@ -654,7 +656,6 @@ function assignHoldingTags() {
                     jQ(this).find("td.instrument.right-border").append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForTagDeleteAction' class='text-label blue randomClassToHelpHide' tag='" + categoryName + "' stock='" + displayedStockName + "'>" + categoryName + "</span>");
                 }
             }
-
             if (holdingRow.pledged > 0) {
                 var tds = jQ(this).find("td");
                 var totalQ = holdingRow.quantity+holdingRow.pledged;
@@ -667,10 +668,7 @@ function assignHoldingTags() {
                 jQ(tds[6]).append(`<div class="randomClassToHelpHide">&nbsp;</div>`);
                 jQ(tds[7]).append(`<div class="randomClassToHelpHide">&nbsp;</div>`);
             }
-
         });
-
-
     } else { debug('tags found'); }
 }
 
@@ -1250,7 +1248,13 @@ function updatePositionInfo(countPositionsDisplaying, pnl, margin) {
         jQ("#marginDiv").text(display + ": " + formatter.format(margin));
     }
     jQ("#marginDiv").prop('title', `ROI: ${(pnl / margin * 100).toFixed(2)}%`);
-    jQ('title').text(formatter.format(pnl));
+    //jQ('title').text(formatter.format(pnl));
+    let addedText = "";
+    if(document.querySelector(allDOMPaths.dayPnLSelector))
+    {
+        addedText = " | "+formatter.format(document.querySelector(allDOMPaths.dayPnLSelector).textContent.split(",").join(""));
+    }
+    jQ('title').text(formatter.format(pnl)+addedText);
 }
 
 function createSubFilter() {
@@ -1657,7 +1661,7 @@ function simulateSelectBoxEvent() {
                 tagSelectorH.dispatchEvent(new Event("change"));
             } else {
                 debug('sleeping as couldnt find holding');
-                setTimeout(function(){ simulateSelectBoxEvent(); }, 1000);
+                //setTimeout(function(){ simulateSelectBoxEvent(); }, 1000);
             }
         }
     } else if (currentUrl.includes('positions')) {
@@ -2099,11 +2103,8 @@ function createPnlText(pnl, maxPnl, margin) {
 
 function getHoldingRowObject(row) {
     var holding = {};
-
     var tds = jQ(row).find("td");
-
     holding.instrument = jQ(jQ(tds[0]).find("span")[0]).text().trim();
-    
     var spans = jQ(tds[1]).find("span");
     if (spans.length > 1) {
         holding.pledged = parseInt(jQ(spans[spans.length-2]).text().trim().split(':')[1]);
@@ -2112,7 +2113,6 @@ function getHoldingRowObject(row) {
         holding.pledged = 0;
         holding.quantity = parseInt(jQ(spans[spans.length-1]).text().trim());
     }
-    
     holding.avgCost = parseFloat(jQ(tds[2]).text().split(",").join(""));
     holding.ltp = parseFloat(jQ(tds[3]).text().split(",").join(""));
     holding.pnl = parseFloat(jQ(tds[5]).text().split(",").join(""));
@@ -2592,6 +2592,7 @@ function main() {
                     // debug(pnl);
 
                 });
+
                 var allOpen = jQ(allDOMPaths.PathForPositions).filter(':has("td.open")');
                 debug(allOpen.length);
                 debug(allOpen);
@@ -2614,6 +2615,7 @@ function main() {
                     // debug(pnl);
 
                 });
+    
                 instance.setContent(`Realised P&L ${formatter.format(pnl)}`);
               },
         });
@@ -2668,12 +2670,12 @@ function main() {
                 //     jQ(this).removeAttr('data-balloon-pos');
                 //     jQ(this).removeAttr('data-balloon');
                 // } else {
-                    var iv = jQ("div.info > span.symbol > span > span.nice-name:contains('INDIA')");
+                    var iv = jQ("div.info > div.symbol-wrapper > div.symbol > span.nice-name:contains('INDIA')");
                     debug(iv.length);
                     if (iv.length > 0) {
                         var strike = jQ(this).text().trim();
                         //jQ("div.vddl-draggable:nth-child(1) > div:nth-child(1) > div:nth-child(1) > span:nth-child(2) > span:nth-child(3)")
-                        var vix = jQ(iv).closest("div").find("span.price > span.last-price").text().trim();
+                        var vix = jQ(iv).closest("div.info").find("div.price > span.last-price").text().trim();
                         var chg = vix / Math.sqrt(12); //g_config.get('nifty_vix_range_monthly_sqroot');
                         var range = strike * chg / 100;
                         var lNift = strike - range;
@@ -2886,7 +2888,6 @@ function main() {
         var currentUrl = window.location.pathname;
         if (currentUrl.includes('holdings')) {
             debug('click on holdings header.');
-
             if (jQ('#tagSelectorH').is(":visible")) {
                 hideDropdown();
             } else {
