@@ -3,7 +3,7 @@
 // @namespace    https://github.com/amit0rana/betterKite
 // @version      3.7
 // @description  Introduces small features on top of kite app
-// @author       Amit
+// @author       Amit and Updated by Onkar
 // @match        https://kite.zerodha.com/*
 // @match        https://console.zerodha.com/*
 // @match        https://insights.sensibull.com/*
@@ -14,19 +14,19 @@
 // @grant        GM_registerMenuCommand
 // @grant        GM_setClipboard
 // @grant        GM_getClipboard
-// @require      https://raw.githubusercontent.com/amit0rana/betterOptionsTrading/master/betterCommon.js
+// @require      http://cdn.jsdelivr.net/gh/sidonkar/betterOptionsTrading/betterCommon.js
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
-// @require      https://raw.githubusercontent.com/amit0rana/MonkeyConfig/master/monkeyconfig.js
+// @require      http://cdn.jsdelivr.net/gh/sidonkar/MonkeyConfig/monkeyconfig.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js
-// @require      https://raw.githubusercontent.com/kawanet/qs-lite/master/dist/qs-lite.min.js
+// @require      http://cdn.jsdelivr.net/gh/kawanet/qs-lite/dist/qs-lite.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js
 // @require      https://unpkg.com/@popperjs/core@2
 // @require      https://unpkg.com/tippy.js@6
 // @require      https://cdn.jsdelivr.net/npm/sweetalert2@11
 // @require      https://cdn.jsdelivr.net/npm/toastify-js
 // @resource     TOASTIFY_CSS https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css
-// @downloadURL  https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js
-// @updateURL    https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.meta.js
+// @downloadURL  http://cdn.jsdelivr.net/gh/sidonkar/betterOptionsTrading/betterKite.user.js
+// @updateURL    http://cdn.jsdelivr.net/gh/sidonkar/betterOptionsTrading/betterKite.meta.js
 // ==/UserScript==
 
 // This is free and unencumbered software released into the public domain.
@@ -296,7 +296,7 @@ const hideOnEsc = {
           hide();
         }
       }
-  
+
       return {
         onShow() {
           document.addEventListener('keydown', onKeyDown);
@@ -382,7 +382,7 @@ function showLotsTippy(target, msg) {
             var row = jQ(qtyTd).closest("tr");
             var pos = getPositionRowObject(row);
             if (pos.instrument == "") return;
-            
+
             var lot = 0;
             if (pos.instrument.startsWith("NIFTY")) {
                 lot = Math.abs(pos.quantity / 50);
@@ -404,7 +404,7 @@ function showTippyToast(target, msg) {
         allowHTML: true,
         showOnCreate: true,
         interactive: true,
-        duration: [0, 5000], 
+        duration: [0, 5000],
         hideOnClick: true,
         trigger: "manual",
         plugins: [hideOnEsc],
@@ -1113,7 +1113,7 @@ function createPositionsDropdown() {
                 var p = getSensibullZerodhaTradingSymbol(tradingSymbolText);
 
                 var matchFound = false;
-                
+
                 var productType = jQ(this).find("td.product > span").text().trim();
 
                 if (selectedGroup.includes("SPECIAL")) {
@@ -1351,8 +1351,8 @@ function createSubFilter() {
     i.setAttribute('data-balloon-length','small');
     i.setAttribute("class","button-small button-grey");
     jQ(s).append(i);
-    
-    
+
+
 
     i = document.createElement("INPUT");
     i.style = 'margin: 2px';
@@ -1526,7 +1526,7 @@ function showPositionDropdown(retry = true) {
     if (g_config.get('auto_refresh_PnL') === true) {
         debug('going to observe pnl change');
         target = jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[3];
-        
+
         debug("**********" + jQ(target).text());
         g_positionsPnlObserver = new MutationObserver(function (mutations) {
             var st = null;
@@ -1951,7 +1951,7 @@ function updatePnl(forPositions = true) {
     var selection = [];
     allVisibleRows.each(function (rowIndex) {
         var v = jQ(jQ(this).find("td")[pnlCol]).text().split(",").join("");
-        
+
         if (v == "") return;
         pnl += parseFloat(v);
 
@@ -2043,7 +2043,7 @@ function onSuCheckboxSelection() {
 
                 }
                 var t = ceQ + "CE & " + peQ + "PE";
-               
+
                 var printText = `<section class="table-wrapper" random-att='betterKite'>
                     <header class="row data-table-header"><h3 class="page-title small">betterKite</h3></header>
                     <div>
@@ -2116,7 +2116,7 @@ function getHoldingRowObject(row) {
     holding.avgCost = parseFloat(jQ(tds[2]).text().split(",").join(""));
     holding.ltp = parseFloat(jQ(tds[3]).text().split(",").join(""));
     holding.pnl = parseFloat(jQ(tds[5]).text().split(",").join(""));
-   
+
     // debug(holding);
     return holding;
 }
@@ -2438,7 +2438,7 @@ function main() {
 
         //simulateSelectBoxEvent();
     });
-    
+
     jQ(document).on('click', "#trailButtonId", function (e) {
         tEv("kite", "trail", "click", "");
 
@@ -2562,7 +2562,7 @@ function main() {
             lotsTippyInstances.forEach((instance) => {
                 instance.destroy();
             });
-            
+
         } else {
             showLotsTippy("td.quantity.right", "test");
         }
@@ -2579,7 +2579,7 @@ function main() {
             // plugins: [lotsGlobalStore],
             onShow(instance) {
                 var pnlTd = instance.reference;
-                
+
                 var allClosed = jQ(allDOMPaths.PathForPositions).filter(':has("td.closed")');
                 var pnl = 0;
                 allClosed.each(function (rowIndex) {
@@ -2615,13 +2615,13 @@ function main() {
                     // debug(pnl);
 
                 });
-    
+
                 instance.setContent(`Realised P&L ${formatter.format(pnl)}`);
               },
         });
-        
+
     });
-    
+
 
     jQ(document).on('click', "td.open.pnl.right", function () {
         tEv("kite", "showActualProit", "click", "");
@@ -2630,7 +2630,7 @@ function main() {
             pnlTippyInstances.forEach((instance) => {
                 instance.destroy();
             });
-            
+
         } else {
             showPnlTippy("td.open.pnl.right", "test");
         }
@@ -2651,7 +2651,7 @@ function main() {
         //     jQ(this).attr('data-balloon', `${formatter.format(pnl)}`);
 
         // }
-        
+
     });
 
     const PIN1_TARGET = 'div.instrument-widget:nth-child(1) > span:nth-child(2) > span:nth-child(1)';
@@ -2719,7 +2719,7 @@ function main() {
         jQ(jQ(allDOMPaths.PathForPositions + ".selected")).find('input.su-checkbox').click();
         setTimeout(onSuCheckboxSelection, 10);
     });
-    
+
 
     jQ(document).on('click', "#resetRowsId", function () {
         tEv("kite", "restSubFilterFilter", "click", "");
@@ -3426,7 +3426,7 @@ function changePnLFilter() {
     debug('changePnLFilter');
     setTimeout(function(){
         document.getElementsByTagName('select')[0].selectedIndex = 2; //FO
-    
+
         document.getElementsByTagName('select')[0].focus();
         document.getElementsByTagName('select')[0].click();
         // document.querySelector("div.two:nth-child(1) > select:nth-child(2)").click();
@@ -3447,7 +3447,7 @@ function changePnLFilter() {
         document.querySelector("td[title='" + monthStart + "']").click();
         document.querySelector('#app > div.wrapper > div > div > div > form > div > div.one.columns > button').click()
     }, 0);
-    
+
     //2021-02-03 ~ 2021-03-01
 }
 
@@ -3472,7 +3472,7 @@ function introducePnlFilter() {
 
 }
 
-//NOT WORKING 
+//NOT WORKING
 waitForKeyElements ("h1:contains('P&L')", introducePnlFilter);
 
 function addPnlMenu() {
@@ -3690,7 +3690,7 @@ function trailOrderButton() {
 
     });
 
-    
+
 }
 
 var open = window.XMLHttpRequest.prototype.open,
@@ -4025,7 +4025,7 @@ function sendPlaceNewOrderRequest(order) {
                         order.trigger_price = order.price;
                         order.trailing_stoploss = (g_config.get("auto_trail_points")).toString();
                     }
-                    
+
                     order.order_type="SL";
                     debug(order);
 
