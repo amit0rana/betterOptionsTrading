@@ -145,7 +145,7 @@ const g_config = new MonkeyConfig({
         },
         banknifty_freeze_quantity: {
             type: 'number',
-            default: 1200
+            default: 900
         },
         finnifty_freeze_quantity: {
             type: 'number',
@@ -386,7 +386,7 @@ function showLotsTippy(target, msg) {
             if (pos.instrument.startsWith("NIFTY")) {
                 lot = Math.abs(pos.quantity / 50);
             } else if (pos.instrument.startsWith("BANKNIFTY")) {
-                lot = Math.abs(pos.quantity / 25);
+                lot = Math.abs(pos.quantity / 15);
             }
 
             instance.setContent(`${lot} lots`);
@@ -3810,7 +3810,7 @@ function addOverrideOption() {
 }
 
 function openReplacement(method, url, async, user, password) {
-
+    debug("openReplacement");
     if (method === 'POST' && url.includes('/oms/orders/regular')) {
         _newOrder = true;
     } else {
@@ -3820,6 +3820,7 @@ function openReplacement(method, url, async, user, password) {
 }
 
 function sendReplacement(data) {
+    debug("sendReplacement");
     if (_newOrder === true) {
         var order = queryStringToJSON(data);
     //     _interceptedReq = order;
@@ -3925,7 +3926,7 @@ function queryStringToJSON(qs) {
 
 function sendPlaceNewOrderRequest(order) {
     debug('sendPlaceNewOrderRequest');
-
+    
     jQ.ajaxSetup({
         headers: {
             'Authorization': `enctoken ${getCookie('enctoken')}`
@@ -3973,7 +3974,7 @@ function sendPlaceNewOrderRequest(order) {
         });
     }
     debug("44444");
-
+    
 
     var qty = order.quantity;
     var remainigQty = qty;
@@ -4063,9 +4064,6 @@ function sendPlaceNewOrderRequest(order) {
     debug("99999");
 };
 
-function sendModifyOrderRequest() {
-    debug('sendModifyOrderRequest');
-};
 
 jQ.fn.exists = function () {
     return this.length !== 0;
