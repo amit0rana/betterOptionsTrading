@@ -72,6 +72,8 @@ const MM_BASKET = 'MM_BASKET';
 const MM_CALC = 'MM_CALC';
 var g_dropdownDisplay = DD_NONE;
 var g_showOnlyMISPositions = false;
+var g_showOnlyEXITEDPositions = false;
+var g_showOnlyNRMLPositions = false;
 var g_showOnlyPEPositions = false;
 var g_showOnlyCEPositions = false;
 var g_showOnlyFUTPositions = false;
@@ -884,6 +886,8 @@ function createPositionsDropdown() {
 
             var stocksInList = [];
             var misCount = 0;
+            var exitedCount = 0;
+            var nrmlCount = 0;
             var ceCount = 0;
             var peCount = 0;
             var futCount = 0;
@@ -988,6 +992,22 @@ function createPositionsDropdown() {
                         matchFound = false;
                     }
                 }
+                if (g_showOnlyEXITEDPositions) {
+                    if (qty == 0) {
+                        //let filter decision pass
+                    } else {
+                        //overide filter decision and hide.
+                        matchFound = false;
+                    }
+                }
+                if (g_showOnlyNRMLPositions) {
+                    if (productType == "NRML") {
+                        //let filter decision pass
+                    } else {
+                        //overide filter decision and hide.
+                        matchFound = false;
+                    }
+                }
                 if (g_showOnlyCEPositions) {
                     if (instrument.includes(' CE')) {
                         //let filter decision pass
@@ -1045,6 +1065,12 @@ function createPositionsDropdown() {
                     }
                     if (productType == "MIS") {
                         misCount++;
+                    }
+                    if (qty == 0) {
+                        exitedCount++;
+                    }
+                    if (productType == "NRML") {
+                        nrmlCount++;
                     }
                     if (instrument.includes(' CE')) {
                         ceCount++;
@@ -1139,6 +1165,22 @@ function createPositionsDropdown() {
                         matchFound = false;
                     }
                 }
+                if (g_showOnlyEXITEDPositions) {
+                    if (qty == 0) {
+                        //let filter decision pass
+                    } else {
+                        //overide filter decision and hide.
+                        matchFound = false;
+                    }
+                }
+                if (g_showOnlyNRMLPositions) {
+                    if (productType == "NRML") {
+                        //let filter decision pass
+                    } else {
+                        //overide filter decision and hide.
+                        matchFound = false;
+                    }
+                }
 
                 if (matchFound) {
                     //dont do anything, let the row be shown.
@@ -1150,6 +1192,8 @@ function createPositionsDropdown() {
             });
 
             jQ("#misFilterId").text("MIS (" + misCount + ")");
+            jQ("#exitedFilterId").text("EXITED (" + exitedCount + ")");
+            jQ("#nrmlFilterId").text("NRML (" + nrmlCount + ")");
             jQ("#peFilterId").text("PE (" + peCount + ")");
             jQ("#ceFilterId").text("CE (" + ceCount + ")");
             jQ("#optFilterId").text("OPT (" + optCount + ")");
@@ -1178,6 +1222,8 @@ function createPositionsDropdown() {
 
             if (g_subFilter) {
                 jQ("#misFilterId").hide();
+                jQ("#exitedFilterId").hide();
+                jQ("#nrmlFilterId").hide();
                 jQ("#peFilterId").hide();
                 jQ("#ceFilterId").hide();
                 jQ("#optFilterId").hide();
@@ -1187,6 +1233,8 @@ function createPositionsDropdown() {
 
             } else {
                 jQ("#misFilterId").show();
+                jQ("#exitedFilterId").show();
+                jQ("#nrmlFilterId").show();
                 jQ("#peFilterId").show();
                 jQ("#ceFilterId").show();
                 jQ("#optFilterId").show();
@@ -1274,6 +1322,18 @@ function createSubFilter() {
     option.text = "MIS";
     option.id = 'misFilterId';
     option.value = "mis";
+    jQ(dropDown).append(option);
+
+    option = document.createElement("option");
+    option.text = "EXITED";
+    option.id = 'exitedFilterId';
+    option.value = "exited";
+    jQ(dropDown).append(option);
+
+    option = document.createElement("option");
+    option.text = "NRML";
+    option.id = 'nrmlFilterId';
+    option.value = "nrml";
     jQ(dropDown).append(option);
 
     //PE only
@@ -2286,6 +2346,8 @@ function resetSubFilter() {
     g_showOnlyPEPositions = false;
     g_showOnlyCEPositions = false;
     g_showOnlyMISPositions = false;
+    g_showOnlyEXITEDPositions = false;
+    g_showOnlyNRMLPositions = false;
     g_showOnlyOPTPositions = false;
     g_showOnlyFUTPositions = false;
     g_subFilter = false;
@@ -2336,6 +2398,12 @@ function main() {
                     // } else {
                     //     jQ(this).hide();
                     // }
+                    break;
+                case 'exited':
+                    g_showOnlyEXITEDPositions = true;
+                    break;
+                case 'nrml':
+                    g_showOnlyNRMLPositions = true;
                     break;
                 case 'pe':
                     // if (position.pece == 'PE') {
