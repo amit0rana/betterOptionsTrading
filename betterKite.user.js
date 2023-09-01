@@ -1141,6 +1141,7 @@ function createPositionsDropdown() {
                 var matchFound = false;
 
                 var productType = jQ(this).find("td.product > span").text().trim();
+				var qty = parseFloat(jQ(jQ(this).find("td")[2]).text().split(",").join(""));
 
                 if (selectedGroup.includes("SPECIAL")) {
                     var lengthOfSpecial = 7;

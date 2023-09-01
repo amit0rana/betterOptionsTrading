@@ -48,7 +48,7 @@ Contributors
 
 Follow below mentioned steps
 * Install [Tempermonkey](https://www.tampermonkey.net/) for your browser (works on all browsers. Tested on Chrome, Vivaldi, Edge). [Chrome extension link](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
-* Open [this link](https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js) in a new tab. Or copy paste <https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js>
+* Open [this link](https://github.com/sidonkar/betterOptionsTrading/raw/master/betterKite.user.js) in a new tab. Or copy paste <https://github.com/sidonkar/betterOptionsTrading/raw/master/betterKite.user.js>
 * Tampermonkey will automatically identify the file as userscript and give you option to install. (sell image below)
 * ![tampermonkey install](https://dl.dropbox.com/s/khs3itzctu13ayw/tampermonkeyInstall.png?dl=0)
 * Click on 'Install' button.
@@ -134,7 +134,7 @@ Introduced help text on each row explaining what different rows mean.
 
 Follow below mentioned steps
 * Install [Tempermonkey](https://www.tampermonkey.net/) for your browser (works on all browsers. Tested on Chrome, Vivaldi, Edge). [Chrome extension link](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
-* Open [this link](https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js) in a new tab. Or copy paste <https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js>
+* Open [this link](https://github.com/sidonkar/betterOptionsTrading/raw/master/betterKite.user.js) in a new tab. Or copy paste <https://github.com/sidonkar/betterOptionsTrading/raw/master/betterKite.user.js>
 * Tampermonkey will automatically identify the file as userscript and give you option to install. (sell image below)
 * ![tampermonkey install](https://dl.dropbox.com/s/khs3itzctu13ayw/tampermonkeyInstall.png?dl=0)
 * Click on 'Install' button.
