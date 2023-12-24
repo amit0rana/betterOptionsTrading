@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.93
+// @version      3.7
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -27,6 +27,7 @@
 // @resource     TOASTIFY_CSS https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css
 // @downloadURL  https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js
 // @updateURL    https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.meta.js
+// @require      https://html2canvas.hertzen.com/dist/html2canvas.min.js
 // ==/UserScript==
 
 // This is free and unencumbered software released into the public domain.
@@ -60,7 +61,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.8";
+const VERSION = "v3.7";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -145,7 +146,7 @@ const g_config = new MonkeyConfig({
         },
         banknifty_freeze_quantity: {
             type: 'number',
-            default: 900
+            default: 1200
         },
         finnifty_freeze_quantity: {
             type: 'number',
@@ -161,7 +162,7 @@ const g_config = new MonkeyConfig({
         },
         midcap_freeze_quantity: {
             type: 'number',
-            default: 4200
+            default: 1800
         },
         enable_nifty_monthly_weekly_range: {
             type: 'checkbox',
@@ -245,6 +246,485 @@ const BASE_PNL_REPORT = "#app > div.wrapper > div > div > h1";
 main();
 
 
+function multiplySignedText(value, factor) {
+  // Remove the sign and commas, convert to a number, multiply by the factor
+  var numberValue = parseFloat(value.replace(/[^\d.-]/g, ""));
+  var result = numberValue * factor;
+
+  // Format the result back as a string
+  var formattedResult = result.toLocaleString(undefined, { minimumFractionDigits: 2 });
+
+  // Append the original sign if it exists
+  var sign = value.match(/[+]/);
+  if (sign) {
+    formattedResult = sign[0] + formattedResult;
+  }
+
+  return formattedResult;
+}
+
+// Function to convert data URL to Blob
+function dataURLToBlob(dataURL) {
+    var arr = dataURL.split(','),
+        mime = arr[0].match(/:(.*?);/)[1],
+        bstr = atob(arr[1]),
+        n = bstr.length,
+        u8arr = new Uint8Array(n);
+
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+
+    return new Blob([u8arr], { type: mime });
+}
+
+// Parse original table, and select the required data
+function filterTableData(clonedTable)
+{
+    var title = 'Aggressive Style';
+    var disclaimerText = 'Disclaimer- The securities quoted are for illustration only. These are not real trades.'
+    //var title = "Risk Management Style";
+    var multiplyer = 1;
+
+    // Get the Title element of the cloned table
+    var clonedTitle = clonedTable.querySelector('.page-title');
+    //clonedTitle.textContent = 'Paper Trades - ' + title + '<br>' + disclaimerText;
+    clonedTitle.innerHTML = 'Paper Trades - ' + title + '<br> <span style="color: gray; font-size: 10px">' + disclaimerText + '</span>';
+
+    // Find the div section within the table
+    var divSection = clonedTable.querySelector('.toolbar');
+    if (divSection) {
+        // Remove the div section from the table
+        divSection.remove();
+    }
+    divSection = clonedTable.querySelector('.randomClassToHelpHide');
+    if (divSection) {
+        // Remove the div section from the table
+        divSection.remove();
+    }
+    // Get the <thead> element of the cloned table
+    var clonedTHead = clonedTable.querySelector('thead');
+    var hrow = clonedTHead.rows[0];
+
+    // Remove the first and last cell from each row
+    hrow.deleteCell(0);
+    hrow.deleteCell(0);
+    hrow.deleteCell(hrow.cells.length - 1);
+
+    // Get the <tbody> element of the cloned table
+    var clonedTBody = clonedTable.querySelector('tbody');
+
+    // Check if the cloned <tbody> has any rows
+    if (clonedTBody && clonedTBody.rows.length > 0) {
+        // Iterate over each row in the cloned <tbody>
+        for (var i = 0; i < clonedTBody.rows.length; i++) {
+            var row = clonedTBody.rows[i];
+
+            // Remove the Weekly and NFO from the trades
+            var exchData = row.cells[2];
+            if (exchData) {
+                var spans = exchData.querySelectorAll('span');
+
+                if (spans.length >= 2) {
+                    var lastSpan = spans[spans.length - 1];
+                    if (spans.length == 3) {
+                        var secondSpan = spans[1];
+                        secondSpan.parentNode.removeChild(secondSpan);
+                    }
+                    lastSpan.parentNode.removeChild(lastSpan);
+                }
+            }
+
+            // Multiply Qty and PnL data
+            var qtyCell = row.cells[3];
+            if (qtyCell && qtyCell.textContent) {
+                qtyCell.textContent = (parseInt(qtyCell.textContent) * multiplyer).toString();
+            }
+
+            var pnlCell = row.cells[6];
+            if (pnlCell && pnlCell.textContent) {
+                pnlCell.textContent = multiplySignedText(pnlCell.textContent, multiplyer);
+            }
+            // Remove the first and last cell from each row
+            row.deleteCell(0);
+            row.deleteCell(0);
+            row.deleteCell(row.cells.length - 1);
+        }
+    }
+
+    // Get the <tfoot> element of the cloned table
+    var clonedTFoot = clonedTable.querySelector('tfoot');
+    var frow = clonedTFoot.rows[0];
+    var totalCell = frow.cells[frow.cells.length - 2];
+    if (totalCell && totalCell.textContent) {
+        totalCell.textContent = multiplySignedText(totalCell.textContent, multiplyer);
+    }
+    // Remove the first and last cell from each row
+    frow.deleteCell(1);
+}
+
+// function to add watermark for the image
+function addWatermark(canvas)
+{
+    // Create a new canvas element for watermark
+    var watermarkCanvas = document.createElement('canvas');
+    var watermarkCtx = watermarkCanvas.getContext('2d');
+
+    // Set dimensions of the watermark canvas to match the captured table canvas
+    watermarkCanvas.width = canvas.width;
+    watermarkCanvas.height = canvas.height;
+
+    // Draw the captured table canvas onto the watermark canvas
+    watermarkCtx.drawImage(canvas, 0, 0);
+
+    // Add the watermark
+    watermarkCtx.font = 'bold 30px Arial';
+    watermarkCtx.fillStyle = 'rgba(0, 200, 200, 0.2)'; // Set watermark color and transparency
+
+    //var watermarkText = 'Note: These are simulated for Educational Purpose';
+    var watermarkText = 'Disclaimer- The securities quoted are for illustration only. These are not real trades.'
+    //var watermarkText = 'Note';
+
+    // Calculate the starting position of the watermark
+    //var startX = -canvas.height / 2;
+    //var startY = canvas.width / 2;
+
+    var startX = 30; // + canvas.width;
+    var startY = canvas.height - 30;
+
+    // Loop through the diagonal positions and draw the watermark text
+    //while (startX < canvas.height) {
+    //    watermarkCtx.fillText(watermarkText, startX, startY);
+    //    startX += watermarkCtx.measureText(watermarkText).width + 20; // Adjust the spacing between watermark texts
+    //    watermarkCtx.translate(startX, startY);
+    //    watermarkCtx.rotate(-45 * Math.PI / 180); // Rotate the watermark by 45 degrees
+    //}
+    // Reset the transformation matrix
+    //watermarkCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+    // Loop through the diagonal positions and draw the rotated watermark text
+    var verticalSpacing = canvas.width / 4;
+    while (startX < canvas.height) {
+        watermarkCtx.save(); // Save the current canvas state
+        watermarkCtx.translate(startX, startY); // Translate to the starting position
+        watermarkCtx.rotate(-20 * Math.PI / 180); // Rotate the watermark by 45 degrees
+
+        // Draw the watermark text
+        watermarkCtx.fillText(watermarkText, 0, 0);
+
+        watermarkCtx.restore(); // Restore the previous canvas state
+        startX += watermarkCtx.measureText(watermarkText).width + 20; // Adjust the spacing between watermark texts
+        startY += verticalSpacing;
+    }
+
+    // Convert the watermark canvas to a data URL
+    var watermarkedDataURL = watermarkCanvas.toDataURL('image/jpeg');
+    return watermarkedDataURL;
+}
+
+function saveJpg() {
+    var testMode = true;
+
+    // Find the table element with the class name 'open-positions'
+    var origTable = document.querySelector('.open-positions');
+
+    if (!origTable) {
+        console.error('Table element not found');
+        return;
+    }
+
+    var table = origTable.cloneNode(true);
+
+    // Cleanup the cloned table
+    filterTableData(table);
+
+    // Temporarily add the table into the main page, this is required for popup or telegram sending.
+    origTable.parentNode.insertBefore(table, origTable.nextSibling);
+
+    // Use html2canvas library to capture the table as an image
+    html2canvas(table).then(function(canvas) {
+         var watermarkedDataURL = addWatermark(canvas);
+        // Convert the canvas to a data URL
+        //var dataURL = canvas.toDataURL('image/jpeg');
+
+        if (testMode == true) {
+            // Create a new popup window
+            var popupWindow = window.open('', '_blank');
+
+            // Create an image element
+            var image = document.createElement('img');
+            image.src = watermarkedDataURL;
+
+            // Append the image to the popup window document
+            popupWindow.document.body.appendChild(image);
+        }
+        else {
+            // Convert data URL to Blob
+            //var blob = dataURLToBlob(dataURL);
+            var blob = dataURLToBlob(watermarkedDataURL);
+
+
+            // Create a form data object
+            var formData = new FormData();
+            formData.append('chat_id', '-1001872477210');
+            formData.append('photo', blob);
+
+            // Make an HTTP POST request to send the photo to the Telegram Bot API
+            fetch('https://api.telegram.org/bot5836656109:AAEcQRbaNDPtpsfqFgQjGmlOs9_yIaMUL9M/sendPhoto', {
+                method: 'POST',
+                body: formData
+            })
+                .then(function(response) {
+                console.log('Photo sent to Telegram Bot API');
+            })
+                .catch(function(error) {
+                console.error('Error sending photo to Telegram Bot API:', error);
+            });
+        }
+    });
+
+    // Remove the table from the mainpage.
+    table.remove();
+}
+
+function origSaveJpg() {
+            // Find the table element with the class name 'open-positions'
+            var origTable = document.querySelector('.open-positions');
+
+            if (!origTable) {
+                console.error('Table element not found');
+                return;
+            }
+
+            var table = origTable.cloneNode(true);
+            origTable.parentNode.insertBefore(table, origTable.nextSibling);
+            // Use html2canvas library to capture the table as an image
+            html2canvas(table).then(function(canvas) {
+                // Convert the canvas to a data URL
+                var dataURL = canvas.toDataURL('image/jpeg');
+
+                // Convert data URL to Blob
+                var blob = dataURLToBlob(dataURL);
+
+                // Create a form data object
+                var formData = new FormData();
+                formData.append('chat_id', '-1001872477210');
+                formData.append('photo', blob);
+
+                // Make an HTTP POST request to send the photo to the Telegram Bot API
+                //fetch('https://api.telegram.org/bot5836656109:AAEcQRbaNDPtpsfqFgQjGmlOs9_yIaMUL9M/sendPhoto', {
+                //    method: 'POST',
+                //    body: formData
+                //})
+                //.then(function(response) {
+                //    console.log('Photo sent to Telegram Bot API');
+                //})
+                //.catch(function(error) {
+                    console.error('Error sending photo to Telegram Bot API:', error);
+                //});
+            });
+}
+
+function workingSaveJpg() {
+    var title = "Aggressive Style";
+    var multiplyer = 2;
+
+    // Find the table element with the class name 'open-positions'
+    var origTable = document.querySelector('.open-positions');
+
+    if (!origTable) {
+        console.error('Table element not found');
+        return;
+    }
+
+    var table = origTable.cloneNode(true);
+
+
+    // Get the Title element of the cloned table
+    var clonedTitle = table.querySelector('.page-title');
+    clonedTitle.textContent = "Paper Trades - " + title;
+
+    // Find the div section within the table
+    var divSection = table.querySelector('.toolbar');
+    if (divSection) {
+        // Remove the div section from the table
+        divSection.remove();
+    }
+    divSection = table.querySelector('.randomClassToHelpHide');
+    if (divSection) {
+        // Remove the div section from the table
+        divSection.remove();
+    }
+    // Get the <thead> element of the cloned table
+    var clonedTHead = table.querySelector('thead');
+    var hrow = clonedTHead.rows[0];
+
+    // Remove the first and last cell from each row
+    hrow.deleteCell(0);
+    hrow.deleteCell(0);
+    hrow.deleteCell(hrow.cells.length - 1);
+
+    // Get the <tbody> element of the cloned table
+    var clonedTBody = table.querySelector('tbody');
+
+    // Check if the cloned <tbody> has any rows
+    if (clonedTBody && clonedTBody.rows.length > 0) {
+        // Iterate over each row in the cloned <tbody>
+        for (var i = 0; i < clonedTBody.rows.length; i++) {
+            var row = clonedTBody.rows[i];
+            var exchData = row.cells[2];
+            if (exchData) {
+                var spans = exchData.querySelectorAll('span');
+
+                if (spans.length >= 2) {
+                    var secondSpan = spans[1];
+                    secondSpan.parentNode.removeChild(secondSpan);
+                }
+            }
+            var qtyCell = row.cells[3];
+            if (qtyCell && qtyCell.textContent) {
+                qtyCell.textContent = (parseInt(qtyCell.textContent) * multiplyer).toString();
+            }
+
+            var pnlCell = row.cells[6];
+            if (pnlCell && pnlCell.textContent) {
+                pnlCell.textContent = (parseFloat(pnlCell.textContent) * multiplyer).toString();
+            }
+            // Remove the first and last cell from each row
+            row.deleteCell(0);
+            row.deleteCell(0);
+            row.deleteCell(row.cells.length - 1);
+
+
+        }
+    }
+
+    // Get the <tfoot> element of the cloned table
+    var clonedTFoot = table.querySelector('tfoot');
+    var frow = clonedTFoot.rows[0];
+    var totalCell = frow.cells[frow.cells.length - 2];
+    if (totalCell && totalCell.textContent) {
+        totalCell.textContent = (parseFloat(totalCell.textContent) * multiplyer).toString();
+    }
+    // Remove the first and last cell from each row
+    frow.deleteCell(1);
+
+    origTable.parentNode.insertBefore(table, origTable.nextSibling);
+
+            // Use html2canvas library to capture the table as an image
+            html2canvas(table).then(function(canvas) {
+                // Convert the canvas to a data URL
+                var dataURL = canvas.toDataURL('image/jpeg');
+
+                // Convert data URL to Blob
+                var blob = dataURLToBlob(dataURL);
+
+                // Create a form data object
+                var formData = new FormData();
+                formData.append('chat_id', '-1001872477210');
+                formData.append('photo', blob);
+
+                // Make an HTTP POST request to send the photo to the Telegram Bot API
+                //fetch('https://api.telegram.org/bot5836656109:AAEcQRbaNDPtpsfqFgQjGmlOs9_yIaMUL9M/sendPhoto', {
+                //    method: 'POST',
+                //    body: formData
+                //})
+                //.then(function(response) {
+                //    console.log('Photo sent to Telegram Bot API');
+                //})
+                //.catch(function(error) {
+                //    console.error('Error sending photo to Telegram Bot API:', error);
+                //});
+            });
+}
+
+function creaeTablesaveJpg() {
+    // Find the table element with the class name 'open-positions'
+    var origTable = document.querySelector('.open-positions');
+    if (!origTable) {
+        console.error('Table element not found');
+        return;
+    }
+
+    var table = document.createElement('table');
+    //table.className = 'paper-trades';
+    table.className = origTable.className;
+    //table.classList.add('custom-table'); // Add additional class if needed
+
+    // Copy attributes from the original table to the new table
+    for (var i = 0; i < origTable.attributes.length; i++) {
+        var attributeName = origTable.attributes[i].name;
+        var attributeValue = origTable.attributes[i].value;
+        table.setAttribute(attributeName, attributeValue);
+    }
+
+    // Copy styles from the original table to the new table
+    var originalTableStyles = getComputedStyle(origTable);
+    for (var j = 0; j < originalTableStyles.length; j++) {
+        var styleName = originalTableStyles[j];
+        var styleValue = originalTableStyles.getPropertyValue(styleName);
+        table.style.setProperty(styleName, styleValue);
+    }
+    var selectedRows = jQ(allDOMPaths.PathForPositions);
+    selectedRows.each(function (rowIndex) {
+        var positionRow = getPositionRowObject(this);
+        if (positionRow.instrument == "") return;
+        var newRow = document.createElement('tr');
+        var instCell = document.createElement('td');
+        var qtyCell = document.createElement('td');
+        var avgCell = document.createElement('td');
+        var ltpCell = document.createElement('td');
+        var pnlCell = document.createElement('td');
+
+        var re = /NFO/g;
+        instCell.textContent = positionRow.instrument;
+        instCell.textContent = instCell.textContent.replace(re, "");
+        instCell.className = "open instrument";
+        qtyCell.textContent = positionRow.quantity;
+        qtyCell.className = "text-sell open quantity right";
+        avgCell.textContent = positionRow.avgPrice;
+        avgCell.className = "open average-price right";
+        ltpCell.textContent = positionRow.ltp;
+        ltpCell.className = "open last-price right";
+        pnlCell.textContent = positionRow.pnl;
+        pnlCell.className = "text-red open pnl right";
+
+        newRow.appendChild(instCell);
+        newRow.appendChild(qtyCell);
+        newRow.appendChild(avgCell);
+        newRow.appendChild(ltpCell);
+        newRow.appendChild(pnlCell);
+
+        table.appendChild(newRow);
+    });
+
+    origTable.parentNode.insertBefore(table, origTable.nextSibling);
+    // Use html2canvas library to capture the table as an image
+    html2canvas(table).then(function(canvas) {
+        // Convert the canvas to a data URL
+        var dataURL = canvas.toDataURL('image/jpeg');
+
+        // Convert data URL to Blob
+        var blob = dataURLToBlob(dataURL);
+
+        // Create a form data object
+        var formData = new FormData();
+        formData.append('chat_id', '-1001872477210');
+        formData.append('photo', blob);
+
+        // Make an HTTP POST request to send the photo to the Telegram Bot API
+        //fetch('https://api.telegram.org/bot5836656109:AAEcQRbaNDPtpsfqFgQjGmlOs9_yIaMUL9M/sendPhoto', {
+        //    method: 'POST',
+        //    body: formData
+        //})
+        //.then(function(response) {
+        //    console.log('Photo sent to Telegram Bot API');
+        //})
+        //.catch(function(error) {
+        //      console.error('Error sending photo to Telegram Bot API:', error);
+        //});
+    });
+}
 
 function showSuccessToast(msg) {
     showToast(msg, "success");
@@ -293,7 +773,7 @@ function showMessage(msg) {
 function getToast(message) {
     return Toastify({
         text: "<span>betterKte</br>"+message+"</span>",
-        duration: 5000,
+        duration: 500,
         close: true,
         offset: "60px",
         style: {top: "60px",display: "grid", "grid-template-columns": "15fr 1fr"},
@@ -310,7 +790,7 @@ const hideOnEsc = {
           hide();
         }
       }
-  
+
       return {
         onShow() {
           document.addEventListener('keydown', onKeyDown);
@@ -396,12 +876,12 @@ function showLotsTippy(target, msg) {
             var row = jQ(qtyTd).closest("tr");
             var pos = getPositionRowObject(row);
             if (pos.instrument == "") return;
-            
+
             var lot = 0;
             if (pos.instrument.startsWith("NIFTY")) {
                 lot = Math.abs(pos.quantity / 50);
             } else if (pos.instrument.startsWith("BANKNIFTY")) {
-                lot = Math.abs(pos.quantity / 15);
+                lot = Math.abs(pos.quantity / 25);
             }
 
             instance.setContent(`${lot} lots`);
@@ -416,7 +896,7 @@ function showTippyToast(target, msg) {
         allowHTML: true,
         showOnCreate: true,
         interactive: true,
-        duration: [0, 5000], 
+        duration: [0, 5000],
         hideOnClick: true,
         trigger: "manual",
         plugins: [hideOnEsc],
@@ -1130,7 +1610,7 @@ function createPositionsDropdown() {
                 var p = getSensibullZerodhaTradingSymbol(tradingSymbolText);
 
                 var matchFound = false;
-                
+
                 var productType = jQ(this).find("td.product > span").text().trim();
 
                 if (selectedGroup.includes("SPECIAL")) {
@@ -1362,8 +1842,8 @@ function createSubFilter() {
     i.setAttribute('data-balloon-length','small');
     i.setAttribute("class","button-small button-grey");
     jQ(s).append(i);
-    
-    
+
+
 
     i = document.createElement("INPUT");
     i.style = 'margin: 2px';
@@ -1374,6 +1854,13 @@ function createSubFilter() {
     jQ(s).append(i);
 
 
+    i = document.createElement("INPUT");
+    i.style = 'margin: 2px';
+    i.type = 'button';
+    i.id = "saveJpgId";
+    i.name = 'saveJpgId';
+    i.value = 'Save';
+    jQ(s).append(i);
 
     t = jQ("<span id='spanBuyCountId' class='text-label randomClassToHelpHide' data-balloon-length='large' data-balloon-pos='right' data-balloon='Select a Scrip from the strategy filter dropdown.'></span></span>");
     jQ(s).append(t);
@@ -1537,7 +2024,7 @@ function showPositionDropdown(retry = true) {
     if (g_config.get('auto_refresh_PnL') === true) {
         debug('going to observe pnl change');
         target = jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[3];
-        
+
         debug("**********" + jQ(target).text());
         g_positionsPnlObserver = new MutationObserver(function (mutations) {
             var st = null;
@@ -1962,7 +2449,7 @@ function updatePnl(forPositions = true) {
     var selection = [];
     allVisibleRows.each(function (rowIndex) {
         var v = jQ(jQ(this).find("td")[pnlCol]).text().split(",").join("");
-        
+
         if (v == "") return;
         pnl += parseFloat(v);
 
@@ -2054,7 +2541,7 @@ function onSuCheckboxSelection() {
 
                 }
                 var t = ceQ + "CE & " + peQ + "PE";
-               
+
                 var printText = `<section class="table-wrapper" random-att='betterKite'>
                     <header class="row data-table-header"><h3 class="page-title small">betterKite</h3></header>
                     <div>
@@ -2118,7 +2605,7 @@ function getHoldingRowObject(row) {
     var tds = jQ(row).find("td");
 
     holding.instrument = jQ(jQ(tds[0]).find("span")[0]).text().trim();
-    
+
     var spans = jQ(tds[1]).find("span");
     if (spans.length > 1) {
         holding.pledged = parseInt(jQ(spans[spans.length-2]).text().trim().split(':')[1]);
@@ -2127,11 +2614,11 @@ function getHoldingRowObject(row) {
         holding.pledged = 0;
         holding.quantity = parseInt(jQ(spans[spans.length-1]).text().trim());
     }
-    
+
     holding.avgCost = parseFloat(jQ(tds[2]).text().split(",").join(""));
     holding.ltp = parseFloat(jQ(tds[3]).text().split(",").join(""));
     holding.pnl = parseFloat(jQ(tds[5]).text().split(",").join(""));
-   
+
     // debug(holding);
     return holding;
 }
@@ -2453,7 +2940,7 @@ function main() {
 
         //simulateSelectBoxEvent();
     });
-    
+
     jQ(document).on('click', "#trailButtonId", function (e) {
         tEv("kite", "trail", "click", "");
 
@@ -2577,7 +3064,7 @@ function main() {
             lotsTippyInstances.forEach((instance) => {
                 instance.destroy();
             });
-            
+
         } else {
             showLotsTippy("td.quantity.right", "test");
         }
@@ -2594,7 +3081,7 @@ function main() {
             // plugins: [lotsGlobalStore],
             onShow(instance) {
                 var pnlTd = instance.reference;
-                
+
                 var allClosed = jQ(allDOMPaths.PathForPositions).filter(':has("td.closed")');
                 var pnl = 0;
                 allClosed.each(function (rowIndex) {
@@ -2632,9 +3119,9 @@ function main() {
                 instance.setContent(`Realised P&L ${formatter.format(pnl)}`);
               },
         });
-        
+
     });
-    
+
 
     jQ(document).on('click', "td.open.pnl.right", function () {
         tEv("kite", "showActualProit", "click", "");
@@ -2643,7 +3130,7 @@ function main() {
             pnlTippyInstances.forEach((instance) => {
                 instance.destroy();
             });
-            
+
         } else {
             showPnlTippy("td.open.pnl.right", "test");
         }
@@ -2664,7 +3151,7 @@ function main() {
         //     jQ(this).attr('data-balloon', `${formatter.format(pnl)}`);
 
         // }
-        
+
     });
 
     const PIN1_TARGET = 'div.instrument-widget:nth-child(1) > span:nth-child(2) > span:nth-child(1)';
@@ -2732,7 +3219,7 @@ function main() {
         jQ(jQ(allDOMPaths.PathForPositions + ".selected")).find('input.su-checkbox').click();
         setTimeout(onSuCheckboxSelection, 10);
     });
-    
+
 
     jQ(document).on('click', "#resetRowsId", function () {
         tEv("kite", "restSubFilterFilter", "click", "");
@@ -2741,6 +3228,12 @@ function main() {
         simulateSelectBoxEvent();
     });
 
+    jQ(document).on('click', "#saveJpgId", function () {
+        tEv("kite", "saveJpg", "click", "");
+        saveJpg();
+        //jQ('#subFilterDropdownId').val('all');
+        //simulateSelectBoxEvent();
+    });
 
     //click on save margin button
     jQ(document).on('click', "#saveMarginBtnId", function () {
@@ -3067,6 +3560,7 @@ function updateRoiNudge() {
     var qty = jQ('input[label="Qty."]').val();
 
     if (jQ('input[value="MARKET"]').prop('checked') == true) {
+        //lastPrice = parseFloat(jQ('div > span.last-price').text().trim().split('₹').join("").split(",").join(""));
         lastPrice = parseFloat(jQ('div > span.last-price').text().trim().split('₹').pop().split(",").join(""));
     }
     if (jQ('input[value="LIMIT"]').prop('checked') == true) {
@@ -3440,7 +3934,7 @@ function changePnLFilter() {
     debug('changePnLFilter');
     setTimeout(function(){
         document.getElementsByTagName('select')[0].selectedIndex = 2; //FO
-    
+
         document.getElementsByTagName('select')[0].focus();
         document.getElementsByTagName('select')[0].click();
         // document.querySelector("div.two:nth-child(1) > select:nth-child(2)").click();
@@ -3461,7 +3955,7 @@ function changePnLFilter() {
         document.querySelector("td[title='" + monthStart + "']").click();
         document.querySelector('#app > div.wrapper > div > div > div > form > div > div.one.columns > button').click()
     }, 0);
-    
+
     //2021-02-03 ~ 2021-03-01
 }
 
@@ -3486,7 +3980,7 @@ function introducePnlFilter() {
 
 }
 
-//NOT WORKING 
+//NOT WORKING
 waitForKeyElements ("h1:contains('P&L')", introducePnlFilter);
 
 function addPnlMenu() {
@@ -3704,7 +4198,7 @@ function trailOrderButton() {
 
     });
 
-    
+
 }
 
 var open = window.XMLHttpRequest.prototype.open,
@@ -3723,14 +4217,7 @@ function addOverrideOption() {
 
     if ( g_config.get('auto_sl_order') === true &&
     (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
-    (
-        jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || 
-        jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY") || 
-        jQ("span.tradingsymbol > span.name").text().startsWith("FINNIFTY") ||
-        jQ("span.tradingsymbol > span.name").text().startsWith("BANKEX") ||
-        jQ("span.tradingsymbol > span.name").text().startsWith("MIDCPNIFTY") ||
-        jQ("span.tradingsymbol > span.name").text().startsWith("SENSEX")
-    )
+    (jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY"))
     ) {
         var div = document.createElement("div");
 
@@ -3765,14 +4252,7 @@ function addOverrideOption() {
 
     if ( g_config.get('overide_qty_freeze_check_to_enable') === true &&
     (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
-    (
-        jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || 
-        jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY") || 
-        jQ("span.tradingsymbol > span.name").text().startsWith("FINNIFTY") ||
-        jQ("span.tradingsymbol > span.name").text().startsWith("BANKEX") ||
-        jQ("span.tradingsymbol > span.name").text().startsWith("MIDCPNIFTY") ||
-        jQ("span.tradingsymbol > span.name").text().startsWith("SENSEX")
-    )
+    (jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKEX") || jQ("span.tradingsymbol > span.name").text().startsWith("FINNIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("SENSEX") || jQ("span.tradingsymbol > span.name").text().startsWith("MIDCPNIFTY"))
     ) {
         var div = document.createElement("div");
 
@@ -3822,14 +4302,7 @@ function addOverrideOption() {
 
     if ( g_config.get('smart_limit_check_to_enable') === true &&
     (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
-    (  
-        jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") ||
-        jQ("span.tradingsymbol > span.name").text().startsWith("FINNIFTY") ||
-        jQ("span.tradingsymbol > span.name").text().startsWith("BANKEX") ||
-        jQ("span.tradingsymbol > span.name").text().startsWith("SENSEX") ||
-        jQ("span.tradingsymbol > span.name").text().startsWith("MIDCPNIFTY") ||
-        jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY")
-    )
+    (jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("FINNIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKEX") || jQ("span.tradingsymbol > span.name").text().startsWith("SENSEX") ||  jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY") ||  jQ("span.tradingsymbol > span.name").text().startsWith("MIDCPNIFTY"))
     ) {
         var insert = `
     <div class="su-radio-wrap" tooltip-pos="down" data-balloon-pos="down" data-balloon="Sell/buy at a 05p betrer than first offer/bid price">
@@ -3846,7 +4319,7 @@ function addOverrideOption() {
 }
 
 function openReplacement(method, url, async, user, password) {
-    debug("openReplacement");
+
     if (method === 'POST' && url.includes('/oms/orders/regular')) {
         _newOrder = true;
     } else {
@@ -3856,7 +4329,6 @@ function openReplacement(method, url, async, user, password) {
 }
 
 function sendReplacement(data) {
-    debug("sendReplacement");
     if (_newOrder === true) {
         var order = queryStringToJSON(data);
     //     _interceptedReq = order;
@@ -3968,7 +4440,7 @@ function queryStringToJSON(qs) {
 
 function sendPlaceNewOrderRequest(order) {
     debug('sendPlaceNewOrderRequest');
-    
+
     jQ.ajaxSetup({
         headers: {
             'Authorization': `enctoken ${getCookie('enctoken')}`
@@ -4016,7 +4488,7 @@ function sendPlaceNewOrderRequest(order) {
         });
     }
     debug("44444");
-    
+
 
     var qty = order.quantity;
     var remainigQty = qty;
@@ -4030,10 +4502,10 @@ function sendPlaceNewOrderRequest(order) {
             limit = NIFTY_QTY_FREEZE;
         } else if (order.tradingsymbol.startsWith("FINNIFTY")) {
             limit = FINNIFTY_QTY_FREEZE;
-        } else if (order.tradingsymbol.startsWith("SENSEX")) {
-            limit = SENSEX_QTY_FREEZE;
         } else if (order.tradingsymbol.startsWith("MIDCPNIFTY")) {
             limit = MIDCAP_QTY_FREEZE;
+        } else if (order.tradingsymbol.startsWith("SENSEX")) {
+            limit = SENSEX_QTY_FREEZE;
         } else if (order.tradingsymbol.startsWith("BANKEX")) {
             limit = BANKEX_QTY_FREEZE;
         }
@@ -4073,7 +4545,7 @@ function sendPlaceNewOrderRequest(order) {
                         order.trigger_price = order.price;
                         order.trailing_stoploss = (g_config.get("auto_trail_points")).toString();
                     }
-                    
+
                     order.order_type="SL";
                     debug(order);
 
@@ -4112,6 +4584,9 @@ function sendPlaceNewOrderRequest(order) {
     debug("99999");
 };
 
+function sendModifyOrderRequest() {
+    debug('sendModifyOrderRequest');
+};
 
 jQ.fn.exists = function () {
     return this.length !== 0;

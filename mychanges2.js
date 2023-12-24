@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.93
+// @version      3.9
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -161,7 +161,7 @@ const g_config = new MonkeyConfig({
         },
         midcap_freeze_quantity: {
             type: 'number',
-            default: 4200
+            default: 1800
         },
         enable_nifty_monthly_weekly_range: {
             type: 'checkbox',
@@ -3723,14 +3723,7 @@ function addOverrideOption() {
 
     if ( g_config.get('auto_sl_order') === true &&
     (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
-    (
-        jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || 
-        jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY") || 
-        jQ("span.tradingsymbol > span.name").text().startsWith("FINNIFTY") ||
-        jQ("span.tradingsymbol > span.name").text().startsWith("BANKEX") ||
-        jQ("span.tradingsymbol > span.name").text().startsWith("MIDCPNIFTY") ||
-        jQ("span.tradingsymbol > span.name").text().startsWith("SENSEX")
-    )
+    (jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY"))
     ) {
         var div = document.createElement("div");
 
