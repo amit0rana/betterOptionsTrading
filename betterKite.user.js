@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.91
+// @version      3.92
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -161,7 +161,7 @@ const g_config = new MonkeyConfig({
         },
         midcap_freeze_quantity: {
             type: 'number',
-            default: 1800
+            default: 4200
         },
         enable_nifty_monthly_weekly_range: {
             type: 'checkbox',
