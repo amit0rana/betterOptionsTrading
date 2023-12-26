@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.9
+// @version      3.93
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -155,6 +155,14 @@ const g_config = new MonkeyConfig({
             type: 'number',
             default: 1000
         },
+        bankex_freeze_quantity: {
+            type: 'number',
+            default: 900
+        },
+        midcap_freeze_quantity: {
+            type: 'number',
+            default: 4200
+        },
         enable_nifty_monthly_weekly_range: {
             type: 'checkbox',
             default: true
@@ -197,6 +205,8 @@ const BANKNIFTY_QTY_FREEZE = parseInt(g_config.get('banknifty_freeze_quantity'))
 const NIFTY_QTY_FREEZE = parseInt(g_config.get('nifty_freeze_quantity'));
 const FINNIFTY_QTY_FREEZE = parseInt(g_config.get('finnifty_freeze_quantity'));
 const SENSEX_QTY_FREEZE = parseInt(g_config.get('sensex_freeze_quantity'));
+const BANKEX_QTY_FREEZE = parseInt(g_config.get('bankex_freeze_quantity'));
+const MIDCAP_QTY_FREEZE = parseInt(g_config.get('midcap_freeze_quantity'));
 
 const allDOMPaths = {
     rowsFromHoldingsTable: "div.holdings > section > div > div > table > tbody > tr",
@@ -3057,7 +3067,7 @@ function updateRoiNudge() {
     var qty = jQ('input[label="Qty."]').val();
 
     if (jQ('input[value="MARKET"]').prop('checked') == true) {
-        lastPrice = parseFloat(jQ('div > span.last-price').text().trim().split('₹').join("").split(",").join(""));
+        lastPrice = parseFloat(jQ('div > span.last-price').text().trim().split('₹').pop().split(",").join(""));
     }
     if (jQ('input[value="LIMIT"]').prop('checked') == true) {
         debug();
@@ -3713,7 +3723,14 @@ function addOverrideOption() {
 
     if ( g_config.get('auto_sl_order') === true &&
     (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
-    (jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY"))
+    (
+        jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || 
+        jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY") || 
+        jQ("span.tradingsymbol > span.name").text().startsWith("FINNIFTY") ||
+        jQ("span.tradingsymbol > span.name").text().startsWith("BANKEX") ||
+        jQ("span.tradingsymbol > span.name").text().startsWith("MIDCPNIFTY") ||
+        jQ("span.tradingsymbol > span.name").text().startsWith("SENSEX")
+    )
     ) {
         var div = document.createElement("div");
 
@@ -3752,6 +3769,8 @@ function addOverrideOption() {
         jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || 
         jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY") || 
         jQ("span.tradingsymbol > span.name").text().startsWith("FINNIFTY") ||
+        jQ("span.tradingsymbol > span.name").text().startsWith("BANKEX") ||
+        jQ("span.tradingsymbol > span.name").text().startsWith("MIDCPNIFTY") ||
         jQ("span.tradingsymbol > span.name").text().startsWith("SENSEX")
     )
     ) {
@@ -3803,7 +3822,14 @@ function addOverrideOption() {
 
     if ( g_config.get('smart_limit_check_to_enable') === true &&
     (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
-    (jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") || jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY"))
+    (  
+        jQ("span.tradingsymbol > span.name").text().startsWith("NIFTY") ||
+        jQ("span.tradingsymbol > span.name").text().startsWith("FINNIFTY") ||
+        jQ("span.tradingsymbol > span.name").text().startsWith("BANKEX") ||
+        jQ("span.tradingsymbol > span.name").text().startsWith("SENSEX") ||
+        jQ("span.tradingsymbol > span.name").text().startsWith("MIDCPNIFTY") ||
+        jQ("span.tradingsymbol > span.name").text().startsWith("BANKNIFTY")
+    )
     ) {
         var insert = `
     <div class="su-radio-wrap" tooltip-pos="down" data-balloon-pos="down" data-balloon="Sell/buy at a 05p betrer than first offer/bid price">
@@ -3851,6 +3877,8 @@ function sendReplacement(data) {
             (order.tradingsymbol.startsWith("BANKNIFTY") && order.quantity > BANKNIFTY_QTY_FREEZE) ||
             (order.tradingsymbol.startsWith("NIFTY") && order.quantity > NIFTY_QTY_FREEZE) ||
             (order.tradingsymbol.startsWith("FINNIFTY") && order.quantity > FINNIFTY_QTY_FREEZE) ||
+            (order.tradingsymbol.startsWith("MIDCPNIFTY") && order.quantity > MIDCAP_QTY_FREEZE) ||
+            (order.tradingsymbol.startsWith("BANKEX") && order.quantity > BANKEX_QTY_FREEZE) ||
             (order.tradingsymbol.startsWith("SENSEX") && order.quantity > SENSEX_QTY_FREEZE)
         )
         )) {
@@ -3877,6 +3905,8 @@ function sendReplacement(data) {
                 (order.tradingsymbol.startsWith("BANKNIFTY") && order.quantity > BANKNIFTY_QTY_FREEZE) ||
                 (order.tradingsymbol.startsWith("NIFTY") && order.quantity > NIFTY_QTY_FREEZE) ||
                 (order.tradingsymbol.startsWith("FINNIFTY") && order.quantity > FINNIFTY_QTY_FREEZE) ||
+                (order.tradingsymbol.startsWith("MIDCPNIFTY") && order.quantity > MIDCAP_QTY_FREEZE) ||
+                (order.tradingsymbol.startsWith("BANKEX") && order.quantity > BANKEX_QTY_FREEZE) ||
                 (order.tradingsymbol.startsWith("SENSEX") && order.quantity > SENSEX_QTY_FREEZE)
             )
             ) {
@@ -4002,6 +4032,10 @@ function sendPlaceNewOrderRequest(order) {
             limit = FINNIFTY_QTY_FREEZE;
         } else if (order.tradingsymbol.startsWith("SENSEX")) {
             limit = SENSEX_QTY_FREEZE;
+        } else if (order.tradingsymbol.startsWith("MIDCPNIFTY")) {
+            limit = MIDCAP_QTY_FREEZE;
+        } else if (order.tradingsymbol.startsWith("BANKEX")) {
+            limit = BANKEX_QTY_FREEZE;
         }
     } else {
         limit = qty;
