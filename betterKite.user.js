@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.93
+// @version      3.94
 // @description  Introduces small features on top of kite app
 // @author       Amit and Updated by Onkar
 // @match        https://kite.zerodha.com/*
@@ -708,6 +708,7 @@ function filterWatchlist(stocksToFilter, selectedCat) {
     var allWatchlistRows = jQ(allDOMPaths.domPathWatchlistRow);
     allWatchlistRows.show();
     if (selectedCat === "All") {
+		calculateStraddle();
         //don't do anything
     } else {
         allWatchlistRows.addClass("allHiddenRows");
@@ -1450,6 +1451,8 @@ var g_observer;
 var g_positionsPnlObserver;
 
 function hideDropdown() {
+    jQ(".supS").remove();
+	jQ(".atmCss").removeClass("atmCss");
     jQ(".randomClassToHelpHide").remove();
     jQ(".allHiddenRows").show();
 
@@ -1610,6 +1613,7 @@ function showPositionDropdown(retry = true) {
                 if (mutation.type == "characterData") {
                     debug("pnl changed");
                     updatePnl(true);
+					calculateStraddle();
                 }
             });
         });
@@ -1624,6 +1628,63 @@ function showPositionDropdown(retry = true) {
         g_positionsPnlObserver.observe(target, config);
     }
 }
+function calculateStraddle(){
+    jQ(".supS").remove();
+    var items = jQ(".vddl-list.list-flat span.last-price").splice(0);
+    var spot = calculateATM(items);
+    items.forEach(function(element,i) {
+        var calcFlag=false;
+        if(i+1<items.length)
+        {
+            var elm=element.parentElement.parentElement.previousElementSibling.textContent.trim().split(" ");
+            var nextElm=items[i+1].parentElement.parentElement.previousElementSibling.textContent.trim().split(" ");
+            if(elm.length>=4 && nextElm.length>=4 && elm.length==nextElm.length)
+            {
+                if(elm.length==4)
+                {
+                    if(elm[2]==spot)
+                        element.parentElement.parentElement.parentElement.classList.add("atmCss")
+                    if(elm[0]==nextElm[0] && elm[1]==nextElm[1] && elm[2]==nextElm[2]){
+                        if((elm[3]=="CE" && nextElm[3]=="PE") || (elm[3]=="PE" && nextElm[3]=="CE"))
+                        {
+                            calcFlag=true;
+                        }
+                    }
+                }
+                else if(elm.length==6)
+                {
+                    if(elm[4]==spot)
+                        element.parentElement.parentElement.parentElement.classList.add("atmCss")
+                    if(elm[0]==nextElm[0] && elm[1]==nextElm[1] && elm[2]==nextElm[2] && elm[3]==nextElm[3] && elm[4]==nextElm[4]  ){
+                        if((elm[5]=="CE" && nextElm[5]=="PE") || (elm[5]=="PE" && nextElm[5]=="CE"))
+                        {
+                            calcFlag=true;
+                        }
+                    }
+                }
+            }
+            if(calcFlag)
+            {
+                var g=+element.textContent + (+items[i+1].textContent);
+                if(!isNaN(g))
+                    jQ(element.parentElement).append("<span class='supS'>"+g.toFixed(2)+"</span>")
+            }
+        }
+    });
+}
+
+function calculateATM(items){
+    jQ(".atmCss").removeClass("atmCss");
+    var indexArr = {"NIFTY 50":50,"NIFTY BANK":100,"NIFTY FIN SERVICE":50,"SENSEX":100,"NIFTY MID SELECT":25}
+    var indexName = items[1].parentElement.parentElement.previousElementSibling.firstChild.firstChild.textContent;
+    var spot = items[1].textContent - items[1].textContent%indexArr[indexName];
+    if(items[1].textContent%indexArr[indexName]>indexArr[indexName]/2)
+    {
+        spot+=indexArr[indexName];
+    }
+    return spot;
+}
+
 
 function getScripText(fullText) {
     debug('getScripText ' + fullText);
