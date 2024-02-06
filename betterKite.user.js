@@ -2433,6 +2433,19 @@ function resetSubFilter() {
 
 // all behavior related actions go here.
 function main() {
+    var cssStr = "<style> span.supS {"+
+        "position: absolute !important;"+
+        "bottom: -8px !important;"+
+        "font-size: small !important;"+
+        "background: #181818;"+
+        "padding: 0 5px;"+
+        "border-radius: 25px;"+
+        "z-index: 1;"+
+        "}"+
+        ".atmCss {"+
+        "box-shadow: inset 0px 0px 5px 0px gray !important;"+
+        "}";
+    jQ("head").append(cssStr);
     GM_registerMenuCommand("Reset Data (WARNING) " + VERSION, function () {
         if (confirm('Are you sure you want to reset all tag data?')) {
             if (confirm('I am checking with you one last time, are you sure?')) {
