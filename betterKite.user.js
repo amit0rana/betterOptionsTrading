@@ -2441,6 +2441,7 @@ function main() {
         "padding: 0 5px;"+
         "border-radius: 25px;"+
         "z-index: 1;"+
+	"color: lightgray;"+
         "}"+
         ".atmCss {"+
         "box-shadow: inset 0px 0px 5px 0px gray !important;"+
