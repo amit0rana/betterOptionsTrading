@@ -1449,6 +1449,7 @@ function createSubFilter() {
 
 var g_observer;
 var g_positionsPnlObserver;
+var g_straddleSpotObserver;
 
 function hideDropdown() {
     jQ(".supS").remove();
@@ -1459,6 +1460,7 @@ function hideDropdown() {
     g_dropdownDisplay = DD_NONE;
     if (g_observer) g_observer.disconnect();
     if (g_positionsPnlObserver) g_positionsPnlObserver.disconnect();
+    if (g_straddleSpotObserver) g_straddleSpotObserver.disconnect();
 }
 
 //waitForKeyElements("span.count",showPositionDropdown);
@@ -1613,7 +1615,6 @@ function showPositionDropdown(retry = true) {
                 if (mutation.type == "characterData") {
                     debug("pnl changed");
                     updatePnl(true);
-					calculateStraddle();
                 }
             });
         });
@@ -1627,6 +1628,28 @@ function showPositionDropdown(retry = true) {
         // Pass in the target node, as well as the observer options
         g_positionsPnlObserver.observe(target, config);
     }
+    //straddle pricing
+    debug('going to observe straddles');
+        target = jQ("div.instrument-widget > span.wrap>span")[0];
+        debug("*****SPOT*****" + jQ(target).text());
+        g_straddleSpotObserver = new MutationObserver(function (mutations) {
+            var st = null;
+            mutations.forEach(function (mutation) {
+                if (mutation.type == "characterData") {
+                    debug("spot changed");
+					calculateStraddle();
+                }
+            });
+        });
+
+        // Configuration of the observer:
+        config = {
+            characterData: true,
+            subtree: true
+        };
+
+        // Pass in the target node, as well as the observer options
+        g_straddleSpotObserver.observe(target, config);
 }
 function calculateStraddle(){
     jQ(".supS").remove();
