@@ -97,6 +97,10 @@ const g_config = new MonkeyConfig({
             type: 'checkbox',
             default: false
         },
+        show_margin: {
+            type: 'checkbox',
+            default: false
+        },
         margin_method: {
             type: 'select',
             choices: ['Basket', 'Calculator'],
@@ -1946,11 +1950,14 @@ function filterOrders() { //notused
 
 
 const calculateMargin = async (selection) => {
-    if (MARGIN_METHOD == MM_BASKET) {
-        return calculateMarginUsingBasket(selection);
-    } else {
-        return calculateMarginUsingMarginCalculator(selection);
+    if (g_config.get('show_margin') === true) {
+        if (MARGIN_METHOD == MM_BASKET) {
+            return calculateMarginUsingBasket(selection);
+        } else {
+            return calculateMarginUsingMarginCalculator(selection);
+        }
     }
+    return "";
 }
 
 const calculateMarginUsingMarginCalculator = async (selection) => {
