@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.95
+// @version      3.96
 // @description  Introduces small features on top of kite app
-// @author       Amit
+// @author       Amit and Updated by Onkar
 // @match        https://kite.zerodha.com/*
 // @match        https://console.zerodha.com/*
 // @match        https://insights.sensibull.com/*
@@ -23,8 +23,8 @@
 // @require      https://cdn.jsdelivr.net/npm/sweetalert2@11
 // @require      https://cdn.jsdelivr.net/npm/toastify-js
 // @resource     TOASTIFY_CSS https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css
-// @downloadURL  https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js
-// @updateURL    https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.meta.js
+// @downloadURL  https://github.com/sidonkar/betterOptionsTrading/raw/master/betterKite.user.js
+// @updateURL    https://github.com/sidonkar/betterOptionsTrading/raw/master/betterKite.meta.js
 // ==/UserScript==
 
 // This is free and unencumbered software released into the public domain.
