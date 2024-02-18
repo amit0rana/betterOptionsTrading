@@ -113,31 +113,31 @@ Follow below mentioned steps
 ![zerodhaSensibullFilters](https://dl.dropbox.com/s/1s91foyuaewkfed/zerodhaSensibullFilters.png?dl=0)
 
 * First 2 Sticky Entries in watchlists
-  ![Sticky Entry](https://onedrive.live.com/embed?resid=A1E0CF34764D53F2%211493&authkey=%21ACT-tUx-fnHozAU&width=427&height=922)
+  * ![Sticky Entry](https://onedrive.live.com/embed?resid=A1E0CF34764D53F2%211493&authkey=%21ACT-tUx-fnHozAU&width=427&height=922)
   
 * ATM indication & Straddle pricing
   This works if the 2nd item in watchlist is an Index and the watchlist is being used to populate the options for the same index
   For Straddle pricing to show up and work, following conditions need to be met
   Same index Same Expiry CE and PE should be populated one after the other (order of ce and pe doesnt matter)
-  ![Straddle Pricing and ATM indication](https://1drv.ms/i/s!AvJTTXY0z-Chi1a7oxjiYamHEEm5?e=Ps0hhn)
+  * ![Straddle Pricing and ATM indication](https://onedrive.live.com/embed?resid=A1E0CF34764D53F2%211494&authkey=%21AFlQILP53HG2zqw&width=430&height=884)
     
 * Intraday Profit Loss on tab
   The Tab on Chrome shows the current PNL followed by a bar and then it shows the intrad ay PNL
-  ![Intraday PnL]()
+  * ![Intraday PnL]()
   
 * Exit and NRML filter
   Exit and NRML filter have been added along with previously existing filters
-  ![Exit and NRML Filter](https://1drv.ms/i/s!AvJTTXY0z-Chi1d3TZGr72rYznMq?e=F7clpb)
+  * ![Exit and NRML Filter](https://onedrive.live.com/embed?resid=A1E0CF34764D53F2%211495&authkey=%21ADUlam0olVJX_4k&width=356&height=179)
 
 * Use full width of browser
   Use entire width of browser for kite utlizing maximum space
-  ![Full Width](https://1drv.ms/i/s!AvJTTXY0z-Chi1gXykUgCCofa_8Z?e=egtdGa)
+  * ![Full Width](https://onedrive.live.com/embed?resid=A1E0CF34764D53F2%211496&authkey=%21AKM4I5jU1j379jU&width=1919&height=1035)
 
 
 * Configurable lot size and Showing margin optionally
    Added option in settings to set lot size for easier updates
    Added option to show margin calculation conditionally to avoid frequent server trips
-  ![Config](https://1drv.ms/i/s!AvJTTXY0z-Chi1lnHAuduOjLKTFk?e=bga222)
+  * ![Config](https://onedrive.live.com/embed?resid=A1E0CF34764D53F2%211497&authkey=%21ACyA1phIS465J24&width=331&height=946)
 
 
 ------
