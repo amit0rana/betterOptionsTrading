@@ -36,6 +36,14 @@ Very simple "userscript" which adds several features to kite.zerodha.com ui (scr
 * Margin calculation is done by 2 methods. If you use 'baseket' method (this is default) then no further action needed but if youw ant to use 'Margin Calculator' method then you need to enable CORS. Choosing which method is available in settings. 
 * Check this image on enabling CORS:
 ![corsusage](https://dl.dropbox.com/s/mbktrw9dkqu4wl0/corsToggle.png?dl=0)
+* ATM indication
+* First 2 Sticky Entries in watchlists
+* Straddle pricing
+* Showing margin optionally
+* Intraday Profit Loss on tab
+* Exit and NRML filter
+* Use full width of browser
+* Configurable lot size
 
 ------
 Contributors
@@ -48,7 +56,7 @@ Contributors
 
 Follow below mentioned steps
 * Install [Tempermonkey](https://www.tampermonkey.net/) for your browser (works on all browsers. Tested on Chrome, Vivaldi, Edge). [Chrome extension link](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
-* Open [this link](https://github.com/sidonkar/betterOptionsTrading/raw/master/betterKite.user.js) in a new tab. Or copy paste <https://github.com/sidonkar/betterOptionsTrading/raw/master/betterKite.user.js>
+* Open [this link](https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js) in a new tab. Or copy paste <https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js>
 * Tampermonkey will automatically identify the file as userscript and give you option to install. (sell image below)
 * ![tampermonkey install](https://dl.dropbox.com/s/khs3itzctu13ayw/tampermonkeyInstall.png?dl=0)
 * Click on 'Install' button.
@@ -104,6 +112,34 @@ Follow below mentioned steps
 ![zerodaSensibullAnalyze](https://dl.dropbox.com/s/rqzpo214j961x1u/zerodaSensibullAnalyze.png?dl=0)
 ![zerodhaSensibullFilters](https://dl.dropbox.com/s/1s91foyuaewkfed/zerodhaSensibullFilters.png?dl=0)
 
+* First 2 Sticky Entries in watchlists
+  ![Sticky Entry](https://1drv.ms/i/s!AvJTTXY0z-Chi1ULclajLfFbwTxp?e=RIcUwP)
+  
+* ATM indication & Straddle pricing
+  This works if the 2nd item in watchlist is an Index and the watchlist is being used to populate the options for the same index
+  For Straddle pricing to show up and work, following conditions need to be met
+  Same index Same Expiry CE and PE should be populated one after the other (order of ce and pe doesnt matter)
+  ![Straddle Pricing and ATM indication](https://1drv.ms/i/s!AvJTTXY0z-Chi1a7oxjiYamHEEm5?e=Ps0hhn)
+    
+* Intraday Profit Loss on tab
+  The Tab on Chrome shows the current PNL followed by a bar and then it shows the intrad ay PNL
+  ![Intraday PnL]()
+  
+* Exit and NRML filter
+  Exit and NRML filter have been added along with previously existing filters
+  ![Exit and NRML Filter](https://1drv.ms/i/s!AvJTTXY0z-Chi1d3TZGr72rYznMq?e=F7clpb)
+
+* Use full width of browser
+  Use entire width of browser for kite utlizing maximum space
+  ![Full Width](https://1drv.ms/i/s!AvJTTXY0z-Chi1gXykUgCCofa_8Z?e=egtdGa)
+
+
+* Configurable lot size and Showing margin optionally
+   Added option in settings to set lot size for easier updates
+   Added option to show margin calculation conditionally to avoid frequent server trips
+  ![Config](https://1drv.ms/i/s!AvJTTXY0z-Chi1lnHAuduOjLKTFk?e=bga222)
+
+
 ------
 # https://kite.zerodha.com/holdings page
 * See P&L and current value 'including' pledged stocks
@@ -134,7 +170,7 @@ Introduced help text on each row explaining what different rows mean.
 
 Follow below mentioned steps
 * Install [Tempermonkey](https://www.tampermonkey.net/) for your browser (works on all browsers. Tested on Chrome, Vivaldi, Edge). [Chrome extension link](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
-* Open [this link](https://github.com/sidonkar/betterOptionsTrading/raw/master/betterKite.user.js) in a new tab. Or copy paste <https://github.com/sidonkar/betterOptionsTrading/raw/master/betterKite.user.js>
+* Open [this link](https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js) in a new tab. Or copy paste <https://github.com/amit0rana/betterOptionsTrading/raw/master/betterKite.user.js>
 * Tampermonkey will automatically identify the file as userscript and give you option to install. (sell image below)
 * ![tampermonkey install](https://dl.dropbox.com/s/khs3itzctu13ayw/tampermonkeyInstall.png?dl=0)
 * Click on 'Install' button.
