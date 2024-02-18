@@ -113,7 +113,7 @@ Follow below mentioned steps
 ![zerodhaSensibullFilters](https://dl.dropbox.com/s/1s91foyuaewkfed/zerodhaSensibullFilters.png?dl=0)
 
 * First 2 Sticky Entries in watchlists
-  ![Sticky Entry](https://1drv.ms/i/s!AvJTTXY0z-Chi1ULclajLfFbwTxp?e=RIcUwP)
+  ![Sticky Entry]([https://1drv.ms/i/s!AvJTTXY0z-Chi1ULclajLfFbwTxp?e=RIcUwP](https://onedrive.live.com/embed?resid=A1E0CF34764D53F2%211493&authkey=%21ACT-tUx-fnHozAU&width=427&height=922))
   
 * ATM indication & Straddle pricing
   This works if the 2nd item in watchlist is an Index and the watchlist is being used to populate the options for the same index
