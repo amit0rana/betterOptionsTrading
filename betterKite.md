@@ -123,7 +123,7 @@ Follow below mentioned steps
     
 * Intraday Profit Loss on tab
   The Tab on Chrome shows the current PNL followed by a bar and then it shows the intrad ay PNL
-  * ![Intraday PnL]()
+  * ![Intraday PnL](https://onedrive.live.com/embed?resid=A1E0CF34764D53F2%211499&authkey=%21AP6bbLsvPDy3Qiw&width=488&height=393)
   
 * Exit and NRML filter
   Exit and NRML filter have been added along with previously existing filters
