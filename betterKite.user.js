@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.93
+// @version      3.94
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -762,6 +762,47 @@ function createHoldingsDropdown() {
             allHoldingrows.show();
             if (selectedCat === "All") {
                 jQ("#stocksInTagCount").text("");
+                filterWatchlist("", "All");
+                //don't do anything
+            } else if (selectedCat === "Watchlist") {
+                jQ("#stocksInTagCount").text("");
+
+                var wlStocks = [];
+                var allWatchlistRows = jQ(allDOMPaths.domPathWatchlistRow);
+                allWatchlistRows.show();
+                allWatchlistRows.each(function (rowIndex) {
+                    var watchlistRowDiv = this;
+                    var stockName = jQ(watchlistRowDiv).find(allDOMPaths.domPathStockNameInWatchlistRow);
+                    var watchlistStock = stockName.text();
+                    if (watchlistStock.includes("-BE")) {
+                        watchlistStock = watchlistStock.split("-BE")[0];
+                    }
+                    wlStocks.push(watchlistStock);
+                });
+                console.log(wlStocks);
+
+                var countHoldingsStocks = 0;
+                allHoldingrows.addClass("allHiddenRows");
+
+                var pnl = 0;
+                allHoldingrows.each(function (rowIndex) {
+                    //var dataUidInTR = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
+                    var holdingRow = getHoldingRowObject(this);
+                    var displayedStockName = holdingRow.instrument;
+
+                    var matchFound = wlStocks.includes(displayedStockName);
+
+                    if (matchFound) {
+                        //dont do anything, let the row be shown.
+                        countHoldingsStocks++;
+                        pnl += parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
+                    } else {
+                        jQ(this).hide();
+                    }
+                });
+
+                jQ("#stocksInTagCount").text("(" + countHoldingsStocks + ") " + formatter.format(pnl));
+
                 //don't do anything
             } else {
                 //logic to hide the rows in Holdings table not in our list
@@ -788,6 +829,10 @@ function createHoldingsDropdown() {
 
                 jQ("#stocksInTagCount").text("(" + countHoldingsStocks + ") " + formatter.format(pnl));
 
+                //START work on watchlist AREA
+                filterWatchlist(selectedStocks, selectedCat);
+                //END work on watchlist AREA
+
             }
 
             assignHoldingTags();
@@ -795,9 +840,7 @@ function createHoldingsDropdown() {
             //END work on Holdings AREA
         }
 
-        //START work on watchlist AREA
-        filterWatchlist(selectedStocks, selectedCat);
-        //END work on watchlist AREA
+        //filterwatchlist was here
 
         return this;
     });
@@ -808,6 +851,12 @@ function createHoldingsDropdown() {
         option.value = key;
         selectBox.add(option);
     };
+
+    var option = document.createElement("option");
+    option.text = "Watchlist";
+    option.value = "Watchlist";
+    selectBox.add(option);
+
     return selectBox;
 }
 
