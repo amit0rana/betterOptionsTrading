@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.94
+// @version      3.95
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -670,12 +670,13 @@ function assignHoldingTags() {
                 }
             }
 
+            var tds = jQ(this).find("td");
+            var totalQ = holdingRow.quantity+holdingRow.pledged;
+            jQ(tds[2]).append(`<div class="text-label grey randomClassToHelpHide">${formatter.format(totalQ*holdingRow.avgCost)}</div>`);
             if (holdingRow.pledged > 0) {
-                var tds = jQ(this).find("td");
-                var totalQ = holdingRow.quantity+holdingRow.pledged;
                 jQ(tds[0]).append(`<div class="randomClassToHelpHide">&nbsp;</div>`);
                 jQ(tds[1]).append(`<div class="text-label grey randomClassToHelpHide">${totalQ}</div>`);
-                jQ(tds[2]).append(`<div class="randomClassToHelpHide">&nbsp;</div>`);
+                // jQ(tds[2]).append(`<div class="randomClassToHelpHide">&nbsp;</div>`);
                 jQ(tds[3]).append(`<div class="randomClassToHelpHide">&nbsp;</div>`);
                 jQ(tds[4]).append(`<div class="text-label grey randomClassToHelpHide">${formatter.format(totalQ*holdingRow.ltp)}</div>`);
                 jQ(tds[5]).append(`<div class="text-label grey randomClassToHelpHide">${formatter.format((holdingRow.ltp - holdingRow.avgCost)*totalQ)}</div>`);
@@ -2169,7 +2170,8 @@ function getHoldingRowObject(row) {
     holding.instrument = jQ(jQ(tds[0]).find("span")[0]).text().trim();
     
     var spans = jQ(tds[1]).find("span");
-    if (spans.length > 1) {
+    if (spans.length > 1 && jQ(spans[spans.length-2]).attr('data-balloon') == "Pledged" ) {
+        //data-balloon=T1, Pledged
         holding.pledged = parseInt(jQ(spans[spans.length-2]).text().trim().split(':')[1]);
         holding.quantity = parseInt(jQ(spans[spans.length-1]).text().trim());
     } else {
