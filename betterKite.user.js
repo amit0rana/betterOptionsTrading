@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.95
+// @version      3.96
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -672,16 +672,17 @@ function assignHoldingTags() {
 
             var tds = jQ(this).find("td");
             var totalQ = holdingRow.quantity+holdingRow.pledged;
-            jQ(tds[2]).append(`<div class="text-label grey randomClassToHelpHide">${formatter.format(totalQ*holdingRow.avgCost)}</div>`);
+            jQ(".randomClassholdingToHelpHide").remove();
+            jQ(tds[2]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format(totalQ*holdingRow.avgCost)}</div>`);
             if (holdingRow.pledged > 0) {
-                jQ(tds[0]).append(`<div class="randomClassToHelpHide">&nbsp;</div>`);
-                jQ(tds[1]).append(`<div class="text-label grey randomClassToHelpHide">${totalQ}</div>`);
-                // jQ(tds[2]).append(`<div class="randomClassToHelpHide">&nbsp;</div>`);
-                jQ(tds[3]).append(`<div class="randomClassToHelpHide">&nbsp;</div>`);
-                jQ(tds[4]).append(`<div class="text-label grey randomClassToHelpHide">${formatter.format(totalQ*holdingRow.ltp)}</div>`);
-                jQ(tds[5]).append(`<div class="text-label grey randomClassToHelpHide">${formatter.format((holdingRow.ltp - holdingRow.avgCost)*totalQ)}</div>`);
-                jQ(tds[6]).append(`<div class="randomClassToHelpHide">&nbsp;</div>`);
-                jQ(tds[7]).append(`<div class="randomClassToHelpHide">&nbsp;</div>`);
+                jQ(tds[0]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
+                jQ(tds[1]).append(`<div class="text-label grey randomClassholdingToHelpHide">${totalQ}</div>`);
+                // jQ(tds[2]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
+                jQ(tds[3]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
+                jQ(tds[4]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format(totalQ*holdingRow.ltp)}</div>`);
+                jQ(tds[5]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format((holdingRow.ltp - holdingRow.avgCost)*totalQ)}</div>`);
+                jQ(tds[6]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
+                jQ(tds[7]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
             }
 
         });
