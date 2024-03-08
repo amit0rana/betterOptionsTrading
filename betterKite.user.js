@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.96
+// @version      3.97
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -60,7 +60,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.8";
+const VERSION = "v3.97";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -672,7 +672,7 @@ function assignHoldingTags() {
 
             var tds = jQ(this).find("td");
             var totalQ = holdingRow.quantity+holdingRow.pledged;
-            jQ(".randomClassholdingToHelpHide").remove();
+            jQ(tds[2]).find("div.randomClassToHelpHide").remove();
             jQ(tds[2]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format(totalQ*holdingRow.avgCost)}</div>`);
             if (holdingRow.pledged > 0) {
                 jQ(tds[0]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
@@ -787,6 +787,8 @@ function createHoldingsDropdown() {
                 allHoldingrows.addClass("allHiddenRows");
 
                 var pnl = 0;
+                var totalCost = 0;
+                var totalCurrentValue = 0;
                 allHoldingrows.each(function (rowIndex) {
                     //var dataUidInTR = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
                     var holdingRow = getHoldingRowObject(this);
@@ -798,6 +800,11 @@ function createHoldingsDropdown() {
                         //dont do anything, let the row be shown.
                         countHoldingsStocks++;
                         pnl += parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
+                        
+                        var totalQ = holdingRow.quantity+holdingRow.pledged;
+                        totalCost += formatter.format(totalQ*holdingRow.avgCost);
+                        totalCurrentValue += formatter.format(totalQ*holdingRow.ltp);
+                        //pnl = formatter.format((holdingRow.ltp - holdingRow.avgCost)*totalQ);
                     } else {
                         jQ(this).hide();
                     }
@@ -812,6 +819,8 @@ function createHoldingsDropdown() {
                 allHoldingrows.addClass("allHiddenRows");
 
                 var pnl = 0;
+                var totalCost = 0;
+                var totalCurrentValue = 0;
                 allHoldingrows.each(function (rowIndex) {
                     //var dataUidInTR = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
                     var holdingRow = getHoldingRowObject(this);
@@ -824,12 +833,24 @@ function createHoldingsDropdown() {
                         //dont do anything, let the row be shown.
                         countHoldingsStocks++;
                         pnl += parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
+                        var totalQ = holdingRow.quantity+holdingRow.pledged;
+                        totalCost += (totalQ*holdingRow.avgCost);
+                        totalCurrentValue += (totalQ*holdingRow.ltp);
                     } else {
                         jQ(this).hide();
                     }
                 });
 
                 jQ("#stocksInTagCount").text("(" + countHoldingsStocks + ") " + formatter.format(pnl));
+                jQ("div.stats.row").find(".randomClassToHelpHide").remove();
+                var divs = jQ("div.stats.row > div");
+                jQ(divs[0]).append(`<h4 class="randomClassToHelpHide value"> (${formatter.format(totalCost)})</h4>`);
+                jQ(divs[1]).append(`<h4 class="randomClassToHelpHide value"> (${formatter.format(totalCurrentValue)})</h4>`);
+                var cls = 'text-green';
+                if (pnl < 0) {
+                    cls = 'text-red';
+                }
+                jQ(divs[3]).append(`<h4 class="randomClassToHelpHide value text-bold text-pagetitle ${cls}"> (${formatter.format(pnl)})</h4>`);
 
                 //START work on watchlist AREA
                 filterWatchlist(selectedStocks, selectedCat);
