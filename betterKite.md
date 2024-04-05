@@ -121,6 +121,12 @@ Follow below mentioned steps
   Same index Same Expiry CE and PE should be populated one after the other (order of ce and pe doesnt matter)
   * ![Straddle Pricing and ATM indication](https://onedrive.live.com/embed?resid=A1E0CF34764D53F2%211494&authkey=%21AFlQILP53HG2zqw&width=430&height=884)
     
+* Synthetic pricing of Index
+  This works if the 2nd item in watchlist is an Index and the watchlist is being used to populate the options for the same index
+  For Synthetic pricing to show up and work, following conditions need to be met
+  Atleast one entry of Same Index Same Expiry CE and PE should be populated one after the other (order of ce and pe doesnt matter)
+  * ![Synthetic Pricing](https://1drv.ms/i/c/a1e0cf34764d53f2/IQNISFD03Ur3R4Fu_H72BlO7AV2LfNOAsUJUkYec3MK0kd4?width=1024)
+    
 * Intraday Profit Loss on tab
   The Tab on Chrome shows the current PNL followed by a bar and then it shows the intrad ay PNL
   * ![Intraday PnL](https://onedrive.live.com/embed?resid=A1E0CF34764D53F2%211499&authkey=%21AP6bbLsvPDy3Qiw&width=488&height=393)
