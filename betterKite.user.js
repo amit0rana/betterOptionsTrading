@@ -829,7 +829,7 @@ function createHoldingsDropdown() {
                         //dont do anything, let the row be shown.
                         countHoldingsStocks++;
                         pnl += parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
-                        
+
                         var totalQ = holdingRow.quantity+holdingRow.pledged;
                         totalCost += (totalQ*holdingRow.avgCost);
                         totalCurrentValue += (totalQ*holdingRow.ltp);
@@ -1762,7 +1762,7 @@ function showPositionDropdown(retry = true) {
 function calculateStraddle(){
     jQ(".supS").remove();
     var items = jQ(".vddl-list.list-flat span.last-price").splice(0);
-    var spot = calculateATM(items);
+    var spot = calculateATM(items),calcSynthetic=false,synthetic=spot,displayCalcSynthetic=false;
     items.forEach(function(element,i) {
         var calcFlag=false;
         if(i+1<items.length)
@@ -1774,22 +1774,45 @@ function calculateStraddle(){
                 if(elm.length==4 || elm.length==5)
                 {
                     if(elm[2]==spot)
-                        element.parentElement.parentElement.parentElement.classList.add("atmCss")
-                    if(elm[0]==nextElm[0] && elm[1]==nextElm[1] && elm[2]==nextElm[2]){
+						element.parentElement.parentElement.parentElement.classList.add("atmCss")
+					if(elm[0]==nextElm[0] && elm[1]==nextElm[1] && elm[2]==nextElm[2]){
                         if((elm[3]=="CE" && nextElm[3]=="PE") || (elm[3]=="PE" && nextElm[3]=="CE"))
                         {
                             calcFlag=true;
+							if(!calcSynthetic)
+							{
+								calcSynthetic=true;
+								displayCalcSynthetic=true;
+								let call = 0, put=0;
+
+								if(elm[3]=="CE")
+									call=+element.textContent,put=+items[i+1].textContent;
+								else
+									put=+element.textContent,call=+items[i+1].textContent;
+								synthetic=+elm[2] + (call - put);
+							}
                         }
                     }
                 }
                 else if(elm.length==6 || elm.length==7)
                 {
                     if(elm[4]==spot)
-                        element.parentElement.parentElement.parentElement.classList.add("atmCss")
-                    if(elm[0]==nextElm[0] && elm[1]==nextElm[1] && elm[2]==nextElm[2] && elm[3]==nextElm[3] && elm[4]==nextElm[4]  ){
+						element.parentElement.parentElement.parentElement.classList.add("atmCss");
+					if(elm[0]==nextElm[0] && elm[1]==nextElm[1] && elm[2]==nextElm[2] && elm[3]==nextElm[3] && elm[4]==nextElm[4]  ){
                         if((elm[5]=="CE" && nextElm[5]=="PE") || (elm[5]=="PE" && nextElm[5]=="CE"))
                         {
                             calcFlag=true;
+							if(!calcSynthetic)
+							{
+								calcSynthetic=true,displayCalcSynthetic=true;
+								let call = 0, put=0;
+
+								if(elm[5]=="CE")
+									call=+element.textContent,put=+items[i+1].textContent;
+								else
+									put=+element.textContent,call=+items[i+1].textContent;
+								synthetic=+elm[4] + (call - put);
+							}
                         }
                     }
                 }
@@ -1800,6 +1823,12 @@ function calculateStraddle(){
                 if(!isNaN(g))
                     jQ(element.parentElement).append("<span class='supS'>"+g.toFixed(2)+"</span>")
             }
+            if(displayCalcSynthetic)
+			{
+				jQ(items[1].parentElement).append("<span class='supS synthetic'>"+synthetic.toFixed(2)+" ( "+(+synthetic-(+items[1].textContent)).toFixed(0)+" )</span>")
+				displayCalcSynthetic=false;
+			}
+
         }
     });
 }
@@ -2570,16 +2599,20 @@ function resetSubFilter() {
 function main() {
     var cssStr = `<style>
     span.supS {
-        position: absolute !important;
-        bottom: -8px !important;
-        font-size: small !important;
-        background: var(--color-bg-default);
-        padding: 0 5px;
-        border-radius: 25px;
-        z-index: 1;
-/*	    color: lightgray;*/
-        box-shadow: 0px 0px 5px 0px gray;
+         position: absolute !important;
+         bottom: -12px !important;
+         font-size: small !important;
+         background: var(--color-bg-default);
+         padding: 0 5px;
+         border-radius: 10px;
+         z-index: 1;
+         /* color: lightgray; */
+         border: 2px solid var(--color-border-1);
     }
+	span.supS.synthetic {
+		font-size: 0.7rem !important;
+        bottom: 34px !important;
+	}
     .atmCss {
         box-shadow: inset 0px 0px 5px 0px gray !important;
     }
