@@ -132,7 +132,7 @@ const g_config = new MonkeyConfig({
         },
         nifty_lot_size: {
             type: 'number',
-            default: 50
+            default: 25
         },
         bank_nifty_lot_size: {
             type: 'number',
@@ -140,7 +140,7 @@ const g_config = new MonkeyConfig({
         },
         fin_nifty_lot_size: {
             type: 'number',
-            default: 40
+            default: 25
         },
         sensex_lot_size: {
             type: 'number',
@@ -230,6 +230,7 @@ const SENSEX_LOT_SIZE = parseInt(g_config.get('sensex_lot_size'));
 const BANKEX_LOT_SIZE = parseInt(g_config.get('bankex_lot_size'));
 const MIDCAP_LOT_SIZE = parseInt(g_config.get('midcap_lot_size'));
 
+const positionsTable = "div.positions > section.open-positions.table-wrapper > div > div > div > table";
 const allDOMPaths = {
     rowsFromHoldingsTable: "div.holdings > section > div > div > table > tbody > tr",
     attrNameForInstrumentTR: "data-uid",
@@ -241,7 +242,7 @@ const allDOMPaths = {
     domPathStockNameInWatchlistRow: "span.nice-name",
     domPathMainInitiatorLabel: "h3.page-title.small > span",
     domPathTabToChangeWatchlist: "ul.marketwatch-selector.list-flat > li",
-    PathForPositions: "div.positions > section.open-positions.table-wrapper > div > div > table > tbody > tr",
+    PathForPositions: positionsTable+" > tbody > tr",
     PathForBasketPositions: "div.basket-table > div > table > tbody > tr",
     domPathForPositionsDayHistory: "div.positions > section.day-positions.table-wrapper > div > div > table > tbody > tr",
     positionHeader: "header.row.data-table-header > h3",
@@ -1687,7 +1688,7 @@ function showPositionDropdown(retry = true) {
     simulateSelectBoxEvent();
 
     // The node to be monitored
-    var target = jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tbody")[0];
+    var target = jQ(positionsTable+" > tbody")[0];
 
     // Create an observer instance
     g_observer = new MutationObserver(function (mutations) {
@@ -1714,7 +1715,7 @@ function showPositionDropdown(retry = true) {
 
     if (g_config.get('auto_refresh_PnL') === true) {
         debug('going to observe pnl change');
-        target = jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot > tr > td")[3];
+        target = jQ(positionsTable+" > tfoot > tr > td")[3];
 
         debug("**********" + jQ(target).text());
         g_positionsPnlObserver = new MutationObserver(function (mutations) {
@@ -1774,7 +1775,7 @@ function calculateStraddle(){
                 if(elm.length==4 || elm.length==5)
                 {
                     if(elm[2]==spot)
-						element.parentElement.parentElement.parentElement.classList.add("atmCss")
+						element.parentElement.parentElement.parentElement.parentElement.classList.add("atmCss")
 					if(elm[0]==nextElm[0] && elm[1]==nextElm[1] && elm[2]==nextElm[2]){
                         if((elm[3]=="CE" && nextElm[3]=="PE") || (elm[3]=="PE" && nextElm[3]=="CE"))
                         {
@@ -1797,7 +1798,7 @@ function calculateStraddle(){
                 else if(elm.length==6 || elm.length==7)
                 {
                     if(elm[4]==spot)
-						element.parentElement.parentElement.parentElement.classList.add("atmCss");
+						element.parentElement.parentElement.parentElement.parentElement.classList.add("atmCss");
 					if(elm[0]==nextElm[0] && elm[1]==nextElm[1] && elm[2]==nextElm[2] && elm[3]==nextElm[3] && elm[4]==nextElm[4]  ){
                         if((elm[5]=="CE" && nextElm[5]=="PE") || (elm[5]=="PE" && nextElm[5]=="CE"))
                         {
@@ -2916,11 +2917,11 @@ function main() {
             showLotsTippy("td.quantity.right", "test");
         }
     });
-    jQ(document).on('click', "section.open-positions.table-wrapper > div > div > table > tfoot > tr > td:nth-child(4)", function () {
+    jQ(document).on('click', positionsTable+" > tfoot > tr > td:nth-child(4)", function () {
         tEv("kite", "showRealisedPnL", "click", "");
 
         debug('clicked');
-        var t = tippy("section.open-positions.table-wrapper > div > div > table > tfoot > tr > td:nth-child(4)", {
+        var t = tippy(positionsTable+" > tfoot > tr > td:nth-child(4)", {
             content: "",
             allowHTML: true,
             offset: [0, -8],
