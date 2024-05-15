@@ -232,7 +232,7 @@ const MIDCAP_LOT_SIZE = parseInt(g_config.get('midcap_lot_size'));
 
 const positionsTable = "div.positions > section.open-positions.table-wrapper > div > div > div > table";
 const allDOMPaths = {
-    rowsFromHoldingsTable: "div.holdings > section > div > div > table > tbody > tr",
+    rowsFromHoldingsTable: "div.holdings > section > div > div > div > table > tbody > tr",
     attrNameForInstrumentTR: "data-uid",
     tradingSymbol: "td.instrument > span.tradingsymbol",
     domPathWatchlistRow: "div.instruments > div > div.vddl-draggable.instrument",
