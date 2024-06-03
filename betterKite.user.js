@@ -683,7 +683,7 @@ function assignHoldingTags() {
     var tagNameSpans = jQ("span[random-att='tagName']");
     info('no of tags found: ' + tagNameSpans.length);
     if (tagNameSpans.length < 1) {
-
+        var curValue=0,initInv=0,netdayChange=0,totalPnL=0,prevTotalValue=0;
         //add label indicating category of stock
         // jQ("td.instrument.right-border > span:nth-child(1)").each(function (rowIndex) {
         jQ(allDOMPaths.rowsFromHoldingsTable).each(function (rowIndex) {
@@ -703,20 +703,36 @@ function assignHoldingTags() {
 
             var tds = jQ(this).find("td");
             var totalQ = holdingRow.quantity+holdingRow.pledged;
+            let avgCost = !isNaN(holdingRow.avgCost)?holdingRow.avgCost:1000;//liquidbees
             jQ(tds[2]).find("div.randomClassholdingToHelpHide").remove();
-            jQ(tds[2]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format(totalQ*holdingRow.avgCost)}</div>`);
+            jQ(tds[2]).append(`<div class="text-label grey randomClassholdingToHelpHide 2">${formatter.format(totalQ*holdingRow.avgCost)}</div>`);
 
+             jQ(tds).find("div.randomClassholdingToHelpHide").remove();
             if (holdingRow.pledged > 0) {
                 jQ(tds[0]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
-                jQ(tds[1]).append(`<div class="text-label grey randomClassholdingToHelpHide">${totalQ}</div>`);
+                jQ(tds[1]).append(`<div class="text-label grey randomClassholdingToHelpHide qty">${totalQ}</div>`);
                 // jQ(tds[2]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
-                jQ(tds[3]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
-                jQ(tds[4]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format(totalQ*holdingRow.ltp)}</div>`);
-                jQ(tds[5]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format((holdingRow.ltp - holdingRow.avgCost)*totalQ)}</div>`);
-                jQ(tds[6]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
-                jQ(tds[7]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
+                jQ(tds[3]).append(`<div class="randomClassholdingToHelpHide ltp">&nbsp;</div>`);
+                jQ(tds[4]).append(`<div class="text-label grey randomClassholdingToHelpHide curVal">${formatter.format(totalQ*holdingRow.ltp)}</div>`);
+                let pnL=(holdingRow.ltp - holdingRow.avgCost)*totalQ;
+                totalPnL+=+pnL;
+                jQ(tds[5]).append(`<div class="text-label grey randomClassholdingToHelpHide pnl">${formatter.format(pnL)}</div>`);
+                jQ(tds[6]).append(`<div class="randomClassholdingToHelpHide netChange">&nbsp;</div>`);
             }
+            else
+                totalPnL+=(holdingRow.ltp-avgCost)*holdingRow.quantity;
+            initInv+=avgCost*totalQ;
+            curValue+=holdingRow.ltp*totalQ;
+            let dayChangePnL=totalQ*holdingRow.ltp*((1-100/(100+(+tds[7].textContent.trim().substr(0,tds[7].textContent.trim().length-1)))));
+            netdayChange+=dayChangePnL
+            prevTotalValue+=totalQ*holdingRow.ltp*(100/(100+(+tds[7].textContent.trim().substr(0,tds[7].textContent.trim().length-1))));
+            jQ(tds[7]).append(`<div class="text-label grey randomClassholdingToHelpHide dayChange">${formatter.format(dayChangePnL)}</div>`);
         });
+        jQ(".fold-header .stats").find("div.randomClassholdingToHelpHide").remove();
+        jQ(jQ(".fold-header .stats .three.columns")[0]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format(initInv)}</div>`)
+        jQ(jQ(".fold-header .stats .three.columns")[1]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format(curValue)}</div>`)
+        jQ(jQ(".fold-header .stats .text-pagetitle")[2]).append(`<div class="text-label grey randomClassholdingToHelpHide ${netdayChange>0?'text-green':'text-red'}">${formatter.format(netdayChange)} (${(netdayChange*100/prevTotalValue).toFixed(2)}%) </div>`)
+        jQ(jQ(".fold-header .stats .text-pagetitle")[3]).append(`<div class="text-label grey randomClassholdingToHelpHide ${curValue>initInv?'text-green':'text-red'}">${formatter.format(totalPnL)}  (${((curValue-initInv)*100/initInv).toFixed(2)}%)  </div>`)
     } else { debug('tags found'); }
 }
 
@@ -1565,7 +1581,7 @@ function hideDropdown() {
 	jQ(".atmCss").removeClass("atmCss");
     jQ(".randomClassToHelpHide").remove();
     jQ(".allHiddenRows").show();
-
+    jQ(".holdings-table").find("div.randomClassholdingToHelpHide").remove();
     g_dropdownDisplay = DD_NONE;
     if (g_observer) g_observer.disconnect();
     if (g_positionsPnlObserver) g_positionsPnlObserver.disconnect();
@@ -1764,6 +1780,7 @@ function calculateStraddle(){
     jQ(".supS").remove();
     var items = jQ(".vddl-list.list-flat span.last-price").splice(0);
     var spot = calculateATM(items),calcSynthetic=false,synthetic=spot,displayCalcSynthetic=false;
+    var syntheticSpot = (synthetic,items[1].parentElement.parentElement.previousElementSibling.firstChild.firstChild.textContent);
     items.forEach(function(element,i) {
         var calcFlag=false;
         if(i+1<items.length)
@@ -1774,8 +1791,6 @@ function calculateStraddle(){
             {
                 if(elm.length==4 || elm.length==5)
                 {
-                    if(elm[2]==spot)
-						element.parentElement.parentElement.parentElement.parentElement.classList.add("atmCss")
 					if(elm[0]==nextElm[0] && elm[1]==nextElm[1] && elm[2]==nextElm[2]){
                         if((elm[3]=="CE" && nextElm[3]=="PE") || (elm[3]=="PE" && nextElm[3]=="CE"))
                         {
@@ -1794,11 +1809,11 @@ function calculateStraddle(){
 							}
                         }
                     }
+                    if(elm[2]== calculateSpot(synthetic,items[1].parentElement.parentElement.previousElementSibling.firstChild.firstChild.textContent))
+						element.parentElement.parentElement.parentElement.parentElement.classList.add("atmCss")
                 }
                 else if(elm.length==6 || elm.length==7)
                 {
-                    if(elm[4]==spot)
-						element.parentElement.parentElement.parentElement.parentElement.classList.add("atmCss");
 					if(elm[0]==nextElm[0] && elm[1]==nextElm[1] && elm[2]==nextElm[2] && elm[3]==nextElm[3] && elm[4]==nextElm[4]  ){
                         if((elm[5]=="CE" && nextElm[5]=="PE") || (elm[5]=="PE" && nextElm[5]=="CE"))
                         {
@@ -1816,6 +1831,8 @@ function calculateStraddle(){
 							}
                         }
                     }
+                     if(elm[4]==calculateSpot(synthetic,items[1].parentElement.parentElement.previousElementSibling.firstChild.firstChild.textContent))
+						element.parentElement.parentElement.parentElement.parentElement.classList.add("atmCss");
                 }
             }
             if(calcFlag)
@@ -1836,10 +1853,14 @@ function calculateStraddle(){
 
 function calculateATM(items){
     jQ(".atmCss").removeClass("atmCss");
-    var strikeDiffIndexArr = {"NIFTY 50":50,"NIFTY BANK":100,"NIFTY FIN SERVICE":50,"SENSEX":100,"BANKEX":100,"NIFTY MID SELECT":25};//options strike diff
     var indexName = items[1].parentElement.parentElement.previousElementSibling.firstChild.firstChild.textContent;
-    var spot = items[1].textContent - items[1].textContent%strikeDiffIndexArr[indexName];
-    if(items[1].textContent%strikeDiffIndexArr[indexName]>strikeDiffIndexArr[indexName]/2)
+    return calculateSpot(items[1].textContent,indexName);
+}
+
+function calculateSpot(item,indexName){
+    var strikeDiffIndexArr = {"NIFTY 50":50,"NIFTY BANK":100,"NIFTY FIN SERVICE":50,"SENSEX":100,"BANKEX":100,"NIFTY MID SELECT":25};//options strike diff
+    var spot = item - item%strikeDiffIndexArr[indexName];
+    if(item%strikeDiffIndexArr[indexName]>strikeDiffIndexArr[indexName]/2)
     {
         spot+=strikeDiffIndexArr[indexName];
     }
@@ -2636,6 +2657,10 @@ function main() {
 		transform: translateX(0px);
 		z-index: 3!important;
 	}
+    .text-red .text-label.grey.randomClassholdingToHelpHide{color: red}
+    .text-green .text-label.grey.randomClassholdingToHelpHide{color: green}
+    .text-red.text-label.grey.randomClassholdingToHelpHide{color: red!important;display: block;margin-top: 7px;padding: 5px;}
+    .text-green.text-label.grey.randomClassholdingToHelpHide{color: green!important;display: block;margin-top: 7px;padding: 5px;}
     </style>`;
     jQ("head").append(cssStr);
     GM_registerMenuCommand("Reset Data (WARNING) " + VERSION, function () {
