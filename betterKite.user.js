@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.99
+// @version      4.00
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -60,7 +60,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.99";
+const VERSION = "v4.00";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -130,6 +130,18 @@ const g_config = new MonkeyConfig({
         smart_limit_check_to_enable: {
             type: 'checkbox',
             default: false
+        },
+        use_api: {
+            type: 'checkbox',
+            default: false
+        },
+        api_key: {
+            type: 'text',
+            default: ''
+        },
+        api_access_token: {
+            type: 'text',
+            default: ''
         },
         pro_mode: {
             type: 'checkbox',
@@ -2663,11 +2675,12 @@ function main() {
             showLotsTippy("td.quantity.right", "test");
         }
     });
-    jQ(document).on('click', "section.open-positions.table-wrapper > div > div > table > tfoot > tr > td:nth-child(4)", function () {
+    
+    jQ(document).on('click', "section.open-positions.table-wrapper > div > div > div > table > tfoot > tr > td:nth-child(4)", function () {
         tEv("kite", "showRealisedPnL", "click", "");
 
         debug('clicked');
-        var t = tippy("section.open-positions.table-wrapper > div > div > table > tfoot > tr > td:nth-child(4)", {
+        var t = tippy("section.open-positions.table-wrapper > div > div > div > table > tfoot > tr > td:nth-child(4)", {
             content: "",
             allowHTML: true,
             offset: [0, -8],
@@ -3921,7 +3934,7 @@ function addOverrideOption() {
 
 function openReplacement(method, url, async, user, password) {
     debug("openReplacement");
-    if (method === 'POST' && url.includes('/oms/orders/regular')) {
+    if (method === 'POST' && url.includes('/orders/regular')) {
         _newOrder = true;
     } else {
         _newOrder = false;
@@ -4040,14 +4053,22 @@ function queryStringToJSON(qs) {
     return JSON.parse(JSON.stringify(result));
 };
 
-function sendPlaceNewOrderRequest(order) {
-    debug('sendPlaceNewOrderRequest');
+function myAjaxSetup() {
+    myAuth = `enctoken ${getCookie('enctoken')}`;
+    if (g_config.get('use_api')) {
+        myAuth = `token ${g_config.get('api_key')}:${g_config.get('api_access_token')}`;
+    }
     
     jQ.ajaxSetup({
         headers: {
-            'Authorization': `enctoken ${getCookie('enctoken')}`
+            'Authorization': myAuth
         }
     });
+}
+function sendPlaceNewOrderRequest(order) {
+    debug('sendPlaceNewOrderRequest');
+    
+    myAjaxSetup();
     debug("11111");
     if (_smartLimit === true) {
         order.order_type = "LIMIT";
@@ -4059,8 +4080,14 @@ function sendPlaceNewOrderRequest(order) {
             order.price = 0.05; //on safer side, keeping a random low price
         }
 
+        myUrl = BASE_URL + `/oms/quote?i=${order.exchange}:${order.tradingsymbol}`;
+        if (g_config.get('use_api')) {
+            myUrl =  `https://api.kite.trade/quote?i=${order.exchange}:${order.tradingsymbol}`;
+        }
+    
+
         jQ.ajax({
-            url: BASE_URL + `/oms/quote?i=${order.exchange}:${order.tradingsymbol}`,
+            url: myUrl,
             type: 'GET',
             async: false,
             cache: false,
@@ -4124,7 +4151,14 @@ function sendPlaceNewOrderRequest(order) {
         order.quantity = q;
 
         console.log(`placing order for ${q}`);
-        jQ.post(BASE_URL + "/oms/orders/regular",
+        
+        myAjaxSetup();
+        myUrl = BASE_URL + "/oms/orders/regular";
+        if (g_config.get('use_api')) {
+            myUrl =  `https://api.kite.trade/orders/regular`;
+        }
+
+        jQ.post(myUrl,
             order,
             function (data, status) {
                  debug("5555");
@@ -4151,7 +4185,7 @@ function sendPlaceNewOrderRequest(order) {
                     order.order_type="SL";
                     debug(order);
 
-                    jQ.post(BASE_URL + "/oms/orders/regular",
+                    jQ.post(myUrl,
                         order,
                         function (data, status) {
                             debug("AAAAAA");
