@@ -29,6 +29,7 @@ Very simple "userscript" which adds several features to kite.zerodha.com ui (scr
 * Filter trades by expiry in sensibull pop-up 
 * Auto group strategy by scrip and expiry 
 * Auto filter Watch list for scrip in positions 
+* Auto add ATM +- n strike options in the watchlist based on expiry
 * Highlight position when you click on scrip in Watch list 
 * Filter mis only, pe online or CE only positions
 * For a strategy, see potentially how much margin can be released by buying hedge positions
