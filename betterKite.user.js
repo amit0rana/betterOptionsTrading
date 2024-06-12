@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      4.03
+// @version      4.04
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -60,7 +60,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v4.03";
+const VERSION = "v4.04";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -206,10 +206,6 @@ const g_config = new MonkeyConfig({
         auto_trail_points: {
             type: 'number',
             default: 3
-        },
-        marketlist_symbol: {
-            type: 'text',
-            default: "FINNIFTY24611"
         },
         marketlist_number_of_strikes: {
             type: 'number',
@@ -2056,16 +2052,12 @@ function addWatchlistFilter() {
     wFilter.innerText = "Filter";
     jQ(allDOMPaths.watchlistSettingIcon).before(wFilter);
 
-/* <a href="" role="tab" class="item" data-balloon="MW 7" data-balloon-pos="up">
-			7
-		</a> */
-
     var oc = document.createElement("a");
     oc.id = 'addAltOptionChain';
     oc.classList.add("randomClassToHelpHide");
     oc.classList.add("item");
     oc.innerText = "OC";
-    oc.setAttribute("role","tab");
+    oc.setAttribute("role", "tab");
     jQ(allDOMPaths.watchlistSettingDiv).before(oc);
 }
 
@@ -2906,7 +2898,46 @@ function main() {
     jQ(document).on('click', "#addAltOptionChain", function () {
         tEv("kite", "addAltOptionChain", "click", "");
         // var h = prompt("Provide Symbol", "NIFTY");
-        var h = prompt("Provide Symbol with Expiry w:NIFTYyymdd m:NIFTY24JUL", g_config.get('marketlist_symbol'));
+        var dt = new Date()
+        var expiry = `${dt.getFullYear() % 100}${dt.getMonth() + 1}${dt.getDate().toString().padStart(2, "0")}`;
+        
+        var todayExpirySymbol = ""
+        switch (dt.getDay()) {
+            case 1:
+                todayExpirySymbol = "MIDCPNIFTY"
+                break;
+            case 2:
+                todayExpirySymbol = "FINNIFTY"
+                break;
+            case 3:
+                todayExpirySymbol = "BANKNIFTY"
+                break;
+            case 4:
+                todayExpirySymbol = "NIFTY"
+                break;
+            case 5:
+                todayExpirySymbol = "BANKEX"
+                break;
+            default:
+                break;
+        }
+        var tdy = new Date();
+        console.log(tdy);
+        dt.setDate(1)
+        dt.setMonth(dt.getMonth()+1)
+        while (dt.getDay() !== 4){ 
+            dt.setDate(dt.getDate() - 1);
+            console.log(dt)
+            console.log( dt === tdy)
+        }
+    
+        let da = new Intl.DateTimeFormat('en', { year: '2-digit' }).format(dt);
+        let mo = new Intl.DateTimeFormat('en', { month: 'short' }).format(dt);
+        
+        if (dt === tdy) {
+            expiry = da + mo.toUpperCase;
+        }
+        var h = prompt("Provide Symbol with Expiry w:NIFTYyymdd m:NIFTY24JUL", todayExpirySymbol+expiry);
         if (h == null || h == "") {
             return;
         }
@@ -2921,6 +2952,9 @@ function main() {
         } else if (sym.startsWith("BANK")) {
             sym = "NSE:NIFTY BANK";
             iSym = "NIFTY BANK";
+        } else if (sym.startsWith("MID")) {
+            sym = "NSE:NIFTY MID SELECT";
+            iSym = "NIFTY MID SELECT";
         }
         var s = 0;
         myAjaxSetup();
@@ -2945,9 +2979,9 @@ function main() {
             success: function (response, status) {
                 debug("22222");
                 debug("Data: " + JSON.stringify(response) + "\nStatus: " + status);
-                
+
                 s = response.data[sym].last_price;
-                
+
                 // if (order.transaction_type === 'BUY') {
                 //     newPrice = newPrice + 0.05;
                 // } else if (order.transaction_type === 'SELL') {
@@ -2959,7 +2993,7 @@ function main() {
             }
         });
         var n = g_config.get('marketlist_number_of_strikes');
-        
+
         var i = 50;
 
         if (h.startsWith("BANK")) {
@@ -2973,7 +3007,7 @@ function main() {
             var symbol = h + (atm - (ll * i)) + cp;
             console.log(symbol)
 
-            
+
             data = {};
             data.tradingsymbol = symbol
             wt++;
@@ -3002,7 +3036,7 @@ function main() {
 
         // var e = prompt("Provide expiry (w:yymdd, m:YYMMM", "NIFTY");
         setTimeout(() => {
-            window.location.reload(); 
+            window.location.reload();
         }, 3000);
         // 
     });
@@ -3012,7 +3046,7 @@ function main() {
 
         mitem = jQ(allDOMPaths.domPathTabToChangeWatchlist + ".selected").text().trim();
         data.watch_id = mitem
-        
+
         jQ.post(BASE_URL + `/api/marketwatch/${mitem}/items`,
             data,
             function (data, status) {
