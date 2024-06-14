@@ -236,7 +236,7 @@ const allDOMPaths = {
     attrNameForInstrumentTR: "data-uid",
     tradingSymbol: "td.instrument > span.tradingsymbol",
     domPathWatchlistRow: "div.instruments > div > div.vddl-draggable.instrument",
-    domPathPendingOrdersTR: "div.pending-orders > div > table > tbody > tr",
+    domPathPendingOrdersTR: "div.pending-orders > div > div > table > tbody > tr",
     domPathExecutedOrdersTR: "div.completed-orders > div > table > tbody > tr",
     domPathTradingSymbolInsideOrdersTR: "span.tradingsymbol > span",
     domPathStockNameInWatchlistRow: "span.nice-name",
@@ -4027,7 +4027,7 @@ function getLastThursday(m, year) {
 }
 
 //code for SL trail
-waitForKeyElements("div.pending-orders > div > table > tbody", trailOrderButton);
+waitForKeyElements("div.pending-orders > div > div > table > tbody", trailOrderButton);
 
 function trailOrderButton() {
     var allPendingOrderRows = jQ(allDOMPaths.domPathPendingOrdersTR);
@@ -4037,7 +4037,7 @@ function trailOrderButton() {
     allPendingOrderRows.each(function (rowIndex) {
         var workingRow = this;
         var status = jQ(workingRow).find("td.order-status > span > span").text();
-        var dataUidInTR = jQ(workingRow).find("td.select > div > input").attr("id");
+        var dataUidInTR = jQ(workingRow).find("td.select-cell > div > input").attr("id");
         if (status == "TRIGGER PENDING") {
             debug('addig trail button');
 
@@ -4047,7 +4047,7 @@ function trailOrderButton() {
             var tPrice = split[1].split("t")[0].trim();
             debug(`price : ${price}`);
             debug(`tPrice : ${tPrice}`);
-            var orderId = dataUidInTR.split("NFO")[1];
+            var orderId = dataUidInTR.split("NFO")[1]?dataUidInTR.split("NFO")[1]:dataUidInTR.split("BFO")[1];
 
             var transaction_type = jQ(this).find("td.transaction-type > span").text();
             jQ(this).find("td.average-price").append(`<span id='trailButtonId' data='${dataUidInTR}|${orderId}|${price}|${tPrice}|${transaction_type}' class='text-label small order-status-label'><span>TRAIL</span></span>`);
