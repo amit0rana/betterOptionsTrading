@@ -3049,7 +3049,7 @@ function main() {
 
         // var e = prompt("Provide expiry (w:yymdd, m:YYMMM", "NIFTY");
         setTimeout(() => {
-            // window.location.reload();
+            window.location.reload();
         }, 3000);
         // 
     });
