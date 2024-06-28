@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      4.06
+// @version      4.07
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -60,7 +60,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v4.06";
+const VERSION = "v4.07";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -2123,13 +2123,14 @@ function onSuCheckboxSelection() {
 
         realPnl = realPnl - (positionRow.quantity * (positionRow.avgPrice - positionRow.ltp));
 
-        var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
+        // var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
+    
 
-        pnl += parseFloat(v);
+        pnl += parseFloat(positionRow.pnl);
 
         var instrument = jQ(jQ(this).find("td")[2]).text();
-        debug(instrument);
-        if (instrument.includes('NSE') || instrument.includes('BSE')) {
+        debug('here' + instrument);
+        if (instrument.trim().endsWith('NSE') || instrument.trim().endsWith('BSE')) {
             return;
         }
         var q = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
@@ -2139,7 +2140,13 @@ function onSuCheckboxSelection() {
             peQ = peQ + q;
         }
 
-        var avgPrice = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
+        // var avgPrice = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
+        var avgPrice = positionRow.avgPrice;
+        // debug('a')
+        // debug(positionRow.avgPrice)
+        // debug('b')
+        // debug(avgPrice)
+
         var value = q * avgPrice;
         maxPnl = maxPnl - value;
 
@@ -2423,6 +2430,24 @@ function resetSubFilter() {
     g_showOnlyFUTPositions = false;
     g_subFilter = false;
     g_subFilterData = false;
+}
+
+function isLastDay(weekDay) { //1 monday
+    var tdy = new Date();
+    var dt = new Date()
+    // console.log("isLastDay " + tdy);
+    dt.setDate(1)
+    dt.setMonth(dt.getMonth()+1)
+    dt.setDate(dt.getDate() - 1);
+    // console.log("start Date " + dt);
+
+    while(dt.getDay() !== weekDay ) {
+        dt.setDate(dt.getDate() - 1);
+        // console.log(dt.toDateString())
+        // console.log( dt.toDateString() == tdy.toDateString())
+    } 
+
+    return (dt.toDateString() === tdy.toDateString());
 }
 
 // all behavior related actions go here.
@@ -2901,11 +2926,18 @@ function main() {
         var dt = new Date()
         var expiry = `${dt.getFullYear() % 100}${dt.getMonth() + 1}${dt.getDate().toString().padStart(2, "0")}`;
         
-        var todayExpirySymbol = ""
-        switch (dt.getDay()) {
+        let da = new Intl.DateTimeFormat('en', { year: '2-digit' }).format(dt);
+        let mo = new Intl.DateTimeFormat('en', { month: 'short' }).format(dt);
+
+        var todayExpirySymbol = "";
+        debug("dat " + dt.getDay());
+        var d = dt.getDay();
+        var isLstD = isLastDay(d);
+        switch (d) {
             case 1:
                 // todayExpirySymbol = "MIDCPNIFTY"
                 todayExpirySymbol = "BANKEX"
+                //BANKEX24JUN58400PE
                 break;
             case 2:
                 todayExpirySymbol = "FINNIFTY"
@@ -2920,24 +2952,15 @@ function main() {
                 todayExpirySymbol = "SENSEX"
                 break;
             default:
+                debug('default')
                 break;
         }
-        var tdy = new Date();
-        console.log(tdy);
-        dt.setDate(1)
-        dt.setMonth(dt.getMonth()+1)
-        while (dt.getDay() !== 4){ 
-            dt.setDate(dt.getDate() - 1);
-            console.log(dt)
-            console.log( dt === tdy)
+
+        debug('last day ' + isLstD);
+        if (isLstD) {
+            expiry = da + mo.toUpperCase();
         }
-    
-        let da = new Intl.DateTimeFormat('en', { year: '2-digit' }).format(dt);
-        let mo = new Intl.DateTimeFormat('en', { month: 'short' }).format(dt);
         
-        if (dt === tdy) {
-            expiry = da + mo.toUpperCase;
-        }
         var h = prompt("Provide Symbol with Expiry w:NIFTYyymdd m:NIFTY24JUL", todayExpirySymbol+expiry);
         if (h == null || h == "") {
             return;
@@ -3003,7 +3026,7 @@ function main() {
 
         var i = 50;
 
-        if (h.startsWith("BANK") || h.startsWith("SENSEX")) {
+        if (h.startsWith("BANKEX") || h.startsWith("SENSEX")) {
             i = 100;
         }
         console.log(s)
