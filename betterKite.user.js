@@ -3612,11 +3612,16 @@ function main() {
                 jQ("div#app>div>div:first-child").append("<button class='atmBtn' id='10'>ATM +- 10</button>")
                 jQ("div#app>div>div:first-child").append("<button class='atmBtn' id='15'>ATM +- 15</button>")
                 jQ("div#app>div>div:first-child").append("<button class='atmBtn' id='20'>ATM +- 20</button>")
+                jQ("div#app>div>div:first-child").append("<button class='atmBtn' id='refreshMe'>Refresh</button>")
 
             var a = jQ(".MuiTableRow-root button.MuiButtonBase-root.MuiButton-root.MuiButton-text:last-child");
             jQ(document).on('click', ".atmBtn", function (e) {
                 for(var i=a.length/2-2*e.target.id-1;i<a.length/2+2*e.target.id+1;i++)
                     jQ(a[i]).click();
+            })
+            jQ(document).on('click', "#refreshMe", function (e) {
+                jQ(".atmBtn").off('click');
+                jQ(".atmBtn").remove();
             })
                 }
         },1000);
