@@ -163,7 +163,11 @@ const g_config = new MonkeyConfig({
             type: 'checkbox',
             default: false
         },
-        use_api: {
+        pe_ce_order: {
+            type: 'checkbox',
+            default: true
+        },
+        /*use_api: {
             type: 'checkbox',
             default: false
         },
@@ -174,7 +178,7 @@ const g_config = new MonkeyConfig({
         api_access_token: {
             type: 'text',
             default: ''
-        },
+        },*/
         pro_mode: {
             type: 'checkbox',
             default: false
@@ -223,10 +227,10 @@ const g_config = new MonkeyConfig({
             type: 'number',
             default: 3
         },
-        marketlist_number_of_strikes: {
+        /*marketlist_number_of_strikes: {
             type: 'number',
             default: 4
-        },
+        },*/
     }
 });
 const D_LEVEL = g_config.get('logging');
@@ -272,7 +276,8 @@ const allDOMPaths = {
     sensibullScriptSelected: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(1) > div > div",
     domContextMenuButton: "span.context-menu-button",
     watchlistSettingIcon: "div.marketwatch-selector.list-flat > div.settings > a.initial",
-    watchlistSettingDiv: "div.marketwatch-selector.list-flat > div.settings"
+    watchlistSettingDiv: "div.marketwatch-selector.list-flat > div.settings",
+    dasboardNicknameSelector:"div.dashboard h1.page-title span"
     // span.settings-button.icon.icon-settings
 };
 //sensibullScriptSelected: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(1) > div > button > span.MuiButton-label"
@@ -1990,6 +1995,8 @@ function toggleDropdown(currentUrl) {
         //     debug('showing send order form');
         // showSendOrderButton();
         // }
+    }else if (currentUrl.includes('dashboard')) {
+        addWatchlistFilter()
     }
 }
 
@@ -2276,6 +2283,14 @@ const getMarginCalculationData = (instrument, product, q, price) => {
 
 var filterText = "";
 function addWatchlistFilter() {
+    var coc = document.createElement("a");
+    coc.id = 'clearOptionChain';
+    coc.classList.add("randomClassToHelpHide");
+    coc.classList.add("item");
+    coc.innerText = "Clear Option Chain";
+    coc.setAttribute("role", "tab");
+    jQ(allDOMPaths.dasboardNicknameSelector).after(coc);
+    return;
     //jQ("#watchlistFilterId").remove();
     var wFilter = document.createElement("span");
     wFilter.id = 'watchlistFilterId';
@@ -2356,7 +2371,7 @@ function onSuCheckboxSelection() {
         realPnl = realPnl - (positionRow.quantity * (positionRow.avgPrice - positionRow.ltp));
 
         // var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
-    
+
 
         pnl += parseFloat(positionRow.pnl);
 
@@ -2675,7 +2690,7 @@ function isLastDay(weekDay) { //1 monday
         dt.setDate(dt.getDate() - 1);
         // console.log(dt.toDateString())
         // console.log( dt.toDateString() == tdy.toDateString())
-    } 
+    }
 
     return (dt.toDateString() === tdy.toDateString());
 }
@@ -2726,15 +2741,23 @@ function main() {
     .text-green .text-label.grey.randomClassholdingToHelpHide{color: green}
     .text-red.text-label.grey.randomClassholdingToHelpHide{color: red!important;display: block;margin-top: 7px;padding: 5px;}
     .text-green.text-label.grey.randomClassholdingToHelpHide{color: green!important;display: block;margin-top: 7px;padding: 5px;}
-    button.atmBtn {
+    button.atmBtn,input#counter{
          border: 1px solid;
          font-size: 0.8rem;
-         padding: 0px 10px;
+         padding: 3px 10px;
          border-radius: 5px;
          margin: 10px 5px;
          font-weight: 800;
          color: var(--primaryColor);
          cursor:pointer;
+    }
+    input#counter {
+         width: 60px;
+    }
+    a#clearOptionChain {
+         float: right;
+         font-size: 0.8rem;
+         line-height: 36px;
     }
     </style>`;
     jQ("head").append(cssStr);
@@ -3212,13 +3235,37 @@ function main() {
         }
     });
 
+
+    //click on clear Option Chain
+    jQ(document).on('click', "#clearOptionChain", function () {
+        tEv("kite", "clearOptionChain", "click", "");
+        var response = window.confirm("This will clear the current watchlist, Do you want to continue?")
+        if(response==false)
+            return;
+        const mouseoverEvent = new Event('mouseenter');
+        var optionChainLength = jQ(".vddl-draggable").length-1;
+        var i=1;
+        removeRow(i,optionChainLength);
+        function removeRow(i,optionChainLength){
+            if(optionChainLength>i)
+            {
+                jQ(jQ(".vddl-draggable")[optionChainLength]).find(".info-wrapper")[0].dispatchEvent(mouseoverEvent);
+                setTimeout(function (){
+                    jQ(jQ(jQ(".vddl-draggable")[optionChainLength]).find(".info-wrapper .actions>span")[4]).find("button")[0].click()
+                    removeRow(i,--optionChainLength);
+                },0)
+            }
+        }
+    });
+
+
     //click on addAltOptionChain
     jQ(document).on('click', "#addAltOptionChain", function () {
         tEv("kite", "addAltOptionChain", "click", "");
         // var h = prompt("Provide Symbol", "NIFTY");
         var dt = new Date()
         var expiry = `${dt.getFullYear() % 100}${dt.getMonth() + 1}${dt.getDate().toString().padStart(2, "0")}`;
-        
+
         let da = new Intl.DateTimeFormat('en', { year: '2-digit' }).format(dt);
         let mo = new Intl.DateTimeFormat('en', { month: 'short' }).format(dt);
 
@@ -3253,7 +3300,7 @@ function main() {
         if (isLstD) {
             expiry = da + mo.toUpperCase();
         }
-        
+
         var h = prompt("Provide Symbol with Expiry w:NIFTYyymdd m:NIFTY24JUL", todayExpirySymbol+expiry);
         if (h == null || h == "") {
             return;
@@ -3367,7 +3414,7 @@ function main() {
         setTimeout(() => {
             window.location.reload();
         }, 3000);
-        // 
+        //
     });
 
     function addToWatchListCall(data) {
@@ -3605,26 +3652,41 @@ function main() {
     if (currentUrl.includes('option-strategy-builder')) {
         var sensibullTitleUpdateInterval = setInterval(()=>{document.title =document.querySelectorAll("div#builder-left-col-scrolling-div>div>div>div")[0].textContent.split(" ")[0]+""+ document.querySelectorAll("div#builder-left-col-scrolling-div>div>div>div:last-child>div:last-child>div:last-child>div:last-child>div:last-child>div:last-child")[0].textContent},1000);
     }
-    if(window.location.host == 'insights.sensibull.com')
-        var tempInterval = setInterval(()=>{
+    if(window.location.pathname.includes("option-chain"))
+    {
+        var sizeVar=5;
+        setInterval(()=>{
             if(jQ(".atmBtn").length==0)
             {
-                jQ("div#app>div>div:first-child").append("<button class='atmBtn' id='10'>ATM +- 10</button>")
-                jQ("div#app>div>div:first-child").append("<button class='atmBtn' id='15'>ATM +- 15</button>")
-                jQ("div#app>div>div:first-child").append("<button class='atmBtn' id='20'>ATM +- 20</button>")
-                jQ("div#app>div>div:first-child").append("<button class='atmBtn' id='refreshMe'>Refresh</button>")
+                jQ("div#app>div>div:first-child").append("<div><button class='atmBtn' id='refreshMe'>Refresh</button><input type='number' id='counter' name='counter' min='1' max='20' class='atmBtn' value='"+sizeVar+"' /><button class='atmBtn' id='atmBtn'>ATM +-</button></div>")
 
             var a = jQ(".MuiTableRow-root button.MuiButtonBase-root.MuiButton-root.MuiButton-text:last-child");
-            jQ(document).on('click', ".atmBtn", function (e) {
-                for(var i=a.length/2-2*e.target.id-1;i<a.length/2+2*e.target.id+1;i++)
-                    jQ(a[i]).click();
+            jQ(document).on('click', "#atmBtn", function (e) {
+                sizeVar = jQ("#counter")[0].value
+                for(var index=0,i=a.length/2-2*sizeVar-1;i<a.length/2+2*sizeVar+1;i++)
+                {
+                    if (g_config.get('pe_ce_order'))
+                    {
+                        if((index==0 && (a[i].parentElement.parentElement.parentElement.parentElement.childNodes[3].textContent==a[i+1].parentElement.parentElement.parentElement.parentElement.childNodes[3].textContent && i<a.length/2+2*sizeVar)) || (index>0 && (a[i].parentElement.parentElement.parentElement.parentElement.childNodes[3].textContent==a[i+1].parentElement.parentElement.parentElement.parentElement.childNodes[3].textContent  && i<a.length/2+2*sizeVar)))
+                            index=i+1;
+                        else if(index>0 && a[i].parentElement.parentElement.parentElement.parentElement.childNodes[3].textContent==a[i-1].parentElement.parentElement.parentElement.parentElement.childNodes[3].textContent)
+                            index=i-1;
+                        else
+                            index=i
+                    }
+                    else
+                        index=i
+                    jQ(a[index]).click();
+                }
             })
             jQ(document).on('click', "#refreshMe", function (e) {
+                sizeVar = jQ("#counter")[0].value
                 jQ(".atmBtn").off('click');
                 jQ(".atmBtn").remove();
             })
                 }
         },1000);
+    }
 
 }
 
@@ -4125,7 +4187,7 @@ function introducePnlFilter() {
 
 }
 
-//NOT WORKING 
+//NOT WORKING
 waitForKeyElements("h1:contains('P&L')", introducePnlFilter);
 
 function addPnlMenu() {
