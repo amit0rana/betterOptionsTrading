@@ -6,7 +6,7 @@
 // @author       Amit and Updated by Onkar
 // @match        https://kite.zerodha.com/*
 // @match        https://console.zerodha.com/*
-// @match        https://insights.sensibull.com/*
+// @match        https://web.sensibull.com/*
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_addStyle
@@ -2632,8 +2632,10 @@ function main() {
          border: 2px solid var(--color-border-1);
     }
 	span.supS.synthetic {
-		font-size: 0.7rem !important;
+		font-size: 0.8rem !important;
         bottom: 34px !important;
+        right: 10px;
+        letter-spacing: 1px;
 	}
     .atmCss {
         box-shadow: inset 0px 0px 5px 0px gray !important;
@@ -3347,6 +3349,12 @@ function main() {
 
     waitForKeyElements("span.value", showRoiNudge);
     waitForKeyElements("div.value.final-margins-value", showBasketRoiNudge);
+
+    //sensibull title updates
+    var currentUrl = window.location.pathname;
+    if (currentUrl.includes('option-strategy-builder')) {
+        var sensibullTitleUpdateInterval = setInterval(()=>{document.title =document.querySelectorAll("div#builder-left-col-scrolling-div>div>div>div")[0].textContent.split(" ")[0]+""+ document.querySelectorAll("div#builder-left-col-scrolling-div>div>div>div:last-child>div:last-child>div:last-child>div:last-child>div:last-child>div:last-child")[0].textContent},1000);
+    }
 
 }
 
