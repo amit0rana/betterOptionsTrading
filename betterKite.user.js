@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      3.99
+// @version      4.07
 // @description  Introduces small features on top of kite app
 // @author       Amit and Updated by Onkar
 // @match        https://kite.zerodha.com/*
@@ -60,7 +60,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v3.98";
+const VERSION = "v4.07";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -162,6 +162,18 @@ const g_config = new MonkeyConfig({
             type: 'checkbox',
             default: false
         },
+        use_api: {
+            type: 'checkbox',
+            default: false
+        },
+        api_key: {
+            type: 'text',
+            default: ''
+        },
+        api_access_token: {
+            type: 'text',
+            default: ''
+        },
         pro_mode: {
             type: 'checkbox',
             default: false
@@ -210,6 +222,10 @@ const g_config = new MonkeyConfig({
             type: 'number',
             default: 3
         },
+        marketlist_number_of_strikes: {
+            type: 'number',
+            default: 4
+        },
     }
 });
 const D_LEVEL = g_config.get('logging');
@@ -241,17 +257,22 @@ const allDOMPaths = {
     domPathTradingSymbolInsideOrdersTR: "span.tradingsymbol > span",
     domPathStockNameInWatchlistRow: "span.nice-name",
     domPathMainInitiatorLabel: "h3.page-title.small > span",
-    domPathTabToChangeWatchlist: "ul.marketwatch-selector.list-flat > li",
+    // domPathTabToChangeWatchlist: "ul.marketwatch-selector.list-flat > li",
+    // domPathTabToChangeWatchlist: "div.marketwatch-selector.list-flat > a.item.selected
+    domPathTabToChangeWatchlist: "div.marketwatch-selector.list-flat > a.item",
     PathForPositions: positionsTable+" > tbody > tr",
     PathForBasketPositions: "div.basket-table > div > table > tbody > tr",
-    domPathForPositionsDayHistory: "div.positions > section.day-positions.table-wrapper > div > div > table > tbody > tr",
+    domPathForPositionsDayHistory: "div.positions > section.day-positions.table-wrapper > div > div > div > table > tbody > tr",
     positionHeader: "header.row.data-table-header > h3",
     dayPnLSelector : "section.day-positions.table-wrapper div div table tfoot tr td:nth-child(3)",
     //sensibullRows: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(2) > div > table > tbody > tr",
     sensibullRows: "tr.jss32.jss33",
     sensibullRowCheckbox: "th > div > span > span > input",
     sensibullScriptSelected: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(1) > div > div",
-    domContextMenuButton: "span.context-menu-button"
+    domContextMenuButton: "span.context-menu-button",
+    watchlistSettingIcon: "div.marketwatch-selector.list-flat > div.settings > a.initial",
+    watchlistSettingDiv: "div.marketwatch-selector.list-flat > div.settings"
+    // span.settings-button.icon.icon-settings
 };
 //sensibullScriptSelected: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(1) > div > button > span.MuiButton-label"
 //("#app > div > div > div > div > div > div > div.style__LeftContentWrapper-t0trse-21.kQiWSc > div.style__SearchableInstrumentWrapper-t0trse-10.duNZzV > div > button > span.MuiButton-label")
@@ -269,6 +290,15 @@ const BASE_PNL_REPORT = "#app > div.wrapper > div > div > h1";
 main();
 
 
+function closestStrike(a, b = 50) {
+    var c1 = a - (a % b);
+    var c2 = (a + b) - (a % b);
+    if (a - c1 > c2 - a) {
+        return c2;
+    } else {
+        return c1;
+    }
+}
 
 function showSuccessToast(msg) {
     showToast(msg, "success");
@@ -288,10 +318,10 @@ function showToast(msg, type) {
         timer: 3000,
         timerProgressBar: true,
         didOpen: (toast) => {
-          toast.addEventListener('mouseenter', Swal.stopTimer)
-          toast.addEventListener('mouseleave', Swal.resumeTimer)
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
         }
-      });
+    });
 
 }
 function showMessage(msg) {
@@ -307,20 +337,20 @@ function showMessage(msg) {
         timer: 3000,
         timerProgressBar: true,
         didOpen: (toast) => {
-          toast.addEventListener('mouseenter', Swal.stopTimer)
-          toast.addEventListener('mouseleave', Swal.resumeTimer)
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
         }
-      });
+    });
 
 }
 
 function getToast(message) {
     return Toastify({
-        text: "<span>betterKte</br>"+message+"</span>",
+        text: "<span>betterKte</br>" + message + "</span>",
         duration: 5000,
         close: true,
         offset: "60px",
-        style: {top: "60px",display: "grid", "grid-template-columns": "15fr 1fr"},
+        style: { top: "60px", display: "grid", "grid-template-columns": "15fr 1fr" },
         escapeMarkup: false
     });
 }
@@ -328,23 +358,23 @@ function getToast(message) {
 const hideOnEsc = {
     name: 'hideOnEsc',
     defaultValue: true,
-    fn({hide}) {
-      function onKeyDown(event) {
-        if (event.keyCode === 27) {
-          hide();
+    fn({ hide }) {
+        function onKeyDown(event) {
+            if (event.keyCode === 27) {
+                hide();
+            }
         }
-      }
 
-      return {
-        onShow() {
-          document.addEventListener('keydown', onKeyDown);
-        },
-        onHide() {
-          document.removeEventListener('keydown', onKeyDown);
-        },
-      };
+        return {
+            onShow() {
+                document.addEventListener('keydown', onKeyDown);
+            },
+            onHide() {
+                document.removeEventListener('keydown', onKeyDown);
+            },
+        };
     },
-  };
+};
 
 function showTippy(target, msg) {
     var t = tippy(target, {
@@ -357,7 +387,7 @@ function showTippy(target, msg) {
         onHidden(instance) {
             debug('onHide');
             instance.destroy();
-          },
+        },
     });
     // t[0].show();
 }
@@ -365,16 +395,16 @@ function showTippy(target, msg) {
 let pnlTippyInstances = [];
 
 const pnlGlobalStore = {
-  fn(instance) {
-    return {
-      onCreate() {
-        pnlTippyInstances.push(instance);
-      },
-      onDestroy() {
-        pnlTippyInstances = pnlTippyInstances.filter((i) => i !== instance);
-      },
-    };
-  },
+    fn(instance) {
+        return {
+            onCreate() {
+                pnlTippyInstances.push(instance);
+            },
+            onDestroy() {
+                pnlTippyInstances = pnlTippyInstances.filter((i) => i !== instance);
+            },
+        };
+    },
 };
 
 function showPnlTippy(target, msg) {
@@ -390,7 +420,7 @@ function showPnlTippy(target, msg) {
             if (pos.instrument == "") return;
             // instance.setProps({content : "amit"});
             instance.setContent(formatter.format(-(pos.quantity * (pos.avgPrice - pos.ltp))));
-          },
+        },
     });
     // t[0].show();
 }
@@ -398,16 +428,16 @@ function showPnlTippy(target, msg) {
 let lotsTippyInstances = [];
 
 const lotsGlobalStore = {
-  fn(instance) {
-    return {
-      onCreate() {
-        lotsTippyInstances.push(instance);
-      },
-      onDestroy() {
-        lotsTippyInstances = lotsTippyInstances.filter((i) => i !== instance);
-      },
-    };
-  },
+    fn(instance) {
+        return {
+            onCreate() {
+                lotsTippyInstances.push(instance);
+            },
+            onDestroy() {
+                lotsTippyInstances = lotsTippyInstances.filter((i) => i !== instance);
+            },
+        };
+    },
 };
 function showLotsTippy(target, msg) {
     var t = tippy(target, {
@@ -437,7 +467,7 @@ function showLotsTippy(target, msg) {
             }
 
             instance.setContent(`${lot} lots`);
-          },
+        },
     });
     // t[0].show();
 }
@@ -455,7 +485,7 @@ function showTippyToast(target, msg) {
         onHidden(instance) {
             debug('onHide');
             instance.destroy();
-          },
+        },
     });
     // t[0].show();
 }
@@ -847,9 +877,9 @@ function createHoldingsDropdown() {
                         countHoldingsStocks++;
                         pnl += parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
 
-                        var totalQ = holdingRow.quantity+holdingRow.pledged;
-                        totalCost += (totalQ*holdingRow.avgCost);
-                        totalCurrentValue += (totalQ*holdingRow.ltp);
+                        var totalQ = holdingRow.quantity + holdingRow.pledged;
+                        totalCost += (totalQ * holdingRow.avgCost);
+                        totalCurrentValue += (totalQ * holdingRow.ltp);
                         //pnl = formatter.format((holdingRow.ltp - holdingRow.avgCost)*totalQ);
                     } else {
                         jQ(this).hide();
@@ -887,9 +917,9 @@ function createHoldingsDropdown() {
                         //dont do anything, let the row be shown.
                         countHoldingsStocks++;
                         pnl += parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
-                        var totalQ = holdingRow.quantity+holdingRow.pledged;
-                        totalCost += (totalQ*holdingRow.avgCost);
-                        totalCurrentValue += (totalQ*holdingRow.ltp);
+                        var totalQ = holdingRow.quantity + holdingRow.pledged;
+                        totalCost += (totalQ * holdingRow.avgCost);
+                        totalCurrentValue += (totalQ * holdingRow.ltp);
                     } else {
                         jQ(this).hide();
                     }
@@ -1349,7 +1379,7 @@ function createPositionsDropdown() {
             }
 
             if (selectedType == 'scrip') {
-                jQ('#spanBuyCountId').attr('data-balloon','Zerodha allows same number of longs as shorts irrespective of calls or puts. So, if you have 4 PUT shorts, you can buy 4 CALL long even though buying CALL is not a hedge position for 4 lots of PUT shorts, so one need to add all shorts across CE and PE and add all longs across CE and PE to find the difference (allowed hedges)');
+                jQ('#spanBuyCountId').attr('data-balloon', 'Zerodha allows same number of longs as shorts irrespective of calls or puts. So, if you have 4 PUT shorts, you can buy 4 CALL long even though buying CALL is not a hedge position for 4 lots of PUT shorts, so one need to add all shorts across CE and PE and add all longs across CE and PE to find the difference (allowed hedges)');
                 if (buyCount < sellCount) {
                     jQ('#spanBuyCountId').addClass("green");
                     jQ('#spanBuyCountId').html("Can BUY : " + (sellCount - buyCount));
@@ -1358,7 +1388,7 @@ function createPositionsDropdown() {
                     jQ('#spanBuyCountId').html("BUY : Not Possible");
                 }
             } else {
-                jQ('#spanBuyCountId').attr('data-balloon','Select a Scrip from the strategy filter dropdown.');
+                jQ('#spanBuyCountId').attr('data-balloon', 'Select a Scrip from the strategy filter dropdown.');
                 jQ('#spanBuyCountId').html("");
             }
 
@@ -1520,10 +1550,10 @@ function createSubFilter() {
     i.id = "selectAllId";
     i.name = 'selectAllId';
     i.innerHTML = 'TS';
-    i.setAttribute('data-balloon','Toggle Selection of Positions');
-    i.setAttribute('data-balloon-pos','up');
-    i.setAttribute('data-balloon-length','medium');
-    i.setAttribute("class","button-small button-grey");
+    i.setAttribute('data-balloon', 'Toggle Selection of Positions');
+    i.setAttribute('data-balloon-pos', 'up');
+    i.setAttribute('data-balloon-length', 'medium');
+    i.setAttribute("class", "button-small button-grey");
 
     //jQ(s).append(t);
     jQ(s).append(i);
@@ -1535,10 +1565,10 @@ function createSubFilter() {
     i.id = "saveMarginBtnId";
     i.name = 'saveMarginBtnId';
     i.innerHTML = 'SM';
-    i.setAttribute('data-balloon','Save Margin');
-    i.setAttribute('data-balloon-pos','up');
-    i.setAttribute('data-balloon-length','small');
-    i.setAttribute("class","button-small button-grey");
+    i.setAttribute('data-balloon', 'Save Margin');
+    i.setAttribute('data-balloon-pos', 'up');
+    i.setAttribute('data-balloon-length', 'small');
+    i.setAttribute("class", "button-small button-grey");
 
     jQ(s).append(i);
 
@@ -1548,10 +1578,10 @@ function createSubFilter() {
     i.id = "hideRestId";
     i.name = 'hideRestId';
     i.innerHTML = 'HS';
-    i.setAttribute('data-balloon','Hide Selected Positions');
-    i.setAttribute('data-balloon-pos','up');
-    i.setAttribute('data-balloon-length','small');
-    i.setAttribute("class","button-small button-grey");
+    i.setAttribute('data-balloon', 'Hide Selected Positions');
+    i.setAttribute('data-balloon-pos', 'up');
+    i.setAttribute('data-balloon-length', 'small');
+    i.setAttribute("class", "button-small button-grey");
     jQ(s).append(i);
 
 
@@ -1957,7 +1987,7 @@ function toggleDropdown(currentUrl) {
         //     updateOrderButtons();
         // } else {
         //     debug('showing send order form');
-            // showSendOrderButton();
+        // showSendOrderButton();
         // }
     }
 }
@@ -1980,7 +2010,7 @@ function simulateSelectBoxEvent() {
                 tagSelectorH.dispatchEvent(new Event("change"));
             } else {
                 debug('sleeping as couldnt find holding');
-                //setTimeout(function(){ simulateSelectBoxEvent(); }, 1000);
+                setTimeout(function () { simulateSelectBoxEvent(); }, 1000);
             }
         }
     } else if (currentUrl.includes('positions')) {
@@ -1991,7 +2021,7 @@ function simulateSelectBoxEvent() {
             if (allPositionsRows.length > 0) {
                 debug('initiating change event found positions');
                 // tagSelectorP.dispatchEvent(new Event("change", {'simulated': true}));
-                tagSelectorP.dispatchEvent(new CustomEvent('change', {'detail': {'simulated': true}}));
+                tagSelectorP.dispatchEvent(new CustomEvent('change', { 'detail': { 'simulated': true } }));
 
             } else {
                 debug('sleeping as couldnt find positions (simulateSelectBox)');
@@ -2192,7 +2222,7 @@ const calculateMarginUsingBasket = async (selection) => {
 
 const getMarginCalculationData = (instrument, product, q, price) => {
 
-    if (instrument=="") return null;
+    if (instrument == "") return null;
     // frame payload for SPAN calculation
     var tokens = instrument.replace(/\s+/g, ' ').split(" ");
     //debug(tokens);
@@ -2215,7 +2245,7 @@ const getMarginCalculationData = (instrument, product, q, price) => {
         data.optfut = 'OPT';
         if (tokens[2] === "w") {
             //eg: NIFTY2140814200CE (NIFTY 8th w APR 14200 CE NFO LABELS)
-            const MONTHS_FOR_WEEKLY = ["1","2","3","4","5","6","7","8","9","O","N","D"];
+            const MONTHS_FOR_WEEKLY = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "O", "N", "D"];
 
             data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${MONTHS_FOR_WEEKLY[MONTHS.indexOf(tokens[3])]}${tokens[1].match(/\d+/)[0].padStart(2, 0)}${tokens[4]}${tokens[5]}`;
             data.exchange = `${tokens[6]}`;
@@ -2246,13 +2276,20 @@ const getMarginCalculationData = (instrument, product, q, price) => {
 var filterText = "";
 function addWatchlistFilter() {
     //jQ("#watchlistFilterId").remove();
-    var wFilter = document.createElement("li");
+    var wFilter = document.createElement("span");
     wFilter.id = 'watchlistFilterId';
     wFilter.classList.add("randomClassToHelpHide");
     wFilter.classList.add("item");
     wFilter.innerText = "Filter";
+    jQ(allDOMPaths.watchlistSettingIcon).before(wFilter);
 
-    jQ("div.marketwatch-sidebar.marketwatch-wrap > ul > li.settings").before(wFilter);
+    var oc = document.createElement("a");
+    oc.id = 'addAltOptionChain';
+    oc.classList.add("randomClassToHelpHide");
+    oc.classList.add("item");
+    oc.innerText = "OC";
+    oc.setAttribute("role", "tab");
+    jQ(allDOMPaths.watchlistSettingDiv).before(oc);
 }
 
 function updatePnl(forPositions = true) {
@@ -2279,7 +2316,7 @@ function updatePnl(forPositions = true) {
 
         if (forPositions) {
             var instrument = jQ(jQ(this).find("td")[2]).text();
-            if (instrument=="") return;
+            if (instrument == "") return;
 
             var qty = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
             var price = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
@@ -2317,13 +2354,14 @@ function onSuCheckboxSelection() {
 
         realPnl = realPnl - (positionRow.quantity * (positionRow.avgPrice - positionRow.ltp));
 
-        var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
+        // var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
+    
 
-        pnl += parseFloat(v);
+        pnl += parseFloat(positionRow.pnl);
 
         var instrument = jQ(jQ(this).find("td")[2]).text();
-        debug(instrument);
-        if (instrument.includes('NSE') || instrument.includes('BSE')) {
+        debug('here' + instrument);
+        if (instrument.trim().endsWith('NSE') || instrument.trim().endsWith('BSE')) {
             return;
         }
         var q = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
@@ -2333,7 +2371,13 @@ function onSuCheckboxSelection() {
             peQ = peQ + q;
         }
 
-        var avgPrice = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
+        // var avgPrice = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
+        var avgPrice = positionRow.avgPrice;
+        // debug('a')
+        // debug(positionRow.avgPrice)
+        // debug('b')
+        // debug(avgPrice)
+
         var value = q * avgPrice;
         maxPnl = maxPnl - value;
 
@@ -2428,13 +2472,13 @@ function getHoldingRowObject(row) {
     var tds = jQ(row).find("td");
     holding.instrument = jQ(jQ(tds[0]).find("span")[0]).text().trim();
     var spans = jQ(tds[1]).find("span");
-    if (spans.length > 1 && jQ(spans[spans.length-2]).attr('data-balloon') == "Pledged" ) {
+    if (spans.length > 1 && jQ(spans[spans.length - 2]).attr('data-balloon') == "Pledged") {
         //data-balloon=T1, Pledged
-        holding.pledged = parseInt(jQ(spans[spans.length-2]).text().trim().split(':')[1]);
-        holding.quantity = parseInt(jQ(spans[spans.length-1]).text().trim());
+        holding.pledged = parseInt(jQ(spans[spans.length - 2]).text().trim().split(':')[1]);
+        holding.quantity = parseInt(jQ(spans[spans.length - 1]).text().trim());
     } else {
         holding.pledged = 0;
-        holding.quantity = parseInt(jQ(spans[spans.length-1]).text().trim());
+        holding.quantity = parseInt(jQ(spans[spans.length - 1]).text().trim());
     }
     holding.avgCost = parseFloat(jQ(tds[2]).text().split(",").join(""));
     holding.ltp = parseFloat(jQ(tds[3]).text().split(",").join(""));
@@ -2617,6 +2661,24 @@ function resetSubFilter() {
     g_subFilterData = false;
 }
 
+function isLastDay(weekDay) { //1 monday
+    var tdy = new Date();
+    var dt = new Date()
+    // console.log("isLastDay " + tdy);
+    dt.setDate(1)
+    dt.setMonth(dt.getMonth()+1)
+    dt.setDate(dt.getDate() - 1);
+    // console.log("start Date " + dt);
+
+    while(dt.getDay() !== weekDay ) {
+        dt.setDate(dt.getDate() - 1);
+        // console.log(dt.toDateString())
+        // console.log( dt.toDateString() == tdy.toDateString())
+    } 
+
+    return (dt.toDateString() === tdy.toDateString());
+}
+
 // all behavior related actions go here.
 function main() {
     var cssStr = `<style>
@@ -2699,10 +2761,10 @@ function main() {
         //     var position = getPositionRowObject(this);
         //     var p = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
 
-            switch (filterValue) {
-                case 'mis':
-                    g_showOnlyMISPositions = true;
-                    // if (position.product == 'MIS') {
+        switch (filterValue) {
+            case 'mis':
+                g_showOnlyMISPositions = true;
+                // if (position.product == 'MIS') {
 
                     // } else {
                     //     jQ(this).hide();
@@ -2717,54 +2779,54 @@ function main() {
                 case 'pe':
                     // if (position.pece == 'PE') {
 
-                    // } else {
-                    //     jQ(this).hide();
-                    // }
-                    g_showOnlyPEPositions = true;
-                    break;
-                case 'ce':
-                    // if (position.pece == 'CE') {
+                // } else {
+                //     jQ(this).hide();
+                // }
+                g_showOnlyPEPositions = true;
+                break;
+            case 'ce':
+                // if (position.pece == 'CE') {
 
-                    // } else {
-                    //     jQ(this).hide();
-                    // }
-                    g_showOnlyCEPositions = true;
-                    break;
-                case 'fut':
-                    // if (position.optfut == 'FUT') {
+                // } else {
+                //     jQ(this).hide();
+                // }
+                g_showOnlyCEPositions = true;
+                break;
+            case 'fut':
+                // if (position.optfut == 'FUT') {
 
-                    // } else {
-                    //     jQ(this).hide();
-                    // }
-                    g_showOnlyFUTPositions = true;
-                    break;
-                case 'opt':
-                    // if (position.optfut == 'OPT') {
+                // } else {
+                //     jQ(this).hide();
+                // }
+                g_showOnlyFUTPositions = true;
+                break;
+            case 'opt':
+                // if (position.optfut == 'OPT') {
 
-                    // } else {
-                    //     jQ(this).hide();
-                    // }
-                    g_showOnlyOPTPositions = true;
-                    break;
-                case 'all':
-                    break;
-                case 'reset':
-                    jQ('#subFilterDropdownId').val('all');
-                    jQ('#allSubFilterId').prop('text', 'All');
-                    break;
-                default:
-                    debug(`setting default`);
-                    g_subFilter = true;
-                    g_subFilterData = this.value;
-                    // if (getExpiryText(p) == filterValue || position.scrip == filterValue) {
-                    //     //let filter decision pass
-                    // } else {
-                    //     //overide filter decision and hide.
-                    //     jQ(this).hide();
-                    // }
+                // } else {
+                //     jQ(this).hide();
+                // }
+                g_showOnlyOPTPositions = true;
+                break;
+            case 'all':
+                break;
+            case 'reset':
+                jQ('#subFilterDropdownId').val('all');
+                jQ('#allSubFilterId').prop('text', 'All');
+                break;
+            default:
+                debug(`setting default`);
+                g_subFilter = true;
+                g_subFilterData = this.value;
+            // if (getExpiryText(p) == filterValue || position.scrip == filterValue) {
+            //     //let filter decision pass
+            // } else {
+            //     //overide filter decision and hide.
+            //     jQ(this).hide();
+            // }
 
-                // code block
-            }
+            // code block
+        }
         // });
 
         // info(filterValue + g_showOnlyPEPositions);
@@ -2799,7 +2861,7 @@ function main() {
         debug('found visible rows: ' + allVisibleRows.length);
 
         jQ(document).off('change', "input.su-checkbox", onSuCheckboxSelection);
-        jQ(document).off('click', allDOMPaths.PathForPositions,onSuCheckboxSelection);
+        jQ(document).off('click', allDOMPaths.PathForPositions, onSuCheckboxSelection);
 
         var lastOne;
         allVisibleRows.each(function (rowIndex) {
@@ -2811,7 +2873,7 @@ function main() {
         setTimeout(onSuCheckboxSelection, 10);
 
         jQ(document).on('change', "input.su-checkbox", onSuCheckboxSelection);
-        jQ(document).on('click', allDOMPaths.PathForPositions,onSuCheckboxSelection);
+        jQ(document).on('click', allDOMPaths.PathForPositions, onSuCheckboxSelection);
 
         //simulateSelectBoxEvent();
     });
@@ -2852,7 +2914,7 @@ function main() {
             data: order,
             async: false,
             cache: false,
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 debug(error);
                 debug(xhr.responseText);
                 getToast(`${status} :: ${error} :: ${xhr.responseText}`).showToast();
@@ -2865,7 +2927,7 @@ function main() {
                 getToast(`Trail Successful. Reloading.`).showToast();
                 reloadPage();
             },
-            complete: function() {
+            complete: function () {
                 debug("33333");
             }
         });
@@ -2910,7 +2972,7 @@ function main() {
             data: order,
             async: false,
             cache: false,
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 debug(error);
                 debug(xhr.responseText);
                 getToast(`${status} :: ${error} :: ${xhr.responseText}`).showToast();
@@ -2923,7 +2985,7 @@ function main() {
                 getToast(`Trail Successful. Reloading.`).showToast();
                 reloadPage();
             },
-            complete: function() {
+            complete: function () {
                 debug("33333");
             }
         });
@@ -2994,7 +3056,7 @@ function main() {
                 });
 
                 instance.setContent(`Realised P&L ${formatter.format(pnl)}`);
-              },
+            },
         });
 
     });
@@ -3031,7 +3093,8 @@ function main() {
 
     });
 
-    const PIN1_TARGET = 'div.instrument-widget:nth-child(1) > span:nth-child(2) > span:nth-child(1)';
+
+    const PIN1_TARGET = 'div.pinned-instruments > div.instrument-widget:nth-child(1) > span.wrap span.last-price';
     jQ(document).on('click', PIN1_TARGET, function () {
 
         /*if (g_config.get('enable_nifty_monthly_weekly_range') == true) {*/
@@ -3061,28 +3124,28 @@ function main() {
                         // jQ(this).attr('data-balloon-pos', 'down');
                         // jQ(this).attr('data-balloon', `(M) ${lNift.toFixed(2)} - ${uNift.toFixed(2)}`);
 
-                        chg = vix / Math.sqrt(52); ////g_config.get('nifty_vix_range_weekly_sqroot');
-                        range = strike * chg / 100;
-                        var wlNift = strike - range;
-                        var wuNift = parseFloat(strike) + parseFloat(range);
+                    chg = vix / Math.sqrt(52); ////g_config.get('nifty_vix_range_weekly_sqroot');
+                    range = strike * chg / 100;
+                    var wlNift = strike - range;
+                    var wuNift = parseFloat(strike) + parseFloat(range);
 
-                        chg = vix / Math.sqrt(365-104-13); ////g_config.get('nifty_vix_range_daily_sqroot');
-                        range = strike * chg / 100;
-                        debug(range);
-                        var dlNift = strike - range;
-                        var duNift = parseFloat(strike) + parseFloat(range);
+                    chg = vix / Math.sqrt(365 - 104 - 13); ////g_config.get('nifty_vix_range_daily_sqroot');
+                    range = strike * chg / 100;
+                    debug(range);
+                    var dlNift = strike - range;
+                    var duNift = parseFloat(strike) + parseFloat(range);
 
-                        showTippy(PIN1_TARGET, `(M) ${lNift.toFixed(2)} - ${uNift.toFixed(2)}<br>(W) ${wlNift.toFixed(2)} - ${wuNift.toFixed(2)}<br>(D) ${dlNift.toFixed(2)} - ${duNift.toFixed(2)}`);
-                        //debug(jQ("div.vddl-draggable:nth-child(1) > div:nth-child(1) > div:nth-child(1) > span:nth-child(2) > span:nth-child(3)"));
-                    } else {
-                        // getToast('Cannot find INDIA VIX in watchlist. Please add it.').showToast();
-                        // showErrorToast('Cannot find INDIA VIX in watchlist. Please add it.');
-                        showTippy(PIN1_TARGET, 'Cannot find INDIA VIX in watchlist. Please add it.');
-                    }
+                    showTippy(PIN1_TARGET, `(M) ${lNift.toFixed(2)} - ${uNift.toFixed(2)}<br>(W) ${wlNift.toFixed(2)} - ${wuNift.toFixed(2)}<br>(D) ${dlNift.toFixed(2)} - ${duNift.toFixed(2)}`);
+                    //debug(jQ("div.vddl-draggable:nth-child(1) > div:nth-child(1) > div:nth-child(1) > span:nth-child(2) > span:nth-child(3)"));
+                } else {
+                    // getToast('Cannot find INDIA VIX in watchlist. Please add it.').showToast();
+                    // showErrorToast('Cannot find INDIA VIX in watchlist. Please add it.');
+                    showTippy(PIN1_TARGET, 'Cannot find INDIA VIX in watchlist. Please add it.');
+                }
                 // }
             } else {
                 // getToast('Works only on NIFTY 50.').showToast();
-                showTippy(PIN1_TARGET,'Works only on NIFTY 50.');
+                showTippy(PIN1_TARGET, 'Works only on NIFTY 50.');
             }
         /*}*/
 
@@ -3137,6 +3200,187 @@ function main() {
             jQ("#watchlistFilterId").text("Filter *");
         }
     });
+
+    //click on addAltOptionChain
+    jQ(document).on('click', "#addAltOptionChain", function () {
+        tEv("kite", "addAltOptionChain", "click", "");
+        // var h = prompt("Provide Symbol", "NIFTY");
+        var dt = new Date()
+        var expiry = `${dt.getFullYear() % 100}${dt.getMonth() + 1}${dt.getDate().toString().padStart(2, "0")}`;
+        
+        let da = new Intl.DateTimeFormat('en', { year: '2-digit' }).format(dt);
+        let mo = new Intl.DateTimeFormat('en', { month: 'short' }).format(dt);
+
+        var todayExpirySymbol = "";
+        debug("dat " + dt.getDay());
+        var d = dt.getDay();
+        var isLstD = isLastDay(d);
+        switch (d) {
+            case 1:
+                // todayExpirySymbol = "MIDCPNIFTY"
+                todayExpirySymbol = "BANKEX"
+                //BANKEX24JUN58400PE
+                break;
+            case 2:
+                todayExpirySymbol = "FINNIFTY"
+                break;
+            case 3:
+                todayExpirySymbol = "BANKNIFTY"
+                break;
+            case 4:
+                todayExpirySymbol = "NIFTY"
+                break;
+            case 5:
+                todayExpirySymbol = "SENSEX"
+                break;
+            default:
+                debug('default')
+                break;
+        }
+
+        debug('last day ' + isLstD);
+        if (isLstD) {
+            expiry = da + mo.toUpperCase();
+        }
+        
+        var h = prompt("Provide Symbol with Expiry w:NIFTYyymdd m:NIFTY24JUL", todayExpirySymbol+expiry);
+        if (h == null || h == "") {
+            return;
+        }
+        var sym = h.match("^[a-zA-Z]*")[0]
+        var iSym = "";
+        if (sym.startsWith("FINN")) {
+            sym = "NSE:NIFTY FIN SERVICE";
+            iSym = "NIFTY FIN SERVICE";
+        } else if (sym.startsWith("BANKEX")) {
+            sym = "BSE:BANKEX";
+            iSym = "BANKEX";
+        } else if (sym.startsWith("NIFT")) {
+            sym = "NSE:NIFTY 50";
+            iSym = "NIFTY 50";
+        } else if (sym.startsWith("BANK")) {
+            sym = "NSE:NIFTY BANK";
+            iSym = "NIFTY BANK";
+        } else if (sym.startsWith("MID")) {
+            sym = "NSE:NIFTY MID SELECT";
+            iSym = "NIFTY MID SELECT";
+        } else if (sym.startsWith("SENSEX")) {
+            sym = "BSE:SENSEX";
+            iSym = "SENSEX";
+        }
+        var s = 0;
+        myAjaxSetup();
+        myUrl = BASE_URL + `/oms/quote?i=${sym}`;
+        if (g_config.get('use_api')) {
+            myUrl = `https://api.kite.trade/quote?i=${sym}`;
+        }
+
+
+        jQ.ajax({
+            url: myUrl,
+            type: 'GET',
+            async: false,
+            cache: false,
+            error: function (xhr, status, error) {
+                debug(error);
+                debug(xhr.responseText);
+                getToast(`${status} :: ${error} :: ${xhr.responseText}`).showToast();
+
+                throw new Error("Not able to get best offer/bid price. " + error);
+            },
+            success: function (response, status) {
+                debug("22222");
+                debug("Data: " + JSON.stringify(response) + "\nStatus: " + status);
+
+                s = response.data[sym].last_price;
+
+                // if (order.transaction_type === 'BUY') {
+                //     newPrice = newPrice + 0.05;
+                // } else if (order.transaction_type === 'SELL') {
+                //     newPrice = newPrice - 0.05;
+                // }
+            },
+            complete: function () {
+                debug("33333");
+            }
+        });
+        var n = g_config.get('marketlist_number_of_strikes');
+
+        var i = 50;
+
+        if (h.startsWith("BANKEX") || h.startsWith("SENSEX")) {
+            i = 100;
+        }
+        console.log(s)
+        var atm = closestStrike(s, i);
+        cp = "PE";
+        var wt = 3;
+        for (ll = n; ll >= 0; ll--) {
+            var symbol = h + (atm - (ll * i)) + cp;
+            console.log(symbol)
+
+
+            data = {};
+            data.tradingsymbol = symbol
+            wt++;
+            data.weight = wt
+            data.segment = "NFO-OPT"
+            if (data.tradingsymbol.startsWith("BANKEX") || data.tradingsymbol.startsWith("SENSEX")) {
+                data.segment = "BFO-OPT";
+            }
+            addToWatchListCall(data);
+        }
+        data = {};
+        data.tradingsymbol = iSym;
+        wt++;
+        data.weight = wt
+        data.segment = "INDICES"
+        addToWatchListCall(data);
+
+        cp = "CE";
+        for (ll = 0; ll <= n; ll++) {
+            var symbol = h + (atm + (ll * i)) + cp;
+            console.log(symbol)
+            data = {};
+            data.tradingsymbol = symbol
+            wt++;
+            data.weight = wt
+            data.segment = "NFO-OPT"
+            if (data.tradingsymbol.startsWith("BANKEX") || data.tradingsymbol.startsWith("SENSEX")) {
+                data.segment = "BFO-OPT";
+            }
+            addToWatchListCall(data);
+        }
+
+        // var e = prompt("Provide expiry (w:yymdd, m:YYMMM", "NIFTY");
+        setTimeout(() => {
+            window.location.reload();
+        }, 3000);
+        // 
+    });
+
+    function addToWatchListCall(data) {
+        //segment=INDICES&tradingsymbol=NIFTY%2050&watch_id=4&weight=14
+
+        mitem = jQ(allDOMPaths.domPathTabToChangeWatchlist + ".selected").text().trim();
+        data.watch_id = mitem
+
+        jQ.post(BASE_URL + `/api/marketwatch/${mitem}/items`,
+            data,
+            function (data, status) {
+                debug("5555");
+
+                debug("Data: " + data + "\nStatus: " + status);
+                getToast(`${status}`).showToast();
+            })
+            .fail(function (xhr, status, error) {
+                debug("666");
+                var resp = JSON.parse(xhr.responseText);
+
+                getToast(`${status} :: ${resp.message}`).showToast();
+
+            });
+    }
 
     //on click of + to assign tag to holdings
     jQ(document).on('click', "#tagAddIcon", function () {
@@ -3245,21 +3489,7 @@ function main() {
         }
     });
 
-    //click of positions header
-    jQ(document).on('click', allDOMPaths.positionHeader, function () {
-        tEv("kite", "positions", "toggle", "");
-        var currentUrl = window.location.pathname;
-        if (currentUrl.includes('positions')) {
-            debug('click on positions header.');
-            if (jQ('#tagSelectorP').is(":visible")) {
-                hideDropdown();
-            } else {
-                showPositionDropdown();
-            }
-        }
-    });
-
-    //click of Holdings header
+    //click of Holdings/position header allDOMPaths.positionHeader
     jQ(document).on('click', allDOMPaths.domPathMainInitiatorLabel, function () {
         tEv("kite", "holdings", "toggle", "");
         var currentUrl = window.location.pathname;
@@ -3269,6 +3499,13 @@ function main() {
                 hideDropdown();
             } else {
                 showHoldingDropdown();
+            }
+        } else if (currentUrl.includes('positions')) {
+            debug('click on positions header.');
+            if (jQ('#tagSelectorP').is(":visible")) {
+                hideDropdown();
+            } else {
+                showPositionDropdown();
             }
         }
     });
@@ -3303,7 +3540,7 @@ function main() {
 
     //on click of watchlist tab (1-5)
     jQ(document).on('click', allDOMPaths.domPathTabToChangeWatchlist, function () {
-        info("clicked on: " + jQ(this).attr("id"));
+        info("clicked on: " + jQ(this).attr("data-balloon"));
         if (jQ(this).attr("id") == "watchlistFilterId") {
             //do nothing
         } else {
@@ -3396,7 +3633,7 @@ function menuShown() {
     `;
     debug('menuShown');
     jQ(menuDom).append(insert);
-    jQ("#bumpOrderButtonId").click(function(evt) {
+    jQ("#bumpOrderButtonId").click(function (evt) {
         debug('bumpOrderButtonId clicked');
         debug(getPositionRowObject(_currentContextMenuRow));
         evt.stopPropagation();
@@ -3807,7 +4044,7 @@ async function updateOrderButtons() {
 
 function changePnLFilter() {
     debug('changePnLFilter');
-    setTimeout(function(){
+    setTimeout(function () {
         document.getElementsByTagName('select')[0].selectedIndex = 2; //FO
 
         document.getElementsByTagName('select')[0].focus();
@@ -3848,15 +4085,15 @@ function introducePnlFilter() {
     tippy('#customFilter', {
         content: "First select FO from dropdown then click here",
         placement: 'bottom',
-      });
+    });
 
     // jQ(document).on('click', "#customPnlFilter", function () {
     // }
 
 }
 
-//NOT WORKING
-waitForKeyElements ("h1:contains('P&L')", introducePnlFilter);
+//NOT WORKING 
+waitForKeyElements("h1:contains('P&L')", introducePnlFilter);
 
 function addPnlMenu() {
     jQ('.dropdown-nav-list').prepend("<li><a target='_blank' href='https://console.zerodha.com/reports/pnl'><span class='icon icon-console'></span> P&L<span class='text-lightest'> / betterKite</span></a></li>");
@@ -4062,13 +4299,13 @@ function trailOrderButton() {
             tippy('#trailButtonId', {
                 content: `This will change (inc. for sell, dec. for buy) the trigger price and price by ${g_config.get("auto_trail_points")} 'Auto trail points' in settings.`,
                 placement: 'bottom',
-              });
+            });
 
-              jQ(this).find("td.average-price").append(`<span id='saveProfitButtonId' style="margin-left: 2px;" data='${dataUidInTR}|${orderId}|${price}|${tPrice}|${transaction_type}' class='text-label small order-status-label'><span>Save Profit</span></span>`);
+            jQ(this).find("td.average-price").append(`<span id='saveProfitButtonId' style="margin-left: 2px;" data='${dataUidInTR}|${orderId}|${price}|${tPrice}|${transaction_type}' class='text-label small order-status-label'><span>Save Profit</span></span>`);
             tippy('#saveProfitButtonId', {
                 content: `This will change (inc. for sell, dec. for buy) the trigger price and price by ${g_config.get("auto_sl_points")} 'Auto sl points' + ${g_config.get("auto_save_profit_points")} 'Auto save profit points' in settings.`,
                 placement: 'bottom',
-              });
+            });
         }
 
     });
@@ -4216,7 +4453,7 @@ function addOverrideOption() {
 
 function openReplacement(method, url, async, user, password) {
     debug("openReplacement");
-    if (method === 'POST' && url.includes('/oms/orders/regular')) {
+    if (method === 'POST' && url.includes('/orders/regular')) {
         _newOrder = true;
     } else {
         _newOrder = false;
@@ -4228,10 +4465,10 @@ function sendReplacement(data) {
     debug("sendReplacement");
     if (_newOrder === true) {
         var order = queryStringToJSON(data);
-    //     _interceptedReq = order;
-    // } else {
-    //     _interceptedReq = "";
-    // }
+        //     _interceptedReq = order;
+        // } else {
+        //     _interceptedReq = "";
+        // }
         debug(`smartLiit ${jQ("#smartLimit").is(":checked")}`);
         debug(`overQtyFreezeCb ${jQ("#overQtyFreezeCb").is(':checked')}`);
         debug(order.tradingsymbol.startsWith(indices[1]));
@@ -4265,7 +4502,7 @@ function sendReplacement(data) {
                 jQ("#smartLimit").prop('checked', false);
                 tEv("kite", "place-order", "smart-limit", "");
                 // throw new Error("Smart Limit Order is executed in the background, Check orders. Check betterKite message");
-            }  else {
+            } else {
                 _smartLimit = false;
             }
 
@@ -4316,16 +4553,16 @@ window.XMLHttpRequest.prototype.send = sendReplacement;
 function queryStringToJSON(qs) {
     var pairs = qs.split('&');
     var result = {};
-    pairs.forEach(function(p) {
+    pairs.forEach(function (p) {
         var pair = p.split('=');
         var key = pair[0];
         var value = decodeURIComponent(pair[1] || '');
 
-        if( result[key] ) {
-            if( Object.prototype.toString.call( result[key] ) === '[object Array]' ) {
-                result[key].push( value );
+        if (result[key]) {
+            if (Object.prototype.toString.call(result[key]) === '[object Array]') {
+                result[key].push(value);
             } else {
-                result[key] = [ result[key], value ];
+                result[key] = [result[key], value];
             }
         } else {
             result[key] = value;
@@ -4335,14 +4572,22 @@ function queryStringToJSON(qs) {
     return JSON.parse(JSON.stringify(result));
 };
 
-function sendPlaceNewOrderRequest(order) {
-    debug('sendPlaceNewOrderRequest');
+function myAjaxSetup() {
+    myAuth = `enctoken ${getCookie('enctoken')}`;
+    if (g_config.get('use_api')) {
+        myAuth = `token ${g_config.get('api_key')}:${g_config.get('api_access_token')}`;
+    }
 
     jQ.ajaxSetup({
         headers: {
-            'Authorization': `enctoken ${getCookie('enctoken')}`
+            'Authorization': myAuth
         }
     });
+}
+function sendPlaceNewOrderRequest(order) {
+    debug('sendPlaceNewOrderRequest');
+
+    myAjaxSetup();
     debug("11111");
     if (_smartLimit === true) {
         order.order_type = "LIMIT";
@@ -4354,12 +4599,18 @@ function sendPlaceNewOrderRequest(order) {
             order.price = 0.05; //on safer side, keeping a random low price
         }
 
+        myUrl = BASE_URL + `/oms/quote?i=${order.exchange}:${order.tradingsymbol}`;
+        if (g_config.get('use_api')) {
+            myUrl = `https://api.kite.trade/quote?i=${order.exchange}:${order.tradingsymbol}`;
+        }
+
+
         jQ.ajax({
-            url: BASE_URL + `/oms/quote?i=${order.exchange}:${order.tradingsymbol}`,
+            url: myUrl,
             type: 'GET',
             async: false,
             cache: false,
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 debug(error);
                 debug(xhr.responseText);
                 getToast(`${status} :: ${error} :: ${xhr.responseText}`).showToast();
@@ -4379,7 +4630,7 @@ function sendPlaceNewOrderRequest(order) {
 
                 order.price = newPrice;
             },
-            complete: function() {
+            complete: function () {
                 debug("33333");
             }
         });
@@ -4419,10 +4670,17 @@ function sendPlaceNewOrderRequest(order) {
         order.quantity = q;
 
         console.log(`placing order for ${q}`);
-        jQ.post(BASE_URL + "/oms/orders/regular",
+
+        myAjaxSetup();
+        myUrl = BASE_URL + "/oms/orders/regular";
+        if (g_config.get('use_api')) {
+            myUrl = `https://api.kite.trade/orders/regular`;
+        }
+
+        jQ.post(myUrl,
             order,
             function (data, status) {
-                 debug("5555");
+                debug("5555");
 
                 debug("Data: " + data + "\nStatus: " + status);
                 getToast(`${status}`).showToast();
@@ -4443,10 +4701,10 @@ function sendPlaceNewOrderRequest(order) {
                         order.trailing_stoploss = (g_config.get("auto_trail_points")).toString();
                     }
 
-                    order.order_type="SL";
+                    order.order_type = "SL";
                     debug(order);
 
-                    jQ.post(BASE_URL + "/oms/orders/regular",
+                    jQ.post(myUrl,
                         order,
                         function (data, status) {
                             debug("AAAAAA");
@@ -4454,7 +4712,7 @@ function sendPlaceNewOrderRequest(order) {
                             debug("Data: " + data + "\nStatus: " + status);
                             getToast(`SL Order ${status}`).showToast();
                         })
-                        .fail(function(xhr, status, error) {
+                        .fail(function (xhr, status, error) {
                             debug("BBBB");
                             var resp = JSON.parse(xhr.responseText);
 
@@ -4466,7 +4724,7 @@ function sendPlaceNewOrderRequest(order) {
 
 
             })
-            .fail(function(xhr, status, error) {
+            .fail(function (xhr, status, error) {
                 debug("666");
                 var resp = JSON.parse(xhr.responseText);
 
