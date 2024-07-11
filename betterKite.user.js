@@ -7,6 +7,7 @@
 // @match        https://kite.zerodha.com/*
 // @match        https://console.zerodha.com/*
 // @match        https://web.sensibull.com/*
+// @match        https://insights.sensibull.com/*
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_addStyle
@@ -2725,6 +2726,16 @@ function main() {
     .text-green .text-label.grey.randomClassholdingToHelpHide{color: green}
     .text-red.text-label.grey.randomClassholdingToHelpHide{color: red!important;display: block;margin-top: 7px;padding: 5px;}
     .text-green.text-label.grey.randomClassholdingToHelpHide{color: green!important;display: block;margin-top: 7px;padding: 5px;}
+    button.atmBtn {
+         border: 1px solid;
+         font-size: 0.8rem;
+         padding: 0px 10px;
+         border-radius: 5px;
+         margin: 10px 5px;
+         font-weight: 800;
+         color: var(--primaryColor);
+         cursor:pointer;
+    }
     </style>`;
     jQ("head").append(cssStr);
     GM_registerMenuCommand("Reset Data (WARNING) " + VERSION, function () {
@@ -3587,11 +3598,28 @@ function main() {
     waitForKeyElements("span.value", showRoiNudge);
     waitForKeyElements("div.value.final-margins-value", showBasketRoiNudge);
 
+    setTimeout(()=>toggleDropdown(window.location.pathname),3000);
+
     //sensibull title updates
     var currentUrl = window.location.pathname;
     if (currentUrl.includes('option-strategy-builder')) {
         var sensibullTitleUpdateInterval = setInterval(()=>{document.title =document.querySelectorAll("div#builder-left-col-scrolling-div>div>div>div")[0].textContent.split(" ")[0]+""+ document.querySelectorAll("div#builder-left-col-scrolling-div>div>div>div:last-child>div:last-child>div:last-child>div:last-child>div:last-child>div:last-child")[0].textContent},1000);
     }
+    if(window.location.host == 'insights.sensibull.com')
+        var tempInterval = setInterval(()=>{
+            if(jQ(".atmBtn").length==0)
+            {
+                jQ("div#app>div>div:first-child").append("<button class='atmBtn' id='10'>ATM +- 10</button>")
+                jQ("div#app>div>div:first-child").append("<button class='atmBtn' id='15'>ATM +- 15</button>")
+                jQ("div#app>div>div:first-child").append("<button class='atmBtn' id='20'>ATM +- 20</button>")
+
+            var a = jQ(".MuiTableRow-root button.MuiButtonBase-root.MuiButton-root.MuiButton-text:last-child");
+            jQ(document).on('click', ".atmBtn", function (e) {
+                for(var i=a.length/2-2*e.target.id-1;i<a.length/2+2*e.target.id+1;i++)
+                    jQ(a[i]).click();
+            })
+                }
+        },1000);
 
 }
 
