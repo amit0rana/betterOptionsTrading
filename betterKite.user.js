@@ -14,6 +14,7 @@
 // @grant        GM_registerMenuCommand
 // @grant        GM_setClipboard
 // @grant        GM_getClipboard
+// @require      https://openuserjs.org/src/libs/sizzle/GM_config.js
 // @require      https://raw.githubusercontent.com/amit0rana/betterOptionsTrading/master/betterCommon.js
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
 // @require      https://raw.githubusercontent.com/amit0rana/MonkeyConfig/master/monkeyconfig.js
@@ -81,6 +82,230 @@ var g_subFilterData = false;
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
 var g_color = ((jQ('html').attr('data-theme') == 'dark') ? '#191919' : 'white');
+
+function initGM() {
+    GM_config.init(
+    {
+        'id': 'MyConfig', // The id used for this instance of GM_config
+        'title': 'Script Settings', // Panel Title
+        'fields': // Fields object
+        {
+            'auto_refresh_PnL': // This is the id of the field
+            {
+                'label': 'Auto Refresh P&L', // Appears next to field
+                'type': 'checkbox', // Makes this setting a text field
+                'default': false, // Default value if user doesn't change it
+                'title': 'Give us your name!', // Add a tooltip (hover over text)
+                'section': ['Positions']
+            },
+            'use_api':
+            {
+                'label': 'Use API or oms',
+                'type': 'checkbox',
+                'default': false,
+            },
+            'api_key':
+            {
+                'label': 'API Key',
+                'type': 'text',
+                'default': '',
+            },
+            'api_access_token':
+            {
+                'label': 'Access Token',
+                'type': 'text',
+                'default': '',
+            },
+            'overide_qty_freeze_check_to_enable':
+            {
+                'label': 'Enable overiding of Qty freeze feature',
+                'type': 'checkbox',
+                'default': false,
+                'section': ['Positions', 'New Position']
+            },
+            'qty_freeze_warning':
+            {
+                'label': 'Warning when removing Qty Freeze',
+                'type': 'checkbox',
+                'default': true,
+            },
+            'nifty_freeze_quantity':
+            {
+                'label': 'Nifty Qty Freeze',
+                'type': 'number',
+                'default': 1800,
+            },
+            'banknifty_freeze_quantity':
+            {
+                'label': 'BankNifty Qty Freeze',
+                'type': 'number',
+                'default': 900,
+            },
+            'finnifty_freeze_quantity':
+            {
+                'label': 'FinNifty Qty Freeze',
+                'type': 'number',
+                'default': 1800,
+            },
+            'sensex_freeze_quantity':
+            {
+                'label': 'Sensex Qty Freeze',
+                'type': 'number',
+                'default': 1000,
+            },
+            'bankex_freeze_quantity':
+            {
+                'label': 'Bankex Qty Freeze',
+                'type': 'number',
+                'default': 1000,
+            },
+            'midcap_freeze_quantity':
+            {
+                'label': 'Midcap Qty Freeze',
+                'type': 'number',
+                'default': 4200,
+            },
+            'smart_limit_check_to_enable':
+            {
+                'label': 'Enable smartLimit feature (needs API)',
+                'type': 'checkbox',
+                'default': false,
+            },
+            'auto_sl_order':
+            {
+                'label': 'Add SL order',
+                'type': 'checkbox',
+                'default': false,
+                'section': ['Positions', 'Scalping']
+            },
+            'auto_sl_points':
+            {
+                'label': 'SL points',
+                'type': 'number',
+                'default': 20,
+            },
+            'auto_save_profit_points':
+            {
+                'label': 'Save profit points',
+                'type': 'number',
+                'default': 20,
+            },
+            'auto_trail_points':
+            {
+                'label': 'Trail profit points',
+                'type': 'number',
+                'default': 3,
+            },
+            'include_existing_positions':
+            {
+                'label': 'Include existing positions for Margin calculation',
+                'type': 'checkbox',
+                'default': false,
+                'section': ['Positions', 'Margin']
+            },
+            'margin_method':
+            {
+                'label': 'Margin Calculation Method',
+                'type': 'select',
+                'options': ['Basket', 'Calculator'],
+                'default': 'MM_BASKET',
+            },
+            'nf_hedge':
+            {
+                'label': 'Nifty Hedge',
+                'type': 'number',
+                'default': 500,
+                'title': 'Used for calculating Margin saving on taking hedge',
+            },
+            'bnf_hedge':
+            {
+                'label': 'BankNifty Hedge',
+                'type': 'number',
+                'default': 700,
+                'title': 'Used for calculating Margin saving on taking hedge',
+            },
+            'stock_hedge':
+            {
+                'label': 'Stocks Hedge',
+                'type': 'number',
+                'default': 100,
+                'title': 'Used for calculating Margin saving on taking hedge',
+            },
+            'enable_nifty_monthly_weekly_range':
+            {
+                'label': 'Nifty range based on vix on hover of Pins',
+                'type': 'checkbox',
+                'default': true,
+                'section': ['Positions', 'VIX Based Range']
+            },
+            'nifty_vix_range_monthly_sqroot':
+            {
+                'label': 'Nifty Range monthly sqroot',
+                'type': 'number',
+                'default': 12,
+            },
+            'nifty_vix_range_weekly_sqroot':
+            {
+                'label': 'Nifty Range weekly sqroot',
+                'type': 'number',
+                'default': 52,
+            },
+            'nifty_vix_range_daily_sqroot':
+            {
+                'label': 'Nifty Range daily sqroot',
+                'type': 'number',
+                'default': 365,
+            },
+            'marketlist_number_of_strikes':
+            {
+                'label': 'Number of strikes +- ATM',
+                'type': 'number',
+                'default': 4,
+                'section': ['Watchlist']
+            },
+            'filter_watchlist':
+            {
+                'label': 'Filter based on watchlist',
+                'type': 'checkbox',
+                'default': true,
+            },
+            'pro_mode':
+            {
+                'label': 'Pro mode',
+                'type': 'checkbox',
+                'default': false,
+                'section': ['Others']
+            },
+            'logging':
+            {
+                'label': 'Logging',
+                'type': 'select',
+                'options': ['D_LEVEL_INFO', 'D_LEVEL_DEBUG', 'D_LEVEL_NONE'],
+                'default': 'D_LEVEL_NONE',
+            },
+        },
+        'events':
+        {
+            // 'init': function () { // runs after initialization completes
+            // //     // override saved value
+            // //     this.set('Name', 'Mike Medley');
+
+            // //     // open frame
+            // //     this.open();
+            //     let auto_refresh_PnL = gmc.get('auto_refresh_PnL');
+
+            // },
+            'save': function () { // runs after values are saved
+                // log the saved value of the Name field
+                // this.log(this.get('Name'));
+                this.close();
+            }
+        }
+    });
+
+    return GM_config;
+}
+const gmc = await initGM()
 
 const g_config = new MonkeyConfig({
     title: 'betterKite Settings',
@@ -2124,7 +2349,7 @@ function onSuCheckboxSelection() {
         realPnl = realPnl - (positionRow.quantity * (positionRow.avgPrice - positionRow.ltp));
 
         // var v = jQ(jQ(this).find("td")[6]).text().split(",").join("");
-    
+
 
         pnl += parseFloat(positionRow.pnl);
 
@@ -2437,15 +2662,15 @@ function isLastDay(weekDay) { //1 monday
     var dt = new Date()
     // console.log("isLastDay " + tdy);
     dt.setDate(1)
-    dt.setMonth(dt.getMonth()+1)
+    dt.setMonth(dt.getMonth() + 1)
     dt.setDate(dt.getDate() - 1);
     // console.log("start Date " + dt);
 
-    while(dt.getDay() !== weekDay ) {
+    while (dt.getDay() !== weekDay) {
         dt.setDate(dt.getDate() - 1);
         // console.log(dt.toDateString())
         // console.log( dt.toDateString() == tdy.toDateString())
-    } 
+    }
 
     return (dt.toDateString() === tdy.toDateString());
 }
@@ -2466,6 +2691,10 @@ function main() {
         }
 
     }, "r");
+
+    GM_registerMenuCommand("New settings ", function () {
+        gmc.open();
+    }, "n");
 
     //sub filter change
     jQ(document).on('change', "#subFilterDropdownId", function () {
@@ -2925,7 +3154,7 @@ function main() {
         // var h = prompt("Provide Symbol", "NIFTY");
         var dt = new Date()
         var expiry = `${dt.getFullYear() % 100}${dt.getMonth() + 1}${dt.getDate().toString().padStart(2, "0")}`;
-        
+
         let da = new Intl.DateTimeFormat('en', { year: '2-digit' }).format(dt);
         let mo = new Intl.DateTimeFormat('en', { month: 'short' }).format(dt);
 
@@ -2960,8 +3189,8 @@ function main() {
         if (isLstD) {
             expiry = da + mo.toUpperCase();
         }
-        
-        var h = prompt("Provide Symbol with Expiry w:NIFTYyymdd m:NIFTY24JUL", todayExpirySymbol+expiry);
+
+        var h = prompt("Provide Symbol with Expiry w:NIFTYyymdd m:NIFTY24JUL", todayExpirySymbol + expiry);
         if (h == null || h == "") {
             return;
         }
