@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      4.08
+// @version      4.09
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -240,7 +240,7 @@ function initGM() {
                 'label': 'Nifty range based on vix on hover of Pins',
                 'type': 'checkbox',
                 'default': true,
-                'section': ['Positions', 'VIX Based Range']
+                'section': ['Positions', 'VIX Based Range. To use, PIN 1 should be Nifty50, Watchlist should have INDIA VIX. Then click on Nifty50 value in Pin1. Now you sould see daily, weekly, monthly range.']
             },
             'nifty_vix_range_monthly_sqroot':
             {
@@ -3058,7 +3058,7 @@ function main() {
                 //     jQ(this).removeAttr('data-balloon-pos');
                 //     jQ(this).removeAttr('data-balloon');
                 // } else {
-                var iv = jQ("div.info > span.symbol > span > span.nice-name:contains('INDIA')");
+                var iv = jQ("div.symbol > span.nice-name:contains('INDIA VIX')");
                 debug(iv.length);
                 if (iv.length > 0) {
                     var strike = jQ(this).text().trim();
