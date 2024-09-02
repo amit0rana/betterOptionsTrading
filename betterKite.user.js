@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      4.09
+// @version      4.10
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -1730,6 +1730,8 @@ var g_positionsPnlObserver;
 
 function hideDropdown() {
     jQ(".randomClassToHelpHide").remove();
+    jQ(".randomClassholdingToHelpHide").remove();
+    
     jQ(".allHiddenRows").show();
 
     g_dropdownDisplay = DD_NONE;
