@@ -258,7 +258,8 @@ function initGM() {
             {
                 'label': 'Nifty Range daily sqroot',
                 'type': 'number',
-                'default': 365,
+                'title': '365 - 104 (weedends) - 13 (holidays)',
+                'default': 248,
             },
             'marketlist_number_of_strikes':
             {
@@ -284,8 +285,8 @@ function initGM() {
             {
                 'label': 'Logging',
                 'type': 'select',
-                'options': ['D_LEVEL_INFO', 'D_LEVEL_DEBUG', 'D_LEVEL_NONE'],
-                'default': 'D_LEVEL_NONE',
+                'options': ['100', '2', '1'],
+                'default': '100',
             },
         },
         'events':
@@ -459,7 +460,7 @@ const allDOMPaths = {
     attrNameForInstrumentTR: "data-uid",
     tradingSymbol: "td.instrument > span.tradingsymbol",
     domPathWatchlistRow: "div.instruments > div > div.vddl-draggable.instrument",
-    domPathPendingOrdersTR: "div.pending-orders > div > table > tbody > tr",
+    domPathPendingOrdersTR: "div.pending-orders > div > div.table-wrapper > table > tbody > tr",
     domPathExecutedOrdersTR: "div.completed-orders > div > table > tbody > tr",
     domPathTradingSymbolInsideOrdersTR: "span.tradingsymbol > span",
     domPathStockNameInWatchlistRow: "span.nice-name",
@@ -939,8 +940,8 @@ function assignHoldingTags() {
                 jQ(tds[1]).append(`<div class="text-label grey randomClassholdingToHelpHide">${totalQ}</div>`);
                 // jQ(tds[2]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
                 jQ(tds[3]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
-                jQ(tds[4]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format(totalQ * holdingRow.ltp)}</div>`);
-                jQ(tds[5]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format((holdingRow.ltp - holdingRow.avgCost) * totalQ)}</div>`);
+                jQ(tds[4]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format(holdingRow.quantity * holdingRow.ltp)}</div>`);
+                jQ(tds[5]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format((holdingRow.ltp - holdingRow.avgCost) * holdingRow.quantity)}</div>`);
                 jQ(tds[6]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
                 jQ(tds[7]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
             }
@@ -1025,6 +1026,9 @@ function createHoldingsDropdown() {
             if (selectedCat === "All") {
                 jQ("#stocksInTagCount").text("");
                 filterWatchlist("", "All");
+                jQ("#totalCostIdH4").remove();
+                jQ("#totalCurrentValueIdH4").remove();
+                jQ("#totalPnlIdH4").remove();
                 //don't do anything
             } else if (selectedCat === "Watchlist") {
                 jQ("#stocksInTagCount").text("");
@@ -1073,13 +1077,13 @@ function createHoldingsDropdown() {
                 jQ("#stocksInTagCount").text("(" + countHoldingsStocks + ") " + formatter.format(pnl));
                 jQ("div.stats.row").find(".randomClassToHelpHide").remove();
                 var divs = jQ("div.stats.row > div");
-                jQ(divs[0]).append(`<h4 class="randomClassToHelpHide value"> (${formatter.format(totalCost)})</h4>`);
-                jQ(divs[1]).append(`<h4 class="randomClassToHelpHide value"> (${formatter.format(totalCurrentValue)})</h4>`);
+                jQ(divs[0]).append(`<h4  id="totalCostIdH4" class="randomClassToHelpHide value"> (${formatter.format(totalCost)})</h4>`);
+                jQ(divs[1]).append(`<h4 id="totalCurrentValueIdH4" class="randomClassToHelpHide value"> (${formatter.format(totalCurrentValue)})</h4>`);
                 var cls = 'text-green';
                 if (pnl < 0) {
                     cls = 'text-red';
                 }
-                jQ(divs[3]).append(`<h4 class="randomClassToHelpHide value text-bold text-pagetitle ${cls}"> (${formatter.format(pnl)})</h4>`);
+                jQ(divs[3]).append(`<h4 id="totalPnlIdH4" class="randomClassToHelpHide value text-bold text-pagetitle ${cls}"> (${formatter.format(pnl)})</h4>`);
                 //don't do anything
             } else {
                 //logic to hide the rows in Holdings table not in our list
@@ -1112,13 +1116,13 @@ function createHoldingsDropdown() {
                 jQ("#stocksInTagCount").text("(" + countHoldingsStocks + ") " + formatter.format(pnl));
                 jQ("div.stats.row").find(".randomClassToHelpHide").remove();
                 var divs = jQ("div.stats.row > div");
-                jQ(divs[0]).append(`<h4 class="randomClassToHelpHide value"> (${formatter.format(totalCost)})</h4>`);
-                jQ(divs[1]).append(`<h4 class="randomClassToHelpHide value"> (${formatter.format(totalCurrentValue)})</h4>`);
+                jQ(divs[0]).append(`<h4 id="totalCostIdH4" class="randomClassToHelpHide value"> (${formatter.format(totalCost)})</h4>`);
+                jQ(divs[1]).append(`<h4 id="totalCurrentValueIdH4" class="randomClassToHelpHide value"> (${formatter.format(totalCurrentValue)})</h4>`);
                 var cls = 'text-green';
                 if (pnl < 0) {
                     cls = 'text-red';
                 }
-                jQ(divs[3]).append(`<h4 class="randomClassToHelpHide value text-bold text-pagetitle ${cls}"> (${formatter.format(pnl)})</h4>`);
+                jQ(divs[3]).append(`<h4 id="totalPnlIdH4" class="randomClassToHelpHide value text-bold text-pagetitle ${cls}"> (${formatter.format(pnl)})</h4>`);
 
                 //START work on watchlist AREA
                 filterWatchlist(selectedStocks, selectedCat);
@@ -3063,8 +3067,9 @@ function main() {
                 if (iv.length > 0) {
                     var strike = jQ(this).text().trim();
                     //jQ("div.vddl-draggable:nth-child(1) > div:nth-child(1) > div:nth-child(1) > span:nth-child(2) > span:nth-child(3)")
-                    var vix = jQ(iv).closest("div").find("span.price > span.last-price").text().trim();
-                    var chg = vix / Math.sqrt(12); //gmc.get('nifty_vix_range_monthly_sqroot');
+                    var vix = jQ(iv).closest("div.info").find("div.price > span.last-price").text().trim();
+                    debug(vix);
+                    var chg = vix / Math.sqrt(gmc.get('nifty_vix_range_monthly_sqroot')); //;
                     var range = strike * chg / 100;
                     var lNift = strike - range;
                     var uNift = parseFloat(strike) + parseFloat(range);
@@ -3072,12 +3077,12 @@ function main() {
                     // jQ(this).attr('data-balloon-pos', 'down');
                     // jQ(this).attr('data-balloon', `(M) ${lNift.toFixed(2)} - ${uNift.toFixed(2)}`);
 
-                    chg = vix / Math.sqrt(52); ////gmc.get('nifty_vix_range_weekly_sqroot');
+                    chg = vix / Math.sqrt(gmc.get('nifty_vix_range_weekly_sqroot')); ////;
                     range = strike * chg / 100;
                     var wlNift = strike - range;
                     var wuNift = parseFloat(strike) + parseFloat(range);
 
-                    chg = vix / Math.sqrt(365 - 104 - 13); ////gmc.get('nifty_vix_range_daily_sqroot');
+                    chg = vix / Math.sqrt(gmc.get('nifty_vix_range_daily_sqroot')); ////;
                     range = strike * chg / 100;
                     debug(range);
                     var dlNift = strike - range;
@@ -4215,7 +4220,7 @@ function getLastThursday(m, year) {
 }
 
 //code for SL trail
-waitForKeyElements("div.pending-orders > div > table > tbody", trailOrderButton);
+waitForKeyElements("div.pending-orders > div > div.table-wrapper > table > tbody", trailOrderButton);
 
 function trailOrderButton() {
     var allPendingOrderRows = jQ(allDOMPaths.domPathPendingOrdersTR);
@@ -4224,8 +4229,8 @@ function trailOrderButton() {
 
     allPendingOrderRows.each(function (rowIndex) {
         var workingRow = this;
-        var status = jQ(workingRow).find("td.order-status > span > span").text();
-        var dataUidInTR = jQ(workingRow).find("td.select > div > input").attr("id");
+        var status = jQ(workingRow).find("td.order-status > span.order-status-label > span").text();
+        var dataUidInTR = jQ(workingRow).find("td.select-cell > div > input").attr("id");
         if (status == "TRIGGER PENDING") {
             debug('addig trail button');
 
