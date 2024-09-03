@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      4.10
+// @version      4.11
 // @description  Introduces small features on top of kite app
 // @author       Amit
 // @match        https://kite.zerodha.com/*
@@ -2415,7 +2415,7 @@ function onSuCheckboxSelection() {
                 }
                 var t = ceQ + "CE & " + peQ + "PE";
 
-                var printText = `<section class="table-wrapper" random-att='betterKite'>
+                var printText = `<section class="table-wrapper" id="betterKiteSectionId" random-att='betterKite'>
                     <header class="row data-table-header"><h3 class="page-title small">betterKite</h3></header>
                     <div>
                         <div class="data-table fold-header">
@@ -2444,6 +2444,7 @@ function onSuCheckboxSelection() {
                 </section>`;
                 //jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot")[0]).append(`<tr random-att='marginsave'><td colspan='9'><span  class='pnl randomClassToHelpHide'> ${t} (Points: ${formatter.format(points)})</span></td></tr>`);
                 //jQ(jQ("div.positions > section.open-positions.table-wrapper > div > div > table > tfoot")[0]).append(`<tr random-att='marginsave'><td colspan='4'>Using P&L shown by Zerodha: ${createPnlText(pnl, maxPnl, margin)}</td><td colspan='4'>Using P&L calculated based on actual quantity: ${createPnlText(realPnl, maxPnl, margin)}</td></tr>`);
+                jQ("section#betterKiteSectionId").remove();
                 jQ(jQ("div.positions > section.open-positions.table-wrapper")[0]).after(printText);
             }
         });
