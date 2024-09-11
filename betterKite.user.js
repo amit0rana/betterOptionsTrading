@@ -707,7 +707,7 @@ function assignHoldingTags() {
                 var holdingRow = getHoldingRowObject(this);
                 //var displayedStockName = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
                 var displayedStockName = holdingRow.instrument;
-                jQ(this).find(".instrument.right-border").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='tagAddIcon' class='text-label grey randomClassToHelpHide' value='" + displayedStockName + "'>+</span></span>");
+                jQ(this).find(".instrument.right-border").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide addTag'><span class='randomClassToHelpHide'>&nbsp;</span><span id='tagAddIcon' class='text-label grey randomClassToHelpHide' value='" + displayedStockName + "'>+</span></span>");
             }
         },
         function () {
@@ -847,6 +847,9 @@ function createHoldingsDropdown() {
             if (selectedCat === "All") {
                 jQ("#stocksInTagCount").text("");
                 filterWatchlist("", "All");
+                allHoldingrows.addClass("allHiddenRows");
+                manageHoldings(allHoldingrows);
+
                 //don't do anything
             } else if (selectedCat === "Watchlist") {
                 jQ("#stocksInTagCount").text("");
@@ -865,82 +868,12 @@ function createHoldingsDropdown() {
                 });
                 console.log(wlStocks);
 
-                var countHoldingsStocks = 0;
                 allHoldingrows.addClass("allHiddenRows");
-
-                var pnl = 0;
-                var totalCost = 0;
-                var totalCurrentValue = 0;
-                allHoldingrows.each(function (rowIndex) {
-                    //var dataUidInTR = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
-                    var holdingRow = getHoldingRowObject(this);
-                    var displayedStockName = holdingRow.instrument;
-
-                    var matchFound = wlStocks.includes(displayedStockName);
-
-                    if (matchFound) {
-                        //dont do anything, let the row be shown.
-                        countHoldingsStocks++;
-                        pnl += parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
-
-                        var totalQ = holdingRow.quantity + holdingRow.pledged;
-                        totalCost += (totalQ * holdingRow.avgCost);
-                        totalCurrentValue += (totalQ * holdingRow.ltp);
-                        //pnl = formatter.format((holdingRow.ltp - holdingRow.avgCost)*totalQ);
-                    } else {
-                        jQ(this).hide();
-                    }
-                });
-
-                jQ("#stocksInTagCount").text("(" + countHoldingsStocks + ") " + formatter.format(pnl));
-                jQ("div.stats.row").find(".randomClassToHelpHide").remove();
-                var divs = jQ("div.stats.row > div");
-                jQ(divs[0]).append(`<h4 class="randomClassToHelpHide value"> (${formatter.format(totalCost)})</h4>`);
-                jQ(divs[1]).append(`<h4 class="randomClassToHelpHide value"> (${formatter.format(totalCurrentValue)})</h4>`);
-                var cls = 'text-green';
-                if (pnl < 0) {
-                    cls = 'text-red';
-                }
-                jQ(divs[3]).append(`<h4 class="randomClassToHelpHide value text-bold text-pagetitle ${cls}"> (${formatter.format(pnl)})</h4>`);
-                //don't do anything
+                manageHoldings(allHoldingrows, wlStocks);
             } else {
                 //logic to hide the rows in Holdings table not in our list
-                var countHoldingsStocks = 0;
                 allHoldingrows.addClass("allHiddenRows");
-
-                var pnl = 0;
-                var totalCost = 0;
-                var totalCurrentValue = 0;
-                allHoldingrows.each(function (rowIndex) {
-                    //var dataUidInTR = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
-                    var holdingRow = getHoldingRowObject(this);
-                    var displayedStockName = holdingRow.instrument;
-
-                    var matchFound = false;
-                    matchFound = selectedStocks.includes(displayedStockName);
-
-                    if (matchFound) {
-                        //dont do anything, let the row be shown.
-                        countHoldingsStocks++;
-                        pnl += parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
-                        var totalQ = holdingRow.quantity + holdingRow.pledged;
-                        totalCost += (totalQ * holdingRow.avgCost);
-                        totalCurrentValue += (totalQ * holdingRow.ltp);
-                    } else {
-                        jQ(this).hide();
-                    }
-                });
-
-                jQ("#stocksInTagCount").text("(" + countHoldingsStocks + ") " + formatter.format(pnl));
-                jQ("div.stats.row").find(".randomClassToHelpHide").remove();
-                var divs = jQ("div.stats.row > div");
-                jQ(divs[0]).append(`<h4 class="randomClassToHelpHide value"> (${formatter.format(totalCost)})</h4>`);
-                jQ(divs[1]).append(`<h4 class="randomClassToHelpHide value"> (${formatter.format(totalCurrentValue)})</h4>`);
-                var cls = 'text-green';
-                if (pnl < 0) {
-                    cls = 'text-red';
-                }
-                jQ(divs[3]).append(`<h4 class="randomClassToHelpHide value text-bold text-pagetitle ${cls}"> (${formatter.format(pnl)})</h4>`);
+                manageHoldings(allHoldingrows, selectedStocks);
 
                 //START work on watchlist AREA
                 filterWatchlist(selectedStocks, selectedCat);
@@ -971,6 +904,50 @@ function createHoldingsDropdown() {
     selectBox.add(option);
 
     return selectBox;
+}
+
+function manageHoldings(allHoldingrows,matchList) {
+    var pnl = 0;
+    var totalCost = 0;
+    var totalCurrentValue = 0;
+    var prevTotalValue = 0;
+    let dayChangePnL = 0,countHoldingsStocks=0;
+    allHoldingrows.each(function (rowIndex) {
+        var holdingRow = getHoldingRowObject(this);
+        var displayedStockName = holdingRow.instrument;
+
+        var matchFound = matchList?matchList.includes(displayedStockName):true;
+
+        if (matchFound) {
+            countHoldingsStocks++;
+            var totalQ = holdingRow.quantity + holdingRow.pledged;
+            pnl += totalQ*(holdingRow.ltp-holdingRow.avgCost);
+            totalCost += (totalQ * holdingRow.avgCost);
+            totalCurrentValue += (totalQ * holdingRow.ltp);
+            dayChangePnL+=totalQ*holdingRow.ltp*((1-100/(100+(+holdingRow.dayChange.substr(0,holdingRow.dayChange.length-1)))));
+            prevTotalValue+=totalQ*holdingRow.ltp*(100/(100+(+holdingRow.dayChange.substr(0,holdingRow.dayChange.length-1))));
+        } else {
+            jQ(this).hide();
+        }
+        // var holdingRow = getHoldingRowObject(this);
+        // var displayedStockName = holdingRow.instrument;
+
+        // //dont do anything, let the row be shown.
+        // countHoldingsStocks++;
+        // var totalQ = holdingRow.quantity + holdingRow.pledged;
+        // pnl += totalQ * (holdingRow.ltp - holdingRow.avgCost);
+        // totalCost += (totalQ * holdingRow.avgCost);
+        // totalCurrentValue += (totalQ * holdingRow.ltp);
+        // dayChangePnL += totalQ * holdingRow.ltp * ((1 - 100 / (100 + (+holdingRow.dayChange.substr(0, holdingRow.dayChange.length - 1)))));
+        // prevTotalValue += totalQ * holdingRow.ltp * (100 / (100 + (+holdingRow.dayChange.substr(0, holdingRow.dayChange.length - 1))));
+    });
+
+    jQ("#stocksInTagCount").text("(" + countHoldingsStocks + ") " + formatter.format(pnl));
+    jQ(".fold-header .stats").find("div.randomClassholdingToHelpHide").remove();
+    jQ(jQ(".fold-header .stats .three.columns")[0]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format(totalCost)}</div>`);
+    jQ(jQ(".fold-header .stats .three.columns")[1]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format(totalCurrentValue)}</div>`);
+    jQ(jQ(".fold-header .stats .text-pagetitle")[2]).append(`<div class="text-label grey randomClassholdingToHelpHide ${dayChangePnL > 0 ? 'text-green' : 'text-red'}">${formatter.format(dayChangePnL)} (${(dayChangePnL * 100 / prevTotalValue).toFixed(2)}%) </div>`);
+    jQ(jQ(".fold-header .stats .text-pagetitle")[3]).append(`<div class="text-label grey randomClassholdingToHelpHide ${totalCurrentValue > totalCost ? 'text-green' : 'text-red'}">${formatter.format(pnl)}  (${((totalCurrentValue - totalCost) * 100 / totalCost).toFixed(2)}%)  </div>`);
 }
 
 function assignPositionTags() {
@@ -1604,7 +1581,6 @@ function createSubFilter() {
 
     t = jQ("<span id='spanBuyCountId' class='text-label randomClassToHelpHide' data-balloon-length='large' data-balloon-pos='right' data-balloon='Select a Scrip from the strategy filter dropdown.'></span></span>");
     jQ(s).append(t);
-
     return s;
 }
 
@@ -1629,6 +1605,7 @@ function hideDropdown() {
 function showPositionDropdown(retry = true) {
     jQ("#headerSubActionsID").remove();
     jQ("div.positions > section.open-positions.table-wrapper > header > h3").after(createSubFilter());
+    addWatchlistFilter("div.positions > section.open-positions.table-wrapper > div > div > div.toolbar > span.search");
 
     debug('showPositionDropdown');
 
@@ -1736,7 +1713,6 @@ function showPositionDropdown(retry = true) {
     jQ(positionGroupdropdown).after(div1);
 
     g_dropdownDisplay = DD_POSITONS;
-    addWatchlistFilter();
     simulateSelectBoxEvent();
 
     // The node to be monitored
@@ -1946,7 +1922,6 @@ function showHoldingDropdown() {
     spanForCount.addEventListener("click", () => updatePnl(false));
     jQ(dropdown).after(spanForCount);
 
-    addWatchlistFilter();
     simulateSelectBoxEvent();
 }
 
@@ -1996,7 +1971,7 @@ function toggleDropdown(currentUrl) {
         // showSendOrderButton();
         // }
     }else if (currentUrl.includes('dashboard')) {
-        addWatchlistFilter()
+        //addWatchlistFilter()
     }
 }
 
@@ -2282,14 +2257,15 @@ const getMarginCalculationData = (instrument, product, q, price) => {
 }
 
 var filterText = "";
-function addWatchlistFilter() {
+function addWatchlistFilter(s) {
     var coc = document.createElement("a");
     coc.id = 'clearOptionChain';
     coc.classList.add("randomClassToHelpHide");
     coc.classList.add("item");
     coc.innerText = "Clear Option Chain";
     coc.setAttribute("role", "tab");
-    jQ(allDOMPaths.dasboardNicknameSelector).after(coc);
+    //jQ(allDOMPaths.dasboardNicknameSelector).after(coc);
+    jQ(s).before(coc);
     return;
     //jQ("#watchlistFilterId").remove();
     var wFilter = document.createElement("span");
@@ -2496,9 +2472,10 @@ function getHoldingRowObject(row) {
         holding.pledged = 0;
         holding.quantity = parseInt(jQ(spans[spans.length - 1]).text().trim());
     }
-    holding.avgCost = parseFloat(jQ(tds[2]).text().split(",").join(""));
+    holding.avgCost = !isNaN(parseFloat(jQ(tds[2]).text().split(",").join("")))?parseFloat(jQ(tds[2]).text().split(",").join("")):1000;//liquidbees has average cost NA
     holding.ltp = parseFloat(jQ(tds[3]).text().split(",").join(""));
     holding.pnl = parseFloat(jQ(tds[5]).text().split(",").join(""));
+    holding.dayChange = jQ(jQ(tds[7]).find("span")[0]).text().split(",").join("").trim();
 
     // debug(holding);
     return holding;
@@ -2737,6 +2714,12 @@ function main() {
 		transform: translateX(0px);
 		z-index: 3!important;
 	}
+    .instruments {
+        overflow: hidden;
+    }
+    .vddl-list.list-flat {
+        overflow: auto;
+    }
     .text-red .text-label.grey.randomClassholdingToHelpHide{color: red}
     .text-green .text-label.grey.randomClassholdingToHelpHide{color: green}
     .text-red.text-label.grey.randomClassholdingToHelpHide{color: red!important;display: block;margin-top: 7px;padding: 5px;}
@@ -2755,9 +2738,12 @@ function main() {
          width: 60px;
     }
     a#clearOptionChain {
-         float: right;
-         font-size: 0.8rem;
-         line-height: 36px;
+         padding : 10px;
+    }
+    .addTag{
+         top: 10px;
+         right: 50px;
+         position: absolute;
     }
     </style>`;
     jQ("head").append(cssStr);
@@ -3660,8 +3646,8 @@ function main() {
             {
                 jQ("div#app>div>div:first-child").append("<div><button class='atmBtn' id='refreshMe'>Refresh</button><input type='number' id='counter' name='counter' min='1' max='20' class='atmBtn' value='"+sizeVar+"' /><button class='atmBtn' id='atmBtn'>ATM +-</button></div>")
 
-            var a = jQ(".MuiTableRow-root button.MuiButtonBase-root.MuiButton-root.MuiButton-text:last-child");
             jQ(document).on('click', "#atmBtn", function (e) {
+                 var a = jQ(".MuiTableRow-root button.MuiButtonBase-root.MuiButton-root.MuiButton-text:last-child");
                 sizeVar = jQ("#counter")[0].value
                 for(var index=0,i=a.length/2-2*sizeVar-1;i<a.length/2+2*sizeVar+1;i++)
                 {
