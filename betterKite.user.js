@@ -1232,7 +1232,7 @@ function assignPositionTags() {
                 var p = positionRow.instrument;
                 if (p == "") return;
 
-                jQ(this).find(".open.instrument").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='" + p + "'>+</span></span>");
+                jQ(this).find("td.open.instrument > div").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='" + p + "'>+</span></span>");
             }
         },
         function () {
