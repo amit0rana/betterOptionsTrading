@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      4.12
+// @version      4.13
 // @description  Introduces small features on top of kite app
 // @author       Amit with inputs from bsvinay, sidonkar, rbcdev
 // @match        https://kite.zerodha.com/*
@@ -61,7 +61,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v4.12";
+const VERSION = "v4.13";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -514,6 +514,7 @@ const BANKEX_LOT_SIZE = parseInt(gmc.get('bankex_lot_size'));
 const MIDCAP_LOT_SIZE = parseInt(gmc.get('midcap_lot_size'));
 
 const allDOMPaths = {
+    positionRowTS: "td.instrument > div > span.tradingsymbol",
     rowsFromHoldingsTable: "div.holdings > section > div > div > div > table > tbody > tr",
     attrNameForInstrumentTR: "data-uid",
     tradingSymbol: "td.instrument > span.tradingsymbol",
@@ -526,7 +527,7 @@ const allDOMPaths = {
     // domPathTabToChangeWatchlist: "ul.marketwatch-selector.list-flat > li",
     // domPathTabToChangeWatchlist: "div.marketwatch-selector.list-flat > a.item.selected
     domPathTabToChangeWatchlist: "div.marketwatch-selector.list-flat > a.item",
-    PathForPositions: "div.positions > section.open-positions.table-wrapper > div > div > div > table > tbody > tr",
+    PathForPositions: "div.positions > section.open-positions.table-wrapper > div > div > div.table-wrapper > table > tbody > tr",
     PathForBasketPositions: "div.basket-table > div > table > tbody > tr",
     domPathForPositionsDayHistory: "div.positions > section.day-positions.table-wrapper > div > div > div > table > tbody > tr",
     positionHeader: "header.row.data-table-header > h3",
@@ -1354,9 +1355,10 @@ function createPositionsDropdown() {
                 var p = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
 
                 var matchFound = false;
-                var tradingSymbolText = jQ(this).find(allDOMPaths.tradingSymbol).text();
+                // var tradingSymbolText = jQ(this).find(allDOMPaths.tradingSymbol).text();
                 var productType = jQ(this).find("td.product > span").text().trim();
                 var instrument = jQ(jQ(this).find("td")[2]).text();
+                var tradingSymbolText = instrument;
                 var product = jQ(jQ(this).find("td")[1]).text();
                 var qty = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
                 var price = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
@@ -1916,7 +1918,7 @@ function showPositionDropdown(retry = true) {
         // debug('before calling getSensibullZerodhaTradingSymbol ' + jQ(jQ(this).find('span.tradingsymbol')).text())
         // var text = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('span.tradingsymbol')).text());
         // var text = getSensibullZerodhaTradingSymbol(jQ(jQ(this).find('td')[2]).text());
-        var tradingSymbol = jQ(this).find("td.instrument > span.tradingsymbol").text();
+        var tradingSymbol = jQ(this).find(allDOMPaths.positionRowTS).text();
         if (tradingSymbol == "") return;
         var text = getSensibullZerodhaTradingSymbol(tradingSymbol);
 
