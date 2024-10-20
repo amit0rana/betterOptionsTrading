@@ -1003,14 +1003,14 @@ function assignHoldingTags() {
             jQ(tds[2]).find("div.randomClassholdingToHelpHide").remove();
             jQ(tds[2]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format(totalQ * holdingRow.avgCost)}</div>`);
             if (holdingRow.pledged > 0) {
-                jQ(tds[0]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
+                // jQ(tds[0]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
                 jQ(tds[1]).append(`<div class="text-label grey randomClassholdingToHelpHide">${totalQ}</div>`);
                 // jQ(tds[2]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
-                jQ(tds[3]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
-                jQ(tds[4]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format(holdingRow.quantity * holdingRow.ltp)}</div>`);
-                jQ(tds[5]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format((holdingRow.ltp - holdingRow.avgCost) * holdingRow.quantity)}</div>`);
-                jQ(tds[6]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
-                jQ(tds[7]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
+                // jQ(tds[3]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
+                // jQ(tds[4]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format(holdingRow.quantity * holdingRow.ltp)}</div>`);
+                // jQ(tds[5]).append(`<div class="text-label grey randomClassholdingToHelpHide">${formatter.format((holdingRow.ltp - holdingRow.avgCost) * holdingRow.quantity)}</div>`);
+                // jQ(tds[6]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
+                // jQ(tds[7]).append(`<div class="randomClassholdingToHelpHide">&nbsp;</div>`);
             }
 
         });
