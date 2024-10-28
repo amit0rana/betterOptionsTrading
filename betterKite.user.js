@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      4.15
+// @version      4.17
 // @description  Introduces small features on top of kite app
 // @author       Amit with inputs from bsvinay, sidonkar, rbcdev
 // @match        https://kite.zerodha.com/*
@@ -61,7 +61,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v4.15";
+const VERSION = "v4.17";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -91,12 +91,31 @@ const indices_BANKEX = 4;
 const indices_MIDCPNIFTY = 5;
 
 var g_color = ((jQ('html').attr('data-theme') == 'dark') ? '#191919' : 'white');
+let gmc = await initGM()
+
+let D_LEVEL;
+let PRO_MODE ;
+let MARGIN_METHOD;
+
+let BANKNIFTY_QTY_FREEZE ;
+let NIFTY_QTY_FREEZE ;
+let FINNIFTY_QTY_FREEZE ;
+let SENSEX_QTY_FREEZE ;
+let BANKEX_QTY_FREEZE ;
+let MIDCAP_QTY_FREEZE ;
+
+let NIFTY_LOT_SIZE ;
+let BANKNIFTY_LOT_SIZE ;
+let FINNIFTY_LOT_SIZE ;
+let SENSEX_LOT_SIZE ;
+let BANKEX_LOT_SIZE ;
+let MIDCAP_LOT_SIZE ;
 
 function initGM() {
     GM_registerMenuCommand("Settings ", function () {
         gmc.open();
     }, "s");
-    GM_config.init(
+    let g = new GM_config(
     {
         'id': 'betterKiteConfig', // The id used for this instance of GM_config
         'title': 'betterKite Settings', // Panel Title
@@ -342,15 +361,33 @@ function initGM() {
         },
         'events':
         {
-            // 'init': function () { // runs after initialization completes
-            // //     // override saved value
-            // //     this.set('Name', 'Mike Medley');
+            'init': function () { // runs after initialization completes
+                // //     // override saved value
+                // //     this.set('Name', 'Mike Medley');
 
-            // //     // open frame
-            // //     this.open();
-            //     let auto_refresh_PnL = gmc.get('auto_refresh_PnL');
+                // //     // open frame
+                // //     this.open();
+                //     let auto_refresh_PnL = gmc.get('auto_refresh_PnL');
+                D_LEVEL = g.get('logging');
+                PRO_MODE = g.get('pro_mode');
+                MARGIN_METHOD = g.get('margin_method');
 
-            // },
+                BANKNIFTY_QTY_FREEZE = parseInt(g.get('banknifty_freeze_quantity'));
+                NIFTY_QTY_FREEZE = parseInt(g.get('nifty_freeze_quantity'));
+                FINNIFTY_QTY_FREEZE = parseInt(g.get('finnifty_freeze_quantity'));
+                SENSEX_QTY_FREEZE = parseInt(g.get('sensex_freeze_quantity'));
+                BANKEX_QTY_FREEZE = parseInt(g.get('bankex_freeze_quantity'));
+                MIDCAP_QTY_FREEZE = parseInt(g.get('midcap_freeze_quantity'));
+
+                NIFTY_LOT_SIZE = parseInt(g.get('nifty_lot_size'));
+                BANKNIFTY_LOT_SIZE = parseInt(g.get('banknifty_lot_size'));
+                FINNIFTY_LOT_SIZE = parseInt(g.get('finnifty_lot_size'));
+                SENSEX_LOT_SIZE = parseInt(g.get('sensex_lot_size'));
+                BANKEX_LOT_SIZE = parseInt(g.get('bankex_lot_size'));
+                MIDCAP_LOT_SIZE = parseInt(g.get('midcap_lot_size'));
+
+                main();
+            },
             'save': function () { // runs after values are saved
                 // log the saved value of the Name field
                 // this.log(this.get('Name'));
@@ -360,158 +397,9 @@ function initGM() {
         }
     });
 
-    return GM_config;
+    return g;
 }
-const gmc = await initGM()
 
-// const g_config = new MonkeyConfig({
-//     title: 'betterKite Settings',
-//     menuCommand: true,
-//     onSave: reloadPage,
-//     params: {
-//         auto_refresh_PnL: {
-//             type: 'checkbox',
-//             default: false
-//         },
-//         include_existing_positions: {
-//             type: 'checkbox',
-//             default: false
-//         },
-//         margin_method: {
-//             type: 'select',
-//             choices: ['Basket', 'Calculator'],
-//             values: [MM_BASKET, MM_CALC],
-//             default: MM_BASKET
-//         },
-//         filter_watchlist: {
-//             type: 'checkbox',
-//             default: true
-//         },
-//         nf_hedge: {
-//             type: 'number',
-//             default: 500
-//         },
-//         bnf_hedge: {
-//             type: 'number',
-//             default: 700
-//         },
-//         stock_hedge: {
-//             type: 'number',
-//             default: 100
-//         },
-//         logging: {
-//             type: 'select',
-//             choices: ['Info', 'Debug', 'None'],
-//             values: [D_LEVEL_INFO, D_LEVEL_DEBUG, D_LEVEL_NONE],
-//             default: D_LEVEL_NONE
-//         },
-//         overide_qty_freeze_check_to_enable: {
-//             type: 'checkbox',
-//             default: false
-//         },
-//         smart_limit_check_to_enable: {
-//             type: 'checkbox',
-//             default: false
-//         },
-//         use_api: {
-//             type: 'checkbox',
-//             default: false
-//         },
-//         api_key: {
-//             type: 'text',
-//             default: ''
-//         },
-//         api_access_token: {
-//             type: 'text',
-//             default: ''
-//         },
-//         pro_mode: {
-//             type: 'checkbox',
-//             default: false
-//         },
-//         qty_freeze_warning: {
-//             type: 'checkbox',
-//             default: true
-//         },
-//         nifty_freeze_quantity: {
-//             type: 'number',
-//             default: 1800
-//         },
-//         banknifty_freeze_quantity: {
-//             type: 'number',
-//             default: 900
-//         },
-//         finnifty_freeze_quantity: {
-//             type: 'number',
-//             default: 1800
-//         },
-//         sensex_freeze_quantity: {
-//             type: 'number',
-//             default: 1000
-//         },
-//         bankex_freeze_quantity: {
-//             type: 'number',
-//             default: 900
-//         },
-//         midcap_freeze_quantity: {
-//             type: 'number',
-//             default: 4200
-//         },
-//         enable_nifty_monthly_weekly_range: {
-//             type: 'checkbox',
-//             default: true
-//         },
-//         nifty_vix_range_monthly_sqroot: {
-//             type: 'number',
-//             default: 12
-//         },
-//         nifty_vix_range_weekly_sqroot: {
-//             type: 'number',
-//             default: 52
-//         },
-//         nifty_vix_range_daily_sqroot: {
-//             type: 'number',
-//             default: 365
-//         },
-//         auto_sl_order: {
-//             type: 'checkbox',
-//             default: false
-//         },
-//         auto_sl_points: {
-//             type: 'number',
-//             default: 20
-//         },
-//         auto_save_profit_points: {
-//             type: 'number',
-//             default: 20
-//         },
-//         auto_trail_points: {
-//             type: 'number',
-//             default: 3
-//         },
-//         marketlist_number_of_strikes: {
-//             type: 'number',
-//             default: 4
-//         },
-//     }
-// });
-const D_LEVEL = gmc.get('logging');
-const PRO_MODE = gmc.get('pro_mode');
-const MARGIN_METHOD = gmc.get('margin_method');
-
-const BANKNIFTY_QTY_FREEZE = parseInt(gmc.get('banknifty_freeze_quantity'));
-const NIFTY_QTY_FREEZE = parseInt(gmc.get('nifty_freeze_quantity'));
-const FINNIFTY_QTY_FREEZE = parseInt(gmc.get('finnifty_freeze_quantity'));
-const SENSEX_QTY_FREEZE = parseInt(gmc.get('sensex_freeze_quantity'));
-const BANKEX_QTY_FREEZE = parseInt(gmc.get('bankex_freeze_quantity'));
-const MIDCAP_QTY_FREEZE = parseInt(gmc.get('midcap_freeze_quantity'));
-
-const NIFTY_LOT_SIZE = parseInt(gmc.get('nifty_lot_size'));
-const BANKNIFTY_LOT_SIZE = parseInt(gmc.get('banknifty_lot_size'));
-const FINNIFTY_LOT_SIZE = parseInt(gmc.get('finnifty_lot_size'));
-const SENSEX_LOT_SIZE = parseInt(gmc.get('sensex_lot_size'));
-const BANKEX_LOT_SIZE = parseInt(gmc.get('bankex_lot_size'));
-const MIDCAP_LOT_SIZE = parseInt(gmc.get('midcap_lot_size'));
 
 const allDOMPaths = {
     positionRowTS: "td.instrument > a > span.tradingsymbol",
@@ -552,8 +440,6 @@ const referenceTrades = initReferenceTrades();
 const BASE_ORDERINFO_DOM = "div.modal-mask.order-info-modal > div.modal-wrapper > div.modal-container.layer-2";
 var g_tradingBasket = new Array();
 const BASE_PNL_REPORT = "#app > div.wrapper > div > div > h1";
-
-main();
 
 
 function closestStrike(a, b = 50) {
