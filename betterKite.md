@@ -11,6 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 For more information, please refer to [<https://unlicense.org>](https://unlicense.org)
 
 Very simple "userscript" which adds several features to kite.zerodha.com ui (screenshots below)
+* Several features to make options trading easy like SmartLimit, Split orders, bump orders etc
 * See P&L and current value 'including' pledged stocks
 * Automatically create SL order, then 'trail' and 'save profit' by just one click.
 * 'Smart Limit' Place LIMIT orders at best offer/bid price.
