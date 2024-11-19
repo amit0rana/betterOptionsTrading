@@ -3763,8 +3763,8 @@ function showBumpButton() {
     var i = document.createElement("BUTTON");
     i.type = 'button';
     i.name = 'bumpOrder';
-    i.value = 'Bump';
-    i.innerHTML = 'Bump';
+    i.value = 'Bump by betterKite';
+    i.innerHTML = 'Bump by betterKite';
     i.id = 'bumpOrder';
     i.style = 'margin: 0px 2px;';
     i.classList.add('button-small');
