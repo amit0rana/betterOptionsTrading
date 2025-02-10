@@ -2500,7 +2500,7 @@ function createPnlText(pnl, maxPnl, margin) {
 
     }
     pnlText += "<br><span class='text-label randomClassToHelpHide'>Prem Taken: " + formatter.format(maxPnl) + " / " + (maxPnl / margin * 100).toFixed(2) + "%</span>";
-    pnlText += "<br><span class='text-label randomClassToHelpHide'>% Current Prem: " + formatter.format(maxPnl - pnl) + " </span>";
+    pnlText += "<br><span class='text-label randomClassToHelpHide'>Current Prem: " + formatter.format(maxPnl - pnl) + " </span>";
     if (margin >= 0) {
         pnlText += "<br><span class='text-label randomClassToHelpHide'>Margin: " + formatter.format(margin) + "</span>";
         pnlText += "<br><span class='text-label randomClassToHelpHide'>Current ROI: " + (pnl / margin * 100).toFixed(2) + "% </span>";
