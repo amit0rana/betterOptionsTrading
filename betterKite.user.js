@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      5.02
+// @version      5.03
 // @description  Introduces small features on top of kite app
 // @author       Amit with inputs from bsvinay, sidonkar, rbcdev
 // @match        https://kite.zerodha.com/*
@@ -31,6 +31,8 @@
 // ==/UserScript==
 
 // This is free and unencumbered software released into the public domain.
+// https://gitee.com/snpeilcode/wait-for-key-elements/blob/master/waitForKeyElements.js another variant
+// https://github.com/CoeJoder/waitForKeyElements.js
 
 // Anyone is free to copy, modify, publish, use, compile, sell, or
 // distribute this software, either in source code form or as a compiled
@@ -61,7 +63,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v5.02";
+const VERSION = "v5.03";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -110,7 +112,10 @@ const indices_MIDCPNIFTY = 5;
 
 const allDOMPaths = {
     positionRowTS: "td.instrument > a > span.tradingsymbol",
-    rowsFromHoldingsTable: "div.holdings > section > div > div > div > table > tbody > tr",
+    // /html/body/div[1]/div[2]/div[2]/div/div/section/div[1]/div[3]/table/tbody/tr[1]
+    // html body.app-wrapper.modal-open div#app.app.page-holdingsEq div.container.wrapper div.container-right div.page-content.holdingsEq div.holdings section.table-wrapper div#a3x9ticht9.data-table.holdings-table.fold-header.sticky.card-view div.table-wrapper table tbody tr
+    // div.table-wrapper > table:nth-child(1) > tbody:nth-child(2) > tr:nth-child(1)
+    rowsFromHoldingsTable: "div.holdings > section > div.holdings-table > div.table-wrapper > table > tbody > tr",
     attrNameForInstrumentTR: "data-uid",
     tradingSymbol: "td.instrument > span.tradingsymbol",
     domPathWatchlistRow: "div.instruments > div > div.vddl-draggable.instrument",
@@ -130,7 +135,8 @@ const allDOMPaths = {
     sensibullRows: "tr.jss32.jss33",
     sensibullRowCheckbox: "th > div > span > span > input",
     sensibullScriptSelected: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(1) > div > div",
-    domContextMenuButton: "span.context-menu-button",
+    // domContextMenuButton: "span.context-menu-button",
+    domContextMenuButton: "div.content > div.table-menu-content > div",
     watchlistSettingIcon: "div.marketwatch-selector.list-flat > div.settings > a.initial",
     watchlistSettingDiv: "div.marketwatch-selector.list-flat > div.settings"
     // span.settings-button.icon.icon-settings
@@ -892,7 +898,7 @@ function assignHoldingTags() {
             //var displayedStockName = removeExtraCharsFromStockName(this.innerHTML);
             //var displayedStockName = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
             var holdingRow = getHoldingRowObject(this);
-
+            
             var displayedStockName = holdingRow.instrument;
 
             for (var categoryName in holdings) {
@@ -1068,6 +1074,7 @@ function createHoldingsDropdown() {
                 allHoldingrows.each(function (rowIndex) {
                     //var dataUidInTR = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
                     var holdingRow = getHoldingRowObject(this);
+                    
                     var displayedStockName = holdingRow.instrument;
 
                     var matchFound = false;
@@ -1136,8 +1143,7 @@ function assignPositionTags() {
                 var positionRow = getPositionRowObject(this);
                 var p = positionRow.instrument;
                 if (p == "") return;
-
-                jQ(this).find("td.open.instrument > div").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='" + p + "'>+</span></span>");
+                jQ(this).find("td.open.instrument").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='" + p + "'>+</span></span>");
             }
         },
         function () {
@@ -1413,7 +1419,7 @@ function createPositionsDropdown() {
                         nrmlCount++;
                     }
 
-                    var data = getMarginCalculationData(instrument, product, qty, price);
+                    var data = getMarginCalculationData(instrument,position.exchange,  product, qty, price);
                     if (data != null) {
                         selection.push(data);
                     }
@@ -2252,23 +2258,25 @@ const calculateMarginUsingBasket = async (selection) => {
 
 }
 
-const getMarginCalculationData = (instrument, product, q, price) => {
+const getMarginCalculationData = (instrument, exchange , product, q, price) => {
 
     if (instrument == "") return null;
     // frame payload for SPAN calculation
     var tokens = instrument.replace(/\s+/g, ' ').split(" ");
     //debug(tokens);
     var data = {};
-    if (tokens[1] === "NSE" || tokens[1] === "BSE") { //buy: OAL BSE HOLDING, sell: OAL NSE SOLD HOLDING
+    data.exchange = exchange;
+    if (exchange === "NSE" || exchange === "BSE") { //buy: OAL BSE HOLDING, sell: OAL NSE SOLD HOLDING
         return null;
     }
     data.symbol = tokens[0];
+    
     data.product = product.replace(/\s/g, '');
     //data.product = product.replace(/\n/g, '').replace(/\t/g, '').trim();
     if (tokens[2] === "FUT") {
         //NIFTY APR FUT NFO
         data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}FUT`;
-        data.exchange = `${tokens[3]}`;
+        // data.exchange = `${tokens[3]}`;
         data.pece = 'PE';
         data.strike = '';
         data.optfut = 'FUT';
@@ -2280,7 +2288,7 @@ const getMarginCalculationData = (instrument, product, q, price) => {
             const MONTHS_FOR_WEEKLY = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "O", "N", "D"];
 
             data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${MONTHS_FOR_WEEKLY[MONTHS.indexOf(tokens[3])]}${tokens[1].match(/\d+/)[0].padStart(2, 0)}${tokens[4]}${tokens[5]}`;
-            data.exchange = `${tokens[6]}`;
+            // data.exchange = `${tokens[6]}`;
             data.pece = `${tokens[5]}`;
             data.strike = `${tokens[4]}`;
             data.scrip = `${tokens[0]}${moment(new Date()).format("YY")}${MONTHS_FOR_WEEKLY[MONTHS.indexOf(tokens[3])]}${tokens[1].replace(/\D/g, "")}`
@@ -2292,7 +2300,7 @@ const getMarginCalculationData = (instrument, product, q, price) => {
                 data.tradingsymbol = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}${tokens[2]}${tokens[3]}`;
             }
 
-            data.exchange = `${tokens[4]}`;
+            // data.exchange = `${tokens[4]}`;
             data.pece = `${tokens[3]}`;
             data.strike = `${tokens[2]}`;
             data.scrip = `${tokens[0]}${moment(new Date()).format("YY")}${tokens[1]}`;
@@ -2357,13 +2365,15 @@ function updatePnl(forPositions = true) {
         pnl += parseFloat(v);
 
         if (forPositions) {
-            var instrument = jQ(jQ(this).find("td")[2]).text();
+            var pos = getPositionRowObject(this);
+            // var instrument = jQ(jQ(this).find("td")[2]).text();
+            var instrument = pos.instrument
             if (instrument == "") return;
 
-            var qty = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
-            var price = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
-            var product = jQ(jQ(this).find("td")[1]).text();
-            var data = getMarginCalculationData(instrument, product, qty, price);
+            // var qty = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
+            // var price = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
+            // var product = jQ(jQ(this).find("td")[1]).text();
+            var data = getMarginCalculationData(instrument, pos.exchange, pos.product, pos.quantity, pos.avgPrice);
             if (data != null) {
                 selection.push(data);
             }
@@ -2401,16 +2411,16 @@ function onSuCheckboxSelection() {
 
         pnl += parseFloat(positionRow.pnl);
 
-        var instrument = jQ(jQ(this).find("td")[2]).text();
-        debug('here' + instrument);
-        if (instrument.trim().endsWith('NSE') || instrument.trim().endsWith('BSE')) {
+        // var instrument = jQ(jQ(this).find("td")[2]).text();
+        // debug('here' + instrument);
+        if (positionRow.exchange.trim().endsWith('NSE') || positionRow.exchange.trim().endsWith('BSE')) {
             return;
         }
-        var q = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
-        if (instrument.includes(' CE')) {
-            ceQ = ceQ + q;
-        } else if (instrument.includes(' PE')) {
-            peQ = peQ + q;
+        // var q = parseFloat(jQ(jQ(this).find("td")[3]).text().split(",").join(""));
+        if (positionRow.pece == 'CE') {
+            ceQ = ceQ + positionRow.quantity;
+        } else if (positionRow.pece == 'PE') {
+            peQ = peQ + positionRow.quantity;
         }
 
         // var avgPrice = parseFloat(jQ(jQ(this).find("td")[4]).text().split(",").join(""));
@@ -2420,17 +2430,17 @@ function onSuCheckboxSelection() {
         // debug('b')
         // debug(avgPrice)
 
-        var value = q * avgPrice;
+        var value = positionRow.quantity * avgPrice;
         maxPnl = maxPnl - value;
 
-        if (q > 0) {
+        if (positionRow.quantity > 0) {
             points = points + avgPrice;
         } else {
             points = points - avgPrice;
         }
 
-        var product = jQ(jQ(this).find("td")[1]).text();
-        var data = getMarginCalculationData(instrument, product, q, avgPrice);
+        // var product = jQ(jQ(this).find("td")[1]).text();
+        var data = getMarginCalculationData(positionRow.instrument, positionRow.exchange, positionRow.product, positionRow.quantity, positionRow.avgPrice);
         if (data != null) {
             selection.push(data);
         }
@@ -2518,10 +2528,15 @@ function getHoldingRowObject(row) {
     holding.instrument = jQ(jQ(tds[0]).find("span")[0]).text().trim();
 
     var spans = jQ(tds[1]).find("span");
-    if (spans.length > 1 && jQ(spans[spans.length - 2]).attr('data-balloon') == "Pledged quantity") {
+    if (spans.length == 1 ) {
         //data-balloon=T1, Pledged
-        holding.pledged = parseInt(jQ(spans[spans.length - 2]).text().trim().split(':')[1]);
-        holding.quantity = parseInt(jQ(spans[spans.length - 1]).text().trim());
+        holding.pledged = parseInt(jQ(tds[1]).find("span.q").text().trim().split(':')[1]);
+        holding.quantity = parseInt(jQ(tds[1]).clone()    // Create a clone of the element
+            .children()     // Select all child elements
+            .remove()       // Remove all child elements
+            .end()          // Go back to the cloned element
+            .text()         // Get the remaining text
+            .trim());
     } else {
         holding.pledged = 0;
         holding.quantity = parseInt(jQ(spans[spans.length - 1]).text().trim());
@@ -2529,7 +2544,7 @@ function getHoldingRowObject(row) {
 
     holding.avgCost = parseFloat(jQ(tds[2]).text().split(",").join(""));
     holding.ltp = parseFloat(jQ(tds[3]).text().split(",").join(""));
-    holding.pnl = parseFloat(jQ(tds[5]).text().split(",").join(""));
+    holding.pnl = parseFloat(jQ(tds[6]).text().split(",").join(""));
 
     // debug(holding);
     return holding;
@@ -2565,10 +2580,9 @@ function getPositionRowObject(row) {
 
 
     position.pnl = jQ(jQ(row).find("td")[6]).text().split(",").join("");
-    position.instrument = jQ(jQ(row).find("td")[2]).text();
-
-    debug('position row ' + position.instrument);
-
+    // position.instrument = jQ(jQ(row).find("td")[2]).text();
+    position.instrument = jQ(jQ(row).find("span.tradingsymbol")).text().trim();
+    position.exchange = jQ(jQ(row).find("span.exchange")).text().trim();
 
     position.product = jQ(jQ(row).find("td")[1]).text().replace(/\s/g, '');
     position.state = jQ(jQ(row).find("td")[1]).attr("class").split(" ")[0];
@@ -2583,7 +2597,7 @@ function getPositionRowObject(row) {
     }
 
     if (position.instrument != "") {
-        var data = getMarginCalculationData(position.instrument, position.product, position.quantity, position.avgPrice);
+        var data = getMarginCalculationData(position.instrument, position.exchange, position.product, position.quantity, position.avgPrice);
 
         if (data != null) {
             position.exchange = data.exchange;
@@ -2595,7 +2609,7 @@ function getPositionRowObject(row) {
             position.symbol = data.symbol;
         }
     }
-
+    
     return position;
 }
 
@@ -3641,9 +3655,6 @@ function main() {
     //whenever selection in position row changes.
     jQ(document).on('change', "input.su-checkbox", onSuCheckboxSelection);
 
-    // waitForKeyElements(allDOMPaths.domContextMenuButton, saveContextMenuRow);
-    //to capture click on context menu
-
 
     //fire hide/show logic if history/url changes.
     var pushState = history.pushState;
@@ -3713,22 +3724,41 @@ function main() {
 }
 
 var _currentContextMenuRow;
-
-
+waitForKeyElements(allDOMPaths.domContextMenuButton, saveContextMenuRow);
+//to capture click on context menu
+/**
+ *{
+  "variety": "regular",
+  "exchange": "NFO",
+  "tradingsymbol": "NIFTY25FEB23800CE",
+  "transaction_type": "SELL",
+  "order_type": "MARKET",
+  "quantity": "75",
+  "price": "0",
+  "product": "NRML",
+  "validity": "DAY",
+  "disclosed_quantity": "0",
+  "trigger_price": "0",
+  "squareoff": "0",
+  "stoploss": "0",
+  "trailing_stoploss": "0",
+  "user_id": "TY2691",
+  "": ""
+}
+ *
+ */
 function saveContextMenuRow() {
     debug('saveContextMenuRow');
-    _currentContextMenuRow = jQ(allDOMPaths.domContextMenuButton).closest('tr');
+    
+    jQ(allDOMPaths.domContextMenuButton).append('<li class="addon-menu separator"><ul class="list-flat"><li><a href="javascript:void(0)" class="icon icon-console"><span class="shift-span">Shift<span class="text-lightest"> / betterKite</span></span></a></li></ul></li>');
+    // jQ(document).on('click', "span.shift-span", function() {processShift();});
+    jQ('.shift-span').click(function(e) {
+        e.preventDefault();
+        _currentContextMenuRow = jQ(allDOMPaths.domContextMenuButton).closest('tr');
+        debug(getPositionRowObject(_currentContextMenuRow));
+    });
 
-    // jQ(document).on('click', "div.context-menu.table", function () {
-    //     var currentUrl = window.location.pathname;
-    //     if (currentUrl.includes('order')) {
-    //         debug('clicked on context menu in order screen');
-    //         tEv("kite", "orders", "context-menu", "");
-    //     }
-
-
-    // });
-
+    
 
 }
 
@@ -4724,8 +4754,10 @@ window.addEventListener('load', function() {
 
 function sendReplacement(data) {
     debug("sendReplacement");
+    
     if (_newOrder === true) {
         var order = queryStringToJSON(data);
+        debug(order);
         //     _interceptedReq = order;
         // } else {
         //     _interceptedReq = "";
