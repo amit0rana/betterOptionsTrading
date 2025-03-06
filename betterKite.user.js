@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      5.03
+// @version      5.04
 // @description  Introduces small features on top of kite app
 // @author       Amit with inputs from bsvinay, sidonkar, rbcdev
 // @match        https://kite.zerodha.com/*
@@ -63,7 +63,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v5.03";
+const VERSION = "v5.04";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -138,7 +138,8 @@ const allDOMPaths = {
     // domContextMenuButton: "span.context-menu-button",
     domContextMenuButton: "div.content > div.table-menu-content > div",
     watchlistSettingIcon: "div.marketwatch-selector.list-flat > div.settings > a.initial",
-    watchlistSettingDiv: "div.marketwatch-selector.list-flat > div.settings"
+    watchlistSettingDiv: "div.marketwatch-selector.list-flat > div.settings",
+    domAddPositionTag: "td.open.instrument"
     // span.settings-button.icon.icon-settings
 };
 //sensibullScriptSelected: "#app > div > div > div > div > div > div > div:nth-child(1) > div:nth-child(1) > div > button > span.MuiButton-label"
@@ -1143,7 +1144,7 @@ function assignPositionTags() {
                 var positionRow = getPositionRowObject(this);
                 var p = positionRow.instrument;
                 if (p == "") return;
-                jQ(this).find("td.open.instrument").append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='" + p + "'>+</span></span>");
+                jQ(this).find(allDOMPaths.domAddPositionTag).append("<span random-att='tagAddBtn' title='Add tag' class='randomClassToHelpHide'><span class='randomClassToHelpHide'>&nbsp;</span><span id='positionTagAddIcon' class='text-label grey randomClassToHelpHide' value='" + p + "'>+</span></span>");
             }
         },
         function () {
@@ -1164,7 +1165,7 @@ function assignPositionTags() {
             //var dataUidInTR = this.getAttribute(allDOMPaths.attrNameForInstrumentTR);
             //var p = dataUidInTR.split(".")[1];
 
-            var positionSpan = jQ(this).find("span.exchange.text-xxsmall.dim");
+            var positionSpan = jQ(this).find(allDOMPaths.domAddPositionTag);
 
             for (var tradeTag in referenceTrades) {
                 if (referenceTrades[tradeTag].includes(p)) {
@@ -3590,7 +3591,7 @@ function main() {
         jQ(this).parents()
             .map(function () {
                 if (this.tagName == 'TR') {
-                    var positionSpan = jQ(this).find("span.exchange.text-xxsmall.dim");
+                    var positionSpan = jQ(this).find(allDOMPaths.domAddPositionTag);
                     var color = userTag.split(".")[1];
                     var tn = userTag.split(".")[0];
                     jQ(positionSpan).append("<span random-att='tagName' class='randomClassToHelpHide'>&nbsp;</span><span id='idForPositionTagDeleteAction' tag='" + userTag + "' position='" + position + "' class='text-label " + color + " randomClassToHelpHide'>" + tn + "</span>");
