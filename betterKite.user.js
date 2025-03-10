@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      5.04
+// @version      5.05
 // @description  Introduces small features on top of kite app
 // @author       Amit with inputs from bsvinay, sidonkar, rbcdev
 // @match        https://kite.zerodha.com/*
@@ -63,7 +63,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v5.04";
+const VERSION = "v5.05";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -1056,13 +1056,13 @@ function createHoldingsDropdown() {
                 jQ("#stocksInTagCount").text("(" + countHoldingsStocks + ") " + formatter.format(pnl));
                 jQ("div.stats.row").find(".randomClassToHelpHide").remove();
                 var divs = jQ("div.stats.row > div");
-                jQ(divs[0]).append(`<h4  id="totalCostIdH4" class="randomClassToHelpHide value"> (${formatter.format(totalCost)})</h4>`);
-                jQ(divs[1]).append(`<h4 id="totalCurrentValueIdH4" class="randomClassToHelpHide value"> (${formatter.format(totalCurrentValue)})</h4>`);
+                jQ(divs[0]).find("div").append(`<h4  id="totalCostIdH4" class="randomClassToHelpHide value"> (${formatter.format(totalCost)})</h4>`);
+                jQ(divs[1]).find("div").append(`<h4 id="totalCurrentValueIdH4" class="randomClassToHelpHide value"> (${formatter.format(totalCurrentValue)})</h4>`);
                 var cls = 'text-green';
                 if (pnl < 0) {
                     cls = 'text-red';
                 }
-                jQ(divs[3]).append(`<h4 id="totalPnlIdH4" class="randomClassToHelpHide value text-bold text-pagetitle ${cls}"> (${formatter.format(pnl)})</h4>`);
+                jQ(divs[3]).find("div").append(`<h4 id="totalPnlIdH4" class="randomClassToHelpHide value text-xxsmall ${cls}"> (${formatter.format(pnl)})</h4>`);
                 //don't do anything
             } else {
                 //logic to hide the rows in Holdings table not in our list
@@ -2529,25 +2529,41 @@ function getHoldingRowObject(row) {
     holding.instrument = jQ(jQ(tds[0]).find("span")[0]).text().trim();
 
     var spans = jQ(tds[1]).find("span");
-    if (spans.length == 1 ) {
+    if (spans.length > 0 ) {
         //data-balloon=T1, Pledged
-        holding.pledged = parseInt(jQ(tds[1]).find("span.q").text().trim().split(':')[1]);
+        q = 0
+        holding.pledged = 0;
+        if (Array.isArray(spans)) {
+            spans.forEach(sp => {
+                spTxt = jQ(sp).text().trim().split(':');
+                if (spTxt[0] == "T1") {
+                    q = parseInt(spTxt[1]);
+                } else if (spTxt[0] == "P") {
+                    holding.pledged = parseInt(spTxt[1]);
+                }
+            });
+        } else {
+            spTxt = jQ(spans).text().trim().split(':');
+            holding.pledged = parseInt(spTxt[1]);
+        }
         holding.quantity = parseInt(jQ(tds[1]).clone()    // Create a clone of the element
             .children()     // Select all child elements
             .remove()       // Remove all child elements
             .end()          // Go back to the cloned element
             .text()         // Get the remaining text
             .trim());
+        holding.quantity = holding.quantity + q
     } else {
         holding.pledged = 0;
-        holding.quantity = parseInt(jQ(spans[spans.length - 1]).text().trim());
+        holding.quantity = parseInt(jQ(tds[1]).text().trim());
     }
+    
 
     holding.avgCost = parseFloat(jQ(tds[2]).text().split(",").join(""));
     holding.ltp = parseFloat(jQ(tds[3]).text().split(",").join(""));
     holding.pnl = parseFloat(jQ(tds[6]).text().split(",").join(""));
 
-    // debug(holding);
+    debug(holding);
     return holding;
 }
 
