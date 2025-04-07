@@ -3,7 +3,7 @@
 // @namespace    https://github.com/amit0rana/betterKite
 // @version      5.05
 // @description  Introduces small features on top of kite app
-// @author       Amit
+// @author       Amit with inputs from bsvinay, sidonkar, rbcdev
 // @match        https://kite.zerodha.com/*
 // @match        https://console.zerodha.com/*
 // @match        https://insights.sensibull.com/*

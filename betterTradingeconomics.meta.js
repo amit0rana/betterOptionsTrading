@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterTradingeconomics
 // @namespace    https://github.com/amit0rana/betterTradingeconomics
-// @version      0.03
+// @version      0.05
 // @description  Introduces small features on top of betterTradingeconomics site
 // @author       Amit
 // @match        https://tradingeconomics.com/*

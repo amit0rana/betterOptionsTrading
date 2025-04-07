@@ -2563,7 +2563,7 @@ function getHoldingRowObject(row) {
     holding.ltp = parseFloat(jQ(tds[3]).text().split(",").join(""));
     holding.pnl = parseFloat(jQ(tds[6]).text().split(",").join(""));
 
-    debug(holding);
+    
     return holding;
 }
 
