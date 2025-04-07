@@ -91,6 +91,11 @@ function stockFilter() {
         refreshBtn.type = "button";
         refreshBtn.innerHTML = "Refresh";
         refreshBtn.addEventListener("click", function() {
+            var allRows = $('tr');
+
+            allRows.each(function(rowIndex) {
+                $(this).show();
+            });
             stockFilter();
         });
         $('#refreshID').remove();
