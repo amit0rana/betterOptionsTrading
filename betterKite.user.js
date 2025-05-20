@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         betterKite
 // @namespace    https://github.com/amit0rana/betterKite
-// @version      5.05
+// @version      5.06
 // @description  Introduces small features on top of kite app
 // @author       Amit with inputs from bsvinay, sidonkar, rbcdev
 // @match        https://kite.zerodha.com/*
@@ -63,7 +63,7 @@ GM_addStyle(my_css);
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
 window.jQ = jQuery.noConflict(true);
-const VERSION = "v5.05";
+const VERSION = "v5.06";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
@@ -118,11 +118,18 @@ const allDOMPaths = {
     rowsFromHoldingsTable: "div.holdings > section > div.holdings-table > div.table-wrapper > table > tbody > tr",
     attrNameForInstrumentTR: "data-uid",
     tradingSymbol: "td.instrument > span.tradingsymbol",
-    domPathWatchlistRow: "div.instruments > div > div.vddl-draggable.instrument",
+
+    domPathWatchlistRow: "div.item > div.item-info-wrapper > div.item-info",
+    // domPathWatchlistRow" "div.instruments > div > div.vddl-draggable.instrument",
+    //domPathStockNameInWatchlistRow: "span.nice-name",
+    domPathStockNameInWatchlistRow: "div.symbol > span.name",
+    // div.marketwatch.marketwatch-wrap > div.items-wrapper > div.draggable-wrapper > div.group-wrapper() > div:nth-child(2) > div.items > div.item-wrapper.draggable-item()
+    //div.item > div.item-info-wrapper > div.item-info = symbol-wrappe - div.symbol - span.name, price-wrapper
+    
     domPathPendingOrdersTR: "div.pending-orders > div > div.table-wrapper > table > tbody > tr",
     domPathExecutedOrdersTR: "div.completed-orders > div > table > tbody > tr",
     domPathTradingSymbolInsideOrdersTR: "span.tradingsymbol > span",
-    domPathStockNameInWatchlistRow: "span.nice-name",
+    
     domPathMainInitiatorLabel: "h3.page-title.small > span",
     // domPathTabToChangeWatchlist: "ul.marketwatch-selector.list-flat > li",
     // domPathTabToChangeWatchlist: "div.marketwatch-selector.list-flat > a.item.selected
