@@ -115,7 +115,7 @@ const allDOMPaths = {
     // /html/body/div[1]/div[2]/div[2]/div/div/section/div[1]/div[3]/table/tbody/tr[1]
     // html body.app-wrapper.modal-open div#app.app.page-holdingsEq div.container.wrapper div.container-right div.page-content.holdingsEq div.holdings section.table-wrapper div#a3x9ticht9.data-table.holdings-table.fold-header.sticky.card-view div.table-wrapper table tbody tr
     // div.table-wrapper > table:nth-child(1) > tbody:nth-child(2) > tr:nth-child(1)
-    rowsFromHoldingsTable: "div.holdings > section > div.holdings-table > div.table-wrapper > table > tbody > tr",
+    rowsFromHoldingsTable: "div.holdings > section > div.holdings-table > div.table-content-wrapper > div.table-wrapper > table > tbody > tr",
     attrNameForInstrumentTR: "data-uid",
     tradingSymbol: "td.instrument > span.tradingsymbol",
 
