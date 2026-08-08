@@ -12,8 +12,6 @@
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // @grant        GM_registerMenuCommand
-// @grant        GM_setClipboard
-// @grant        GM_getClipboard
 // @require      https://raw.githubusercontent.com/sizzlemctwizzle/GM_config/refs/heads/master/gm_config.js
 // @require      https://raw.githubusercontent.com/amit0rana/betterOptionsTrading/master/betterCommon.js
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js
@@ -31,8 +29,6 @@
 // ==/UserScript==
 
 // This is free and unencumbered software released into the public domain.
-// https://gitee.com/snpeilcode/wait-for-key-elements/blob/master/waitForKeyElements.js another variant
-// https://github.com/CoeJoder/waitForKeyElements.js
 
 // Anyone is free to copy, modify, publish, use, compile, sell, or
 // distribute this software, either in source code form or as a compiled
@@ -57,34 +53,39 @@
 
 // For more information, please refer to <https://unlicense.org>
 
+// Pulls the Toastify stylesheet in through @resource and injects it.
+// Runs first so later modules can show toasts during start-up.
+
 const my_css = GM_getResourceText("TOASTIFY_CSS");
 GM_addStyle(my_css);
 
+// Minified Google Analytics beacon (Universal Analytics property UA-176741575-1).
+//
+// Two things to know before touching it: `options` is a *string*, so `options.anonymizeIp`
+// is undefined and IP anonymisation never actually applies; and it sends `document.title`,
+// which updatePositionInfo() sets to the current P&L. Universal Analytics stopped
+// accepting data in 2023, so these hits go nowhere.
+
 var context = window, options = "{    anonymizeIp: true,    colorDepth: true,    characterSet: true,    screenSize: true,    language: true}"; const hhistory = context.history, doc = document, nav = navigator || {}, storage = localStorage, encode = encodeURIComponent, pushState = hhistory.pushState, typeException = "exception", generateId = () => Math.random().toString(36), getId = () => (storage.cid || (storage.cid = generateId()), storage.cid), serialize = e => { var t = []; for (var o in e) e.hasOwnProperty(o) && void 0 !== e[o] && t.push(encode(o) + "=" + encode(e[o])); return t.join("&") }, track = (e, t, o, n, i, a, r) => { const c = "https://www.google-analytics.com/collect", s = serialize({ v: "1", ds: "web", aip: options.anonymizeIp ? 1 : void 0, tid: "UA-176741575-1", cid: getId(), t: e || "pageview", sd: options.colorDepth && screen.colorDepth ? `${screen.colorDepth}-bits` : void 0, dr: doc.referrer || void 0, dt: doc.title, dl: doc.location.origin + doc.location.pathname + doc.location.search, ul: options.language ? (nav.language || "").toLowerCase() : void 0, de: options.characterSet ? doc.characterSet : void 0, sr: options.screenSize ? `${(context.screen || {}).width}x${(context.screen || {}).height}` : void 0, vp: options.screenSize && context.visualViewport ? `${(context.visualViewport || {}).width}x${(context.visualViewport || {}).height}` : void 0, ec: t || void 0, ea: o || void 0, el: n || void 0, ev: i || void 0, exd: a || void 0, exf: void 0 !== r && !1 == !!r ? 0 : void 0 }); if (nav.sendBeacon) nav.sendBeacon(c, s); else { var d = new XMLHttpRequest; d.open("POST", c, !0), d.send(s) } }, tEv = (e, t, o, n) => track("event", e, t, o, n), tEx = (e, t) => track(typeException, null, null, null, null, e, t); hhistory.pushState = function (e) { return "function" == typeof history.onpushstate && hhistory.onpushstate({ state: e }), setTimeout(track, options.delay || 10), pushState.apply(hhistory, arguments) }, track(), context.ma = { tEv: tEv, tEx: tEx };
 
+// Takes jQuery under the name jQ so it cannot collide with the copy Kite loads.
+
 window.jQ = jQuery.noConflict(true);
+// Storage keys, dropdown/margin mode constants, the sub-filter flags, and INDEX_CONFIG --
+// the one table describing each tradable index (lot size, freeze quantity, expiry day,
+// strike step, segment, hedge offset).
+
 const VERSION = "v5.08";
 const GM_HOLDINGS_NAME = "BK_HOLDINGS";
 const GMPositionsName = "BK_POSITIONS";
 const GMRefTradeName = "BK_REF_TRADES";
 
+// Read by debug()/info() in betterCommon.js, which Tampermonkey @requires into this
+// same scope. It looks unused here because its only consumers live in that file.
+// eslint-disable-next-line no-unused-vars
 let D_LEVEL = D_LEVEL_NONE;
 let PRO_MODE ;
 let MARGIN_METHOD;
-
-let BANKNIFTY_QTY_FREEZE ;
-let NIFTY_QTY_FREEZE ;
-let FINNIFTY_QTY_FREEZE ;
-let SENSEX_QTY_FREEZE ;
-let BANKEX_QTY_FREEZE ;
-let MIDCAP_QTY_FREEZE ;
-
-let NIFTY_LOT_SIZE ;
-let BANKNIFTY_LOT_SIZE ;
-let FINNIFTY_LOT_SIZE ;
-let SENSEX_LOT_SIZE ;
-let BANKEX_LOT_SIZE ;
-let MIDCAP_LOT_SIZE ;
 
 const DD_NONE = '';
 const DD_HOLDINGS = 'H';
@@ -102,13 +103,90 @@ var g_showOnlyNRMLPositions = false;
 var g_subFilter = false;
 var g_subFilterData = false;
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-const indices = ['NIFTY','BANKNIFTY','FINNIFTY','SENSEX','BANKEX','MIDCPNIFTY'];
-const indices_NIFTY = 0;
-const indices_BANKNIFTY = 1;
-const indices_FINNIFTY = 2;
-const indices_SENSEX = 3;
-const indices_BANKEX = 4;
-const indices_MIDCPNIFTY = 5;
+
+// One row per index, replacing what used to be six parallel `if symbol.startsWith(...)`
+// ladders and twelve *_LOT_SIZE / *_QTY_FREEZE globals. Adding or retuning an index is
+// a single row here.
+//
+//   settings      prefix of the GM_config field ids: `<prefix>_lot_size`, `<prefix>_freeze_quantity`
+//   label         shown in the settings panel
+//   expiryWeekday day of the week whose expiry this index carries (0=Sun), or null if it has none
+//   strikeStep    strike spacing used when building an option chain in the watchlist
+//   optionSegment segment sent to the marketwatch API
+//   hedgeSetting  GM_config field holding the strike offset used for margin-saving hedges
+//
+// Key order drives the order of the generated settings fields, so keep it stable.
+const INDEX_CONFIG = {
+    NIFTY:      { settings: 'nifty',     label: 'Nifty',     defaultLotSize: 25, defaultFreezeQty: 1800, expiryWeekday: 4,    strikeStep: 50,  optionSegment: 'NFO-OPT', hedgeSetting: 'nf_hedge' },
+    BANKNIFTY:  { settings: 'banknifty', label: 'BankNifty', defaultLotSize: 15, defaultFreezeQty: 900,  expiryWeekday: 3,    strikeStep: 50,  optionSegment: 'NFO-OPT', hedgeSetting: 'bnf_hedge' },
+    FINNIFTY:   { settings: 'finnifty',  label: 'FinNifty',  defaultLotSize: 25, defaultFreezeQty: 1800, expiryWeekday: 2,    strikeStep: 50,  optionSegment: 'NFO-OPT', hedgeSetting: 'stock_hedge' },
+    SENSEX:     { settings: 'sensex',    label: 'Sensex',    defaultLotSize: 10, defaultFreezeQty: 1000, expiryWeekday: 5,    strikeStep: 100, optionSegment: 'BFO-OPT', hedgeSetting: 'stock_hedge' },
+    BANKEX:     { settings: 'bankex',    label: 'Bankex',    defaultLotSize: 15, defaultFreezeQty: 1000, expiryWeekday: 1,    strikeStep: 100, optionSegment: 'BFO-OPT', hedgeSetting: 'stock_hedge' },
+    MIDCPNIFTY: { settings: 'midcap',    label: 'Midcap',    defaultLotSize: 75, defaultFreezeQty: 4200, expiryWeekday: null, strikeStep: 50,  optionSegment: 'NFO-OPT', hedgeSetting: 'stock_hedge' },
+};
+
+const INDEX_SYMBOLS = Object.keys(INDEX_CONFIG);
+
+// Scrip name -> the name the same instrument goes by in the watchlist. Only these two
+// are translated today; every other index is matched by its own name.
+const WATCHLIST_NAME_BY_SCRIP = {
+    BANKNIFTY: 'NIFTY BANK',
+    NIFTY: 'NIFTY 50',
+};
+
+// Prefix of what the user types in the option-chain prompt -> the quote symbol to price
+// the chain off, and the index name to add to the watchlist.
+// Order matters: BANKEX must be tested before the BANK prefix that BANKNIFTY matches.
+const OPTION_CHAIN_INDEX_PREFIXES = [
+    ['FINN', 'NSE:NIFTY FIN SERVICE', 'NIFTY FIN SERVICE'],
+    ['BANKEX', 'BSE:BANKEX', 'BANKEX'],
+    ['NIFT', 'NSE:NIFTY 50', 'NIFTY 50'],
+    ['BANK', 'NSE:NIFTY BANK', 'NIFTY BANK'],
+    ['MID', 'NSE:NIFTY MID SELECT', 'NIFTY MID SELECT'],
+    ['SENSEX', 'BSE:SENSEX', 'SENSEX'],
+];
+
+// Lot sizes and freeze quantities read from settings, filled in by the GM_config init
+// handler. symbol -> { lotSize, freezeQty }.
+const INDEX_LIMITS = {};
+
+/** The index a trading symbol belongs to, or undefined for stocks. */
+function indexSymbolFor(tradingsymbol) {
+    if (!tradingsymbol) return undefined;
+    return INDEX_SYMBOLS.find((symbol) => tradingsymbol.startsWith(symbol));
+}
+
+/**
+ * Lot size and freeze quantity for a trading symbol.
+ * Undefined for stocks, and also before the settings init handler has run -- callers
+ * must handle that rather than reaching straight into the result.
+ */
+function indexLimitsFor(tradingsymbol) {
+    const symbol = indexSymbolFor(tradingsymbol);
+    return symbol ? INDEX_LIMITS[symbol] : undefined;
+}
+
+/** Index name whose weekly expiry falls on the given weekday, or '' if none does. */
+function indexExpiringOnWeekday(weekday) {
+    return INDEX_SYMBOLS.find((symbol) => INDEX_CONFIG[symbol].expiryWeekday === weekday) || '';
+}
+
+/** GM_config field definitions generated from INDEX_CONFIG, keyed by field id. */
+function indexSettingsFields(suffix, labelSuffix, defaultKey) {
+    const fields = {};
+    for (const symbol of INDEX_SYMBOLS) {
+        const cfg = INDEX_CONFIG[symbol];
+        fields[`${cfg.settings}_${suffix}`] = {
+            'label': `${cfg.label} ${labelSuffix}`,
+            'type': 'number',
+            'default': cfg[defaultKey],
+        };
+    }
+    return fields;
+}
+
+// Every CSS selector the script uses against Kite's markup, in one place.
+// When a Kite release breaks betterKite, this is almost always the file to fix.
 
 const allDOMPaths = {
     positionRowTS: "td.instrument > a > span.tradingsymbol",
@@ -154,7 +232,198 @@ const allDOMPaths = {
 //("#app > div > div > div > div > div > div > div.style__LeftContentWrapper-t0trse-21.kQiWSc > div.style__SearchableInstrumentWrapper-t0trse-10.duNZzV > div > button > span.MuiButton-label")
 
 
-var g_color = ((jQ('html').attr('data-theme') == 'dark') ? '#191919' : 'white');
+// Pure helpers with no Kite state: strike rounding, expiry/symbol parsing, date maths,
+// query-string parsing, and waitForKeyElements (the SPA polling helper).
+//
+// These are the functions covered by test/pure-functions.test.js.
+
+function closestStrike(a, b = 50) {
+    var c1 = a - (a % b);
+    var c2 = (a + b) - (a % b);
+    if (a - c1 > c2 - a) {
+        return c2;
+    } else {
+        return c1;
+    }
+}
+
+function getExpiryText(fullText) {
+    //debug('getExpiryText ' + fullText);
+    var expiry = fullText.split(' ');
+    if (expiry.length == 1) return "";
+    var t = expiry[1];
+
+    return t;
+}
+
+function getLastThursday(m, year) {
+
+    debug(MONTHS.indexOf(m.toUpperCase()));
+    var month = MONTHS.indexOf(m.toUpperCase()) + 1;
+
+    var d = new Date();
+    if (year) { d.setFullYear(year); }
+    d.setDate(1); // Roll to the first day of ...
+    d.setMonth(month || d.getMonth() + 1); // ... the next month.
+    do { // Roll the days backwards until Monday.
+        d.setDate(d.getDate() - 1);
+    } while (d.getDay() !== 4);
+
+    let da = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(d);
+    let mo = new Intl.DateTimeFormat('en', { month: 'short' }).format(d);
+    return da + mo;
+}
+
+function getSensibullZerodhaTradingSymbol(original) {
+    //BANKNIFTY JUN 30000 PE NFO
+    //BHARTIARTL JUN FUT NFO
+    debug(`getSensibullZerodhaTradingSymbol ${original}`)
+    var ts = original.split(" ");
+    debug(`count ${ts.length}`)
+
+    if (ts.length == 1) return original;
+
+    if (ts[2] == 'FUT') {
+        debug('FUT');
+        return `${ts[0]} ${getLastThursday(ts[1])} ${ts[2]}`;
+    } else if (ts[2] == "w") {
+        debug('weekly');
+        return `${ts[0]} ${ts[1].match(/\d+/)[0].padStart(2, 0)}${ts[3]} ${ts[4]} ${ts[5]}`;
+    } else {
+        debug('monthly');
+        if (ts[1].match(/^\d/)) {
+            return `${ts[0]} ${ts[1]} ${ts[2]} ${ts[3]}`;
+        } else {
+            return `${ts[0]} ${getLastThursday(ts[1])} ${ts[2]} ${ts[3]}`;
+        }
+    }
+}
+
+function isLastDay(weekDay) { //1 monday
+    var tdy = new Date();
+    var dt = new Date()
+    // console.log("isLastDay " + tdy);
+    dt.setDate(1)
+    dt.setMonth(dt.getMonth() + 1)
+    dt.setDate(dt.getDate() - 1);
+    // console.log("start Date " + dt);
+
+    while (dt.getDay() !== weekDay) {
+        dt.setDate(dt.getDate() - 1);
+        // console.log(dt.toDateString())
+        // console.log( dt.toDateString() == tdy.toDateString())
+    }
+
+    return (dt.toDateString() === tdy.toDateString());
+}
+
+function queryStringToJSON(qs) {
+    var pairs = qs.split('&');
+    var result = {};
+    pairs.forEach(function (p) {
+        var pair = p.split('=');
+        var key = pair[0];
+        var value = decodeURIComponent(pair[1] || '');
+
+        if (result[key]) {
+            if (Object.prototype.toString.call(result[key]) === '[object Array]') {
+                result[key].push(value);
+            } else {
+                result[key] = [result[key], value];
+            }
+        } else {
+            result[key] = value;
+        }
+    });
+
+    return JSON.parse(JSON.stringify(result));
+}
+
+// Polls for elements that Kite's SPA renders after page load, and runs a callback on
+// each new match. Other variants worth comparing against if this ever needs replacing:
+//   https://gitee.com/snpeilcode/wait-for-key-elements/blob/master/waitForKeyElements.js
+//   https://github.com/CoeJoder/waitForKeyElements.js
+function waitForKeyElements(
+    selectorTxt,    /* Required: The jQuery selector string that
+                        specifies the desired element(s).
+                    */
+    actionFunction, /* Required: The code to run when elements are
+                        found. It is passed a jNode to the matched
+                        element.
+                    */
+    bWaitOnce,      /* Optional: If false, will continue to scan for
+                        new elements even after the first match is
+                        found.
+                    */
+    iframeSelector  /* Optional: If set, identifies the iframe to
+                        search.
+                    */
+) {
+    var targetNodes, btargetsFound;
+
+    if (typeof iframeSelector == "undefined")
+        targetNodes = jQ(selectorTxt);
+    else
+        targetNodes = jQ(iframeSelector).contents()
+            .find(selectorTxt);
+
+    if (targetNodes && targetNodes.length > 0) {
+        btargetsFound = true;
+        /*--- Found target node(s).  Go through each and act if they
+            are new.
+        */
+        targetNodes.each(function () {
+            var jThis = jQ(this);
+            var alreadyFound = jThis.data('alreadyFound') || false;
+
+            if (!alreadyFound) {
+                //--- Call the payload function.
+                var cancelFound = actionFunction(jThis);
+                if (cancelFound)
+                    btargetsFound = false;
+                else
+                    jThis.data('alreadyFound', true);
+            }
+        });
+    }
+    else {
+        btargetsFound = false;
+    }
+
+    //--- Get the timer-control variable for this selector.
+    var controlObj = waitForKeyElements.controlObj || {};
+    var controlKey = selectorTxt.replace(/[^\w]/g, "_");
+    var timeControl = controlObj[controlKey];
+
+    //--- Now set or clear the timer as appropriate.
+    if (btargetsFound && bWaitOnce && timeControl) {
+        //--- The only condition where we need to clear the timer.
+        clearInterval(timeControl);
+        delete controlObj[controlKey]
+    }
+    else {
+        //--- Set a timer, if needed.
+        if (!timeControl) {
+            timeControl = setInterval(function () {
+                waitForKeyElements(selectorTxt,
+                    actionFunction,
+                    bWaitOnce,
+                    iframeSelector
+                );
+            },
+                300
+            );
+            controlObj[controlKey] = timeControl;
+        }
+    }
+    waitForKeyElements.controlObj = controlObj;
+}
+
+// The GM_config settings panel, and the `gmc` instance every feature reads from.
+//
+// Note the top-level `await` here: everything after it in the built script runs as an
+// async continuation, which is why the bootstrap polls gmc.isInit before calling main().
+
 let gmc = await initGM()
 
 function initGM() {
@@ -213,42 +482,7 @@ function initGM() {
                 'type': 'checkbox',
                 'default': true,
             },
-            'nifty_freeze_quantity':
-            {
-                'label': 'Nifty Qty Freeze',
-                'type': 'number',
-                'default': 1800,
-            },
-            'banknifty_freeze_quantity':
-            {
-                'label': 'BankNifty Qty Freeze',
-                'type': 'number',
-                'default': 900,
-            },
-            'finnifty_freeze_quantity':
-            {
-                'label': 'FinNifty Qty Freeze',
-                'type': 'number',
-                'default': 1800,
-            },
-            'sensex_freeze_quantity':
-            {
-                'label': 'Sensex Qty Freeze',
-                'type': 'number',
-                'default': 1000,
-            },
-            'bankex_freeze_quantity':
-            {
-                'label': 'Bankex Qty Freeze',
-                'type': 'number',
-                'default': 1000,
-            },
-            'midcap_freeze_quantity':
-            {
-                'label': 'Midcap Qty Freeze',
-                'type': 'number',
-                'default': 4200,
-            },
+            ...indexSettingsFields('freeze_quantity', 'Qty Freeze', 'defaultFreezeQty'),
             'smart_limit_check_to_enable':
             {
                 'label': 'Enable smartLimit feature (needs API)',
@@ -291,8 +525,8 @@ function initGM() {
             {
                 'label': 'Margin Calculation Method',
                 'type': 'select',
-                'options': ['Basket', 'Calculator'],
-                'default': 'Basket',
+                'options': [MM_BASKET, MM_CALC],
+                'default': MM_BASKET,
             },
             'nf_hedge':
             {
@@ -376,42 +610,7 @@ function initGM() {
                 'default': false,
                 'section': ['Others']
             },
-        'nifty_lot_size':
-            {
-                'label': 'Nifty lot size',
-                'type': 'number',
-                'default': 25,
-            },
-        'banknifty_lot_size':
-            {
-                'label': 'Banknifty lot size',
-                'type': 'number',
-                'default': 15,
-            },
-        'finnifty_lot_size':
-            {
-                'label': 'Finnifty lot size',
-                'type': 'number',
-                'default': 25,
-            },
-        'sensex_lot_size':
-            {
-                'label': 'Sensex lot size',
-                'type': 'number',
-                'default': 10,
-            },
-        'bankex_lot_size':
-            {
-                'label': 'Bankex lot size',
-                'type': 'number',
-                'default': 15,
-            },
-        'midcap_lot_size':
-            {
-                'label': 'Midcap lot size',
-                'type': 'number',
-                'default': 75,
-            },
+            ...indexSettingsFields('lot_size', 'lot size', 'defaultLotSize'),
             'full_width':
             {
                 'label': 'Utilise full browser width',
@@ -439,19 +638,13 @@ function initGM() {
                 PRO_MODE = g.get('pro_mode');
                 MARGIN_METHOD = g.get('margin_method');
 
-                BANKNIFTY_QTY_FREEZE = parseInt(g.get('banknifty_freeze_quantity'));
-                NIFTY_QTY_FREEZE = parseInt(g.get('nifty_freeze_quantity'));
-                FINNIFTY_QTY_FREEZE = parseInt(g.get('finnifty_freeze_quantity'));
-                SENSEX_QTY_FREEZE = parseInt(g.get('sensex_freeze_quantity'));
-                BANKEX_QTY_FREEZE = parseInt(g.get('bankex_freeze_quantity'));
-                MIDCAP_QTY_FREEZE = parseInt(g.get('midcap_freeze_quantity'));
-
-                NIFTY_LOT_SIZE = parseInt(g.get('nifty_lot_size'));
-                BANKNIFTY_LOT_SIZE = parseInt(g.get('banknifty_lot_size'));
-                FINNIFTY_LOT_SIZE = parseInt(g.get('finnifty_lot_size'));
-                SENSEX_LOT_SIZE = parseInt(g.get('sensex_lot_size'));
-                BANKEX_LOT_SIZE = parseInt(g.get('bankex_lot_size'));
-                MIDCAP_LOT_SIZE = parseInt(g.get('midcap_lot_size'));
+                for (const symbol of INDEX_SYMBOLS) {
+                    const cfg = INDEX_CONFIG[symbol];
+                    INDEX_LIMITS[symbol] = {
+                        lotSize: parseInt(g.get(`${cfg.settings}_lot_size`)),
+                        freezeQty: parseInt(g.get(`${cfg.settings}_freeze_quantity`)),
+                    };
+                }
             },
             'save': function (a=true) { // runs after values are saved
                 // log the saved value of the Name field
@@ -465,228 +658,14 @@ function initGM() {
 
     return g;
 }
+// Holdings categories, position strategies and reference-trade tags, persisted through
+// GM_setValue, plus the Tampermonkey menu commands that edit them.
+
 const holdings = initHoldings();
 
 const positions = initPositions();
 
 const referenceTrades = initReferenceTrades();
-
-const BASE_ORDERINFO_DOM = "div.modal-mask.order-info-modal > div.modal-wrapper > div.modal-container.layer-2";
-var g_tradingBasket = new Array();
-const BASE_PNL_REPORT = "#app > div.wrapper > div > div > h1";
-
-
-function closestStrike(a, b = 50) {
-    var c1 = a - (a % b);
-    var c2 = (a + b) - (a % b);
-    if (a - c1 > c2 - a) {
-        return c2;
-    } else {
-        return c1;
-    }
-}
-
-function showSuccessToast(msg) {
-    showToast(msg, "success");
-}
-function showErrorToast(msg) {
-    showToast(msg, "error"); //warning, info, question
-}
-function showToast(msg, type) {
-    Swal.fire({
-        title: msg,
-        icon: type,
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        allowEscapeKey: true,
-        showCloseButton: true,
-        timer: 3000,
-        timerProgressBar: true,
-        didOpen: (toast) => {
-            toast.addEventListener('mouseenter', Swal.stopTimer)
-            toast.addEventListener('mouseleave', Swal.resumeTimer)
-        }
-    });
-
-}
-function showMessage(msg) {
-    Swal.fire({
-        title: 'betterKite',
-        html: msg,
-        //icon: type,
-        //toast: true,
-        //position: 'top-end',
-        showConfirmButton: false,
-        allowEscapeKey: true,
-        showCloseButton: true,
-        timer: 3000,
-        timerProgressBar: true,
-        didOpen: (toast) => {
-            toast.addEventListener('mouseenter', Swal.stopTimer)
-            toast.addEventListener('mouseleave', Swal.resumeTimer)
-        }
-    });
-
-}
-
-function getToast(message) {
-    return Toastify({
-        text: "<span>betterKte</br>" + message + "</span>",
-        duration: 5000,
-        close: true,
-        offset: "60px",
-        style: { top: "60px", display: "grid", "grid-template-columns": "15fr 1fr" },
-        escapeMarkup: false
-    });
-}
-
-const hideOnEsc = {
-    name: 'hideOnEsc',
-    defaultValue: true,
-    fn({ hide }) {
-        function onKeyDown(event) {
-            if (event.keyCode === 27) {
-                hide();
-            }
-        }
-
-        return {
-            onShow() {
-                document.addEventListener('keydown', onKeyDown);
-            },
-            onHide() {
-                document.removeEventListener('keydown', onKeyDown);
-            },
-        };
-    },
-};
-
-function showTippy(target, msg) {
-    var t = tippy(target, {
-        content: msg,
-        allowHTML: true,
-        hideOnClick: true,
-        trigger: "click",
-        plugins: [hideOnEsc],
-        showOnCreate: true,
-        onHidden(instance) {
-            debug('onHide');
-            instance.destroy();
-        },
-    });
-    // t[0].show();
-}
-
-let pnlTippyInstances = [];
-
-const pnlGlobalStore = {
-    fn(instance) {
-        return {
-            onCreate() {
-                pnlTippyInstances.push(instance);
-            },
-            onDestroy() {
-                pnlTippyInstances = pnlTippyInstances.filter((i) => i !== instance);
-            },
-        };
-    },
-};
-
-function showPnlTippy(target, msg) {
-    var t = tippy(target, {
-        content: msg,
-        offset: [0, -8],
-        allowHTML: true,
-        plugins: [pnlGlobalStore],
-        onShow(instance) {
-            var pnlTd = instance.reference;
-            var row = jQ(pnlTd).closest("tr");
-            var pos = getPositionRowObject(row);
-            if (pos.instrument == "") return;
-            // instance.setProps({content : "amit"});
-            instance.setContent(formatter.format(-(pos.quantity * (pos.avgPrice - pos.ltp))));
-        },
-    });
-    // t[0].show();
-}
-
-let lotsTippyInstances = [];
-
-const lotsGlobalStore = {
-    fn(instance) {
-        return {
-            onCreate() {
-                lotsTippyInstances.push(instance);
-            },
-            onDestroy() {
-                lotsTippyInstances = lotsTippyInstances.filter((i) => i !== instance);
-            },
-        };
-    },
-};
-function showLotsTippy(target, msg) {
-    var t = tippy(target, {
-        content: msg,
-        allowHTML: true,
-        offset: [0, -8],
-        plugins: [lotsGlobalStore],
-        onShow(instance) {
-            var qtyTd = instance.reference;
-            var row = jQ(qtyTd).closest("tr");
-            var pos = getPositionRowObject(row);
-            if (pos.instrument == "") return;
-
-            var lot = 0;
-            if (pos.instrument.startsWith(indices[indices_NIFTY])) {
-                lot = Math.abs(pos.quantity / NIFTY_LOT_SIZE);
-            } else if (pos.instrument.startsWith(indices[indices_BANKNIFTY])) {
-                lot = Math.abs(pos.quantity / BANKNIFTY_LOT_SIZE);
-            } else if (pos.instrument.startsWith(indices[indices_FINNIFTY])) {
-                lot = Math.abs(pos.quantity / FINNIFTY_LOT_SIZE);
-            } else if (pos.instrument.startsWith(indices[indices_SENSEX])) {
-                lot = Math.abs(pos.quantity / SENSEX_LOT_SIZE);
-            } else if (pos.instrument.startsWith(indices[indices_BANKEX])) {
-                lot = Math.abs(pos.quantity / BANKEX_LOT_SIZE);
-            } else if (pos.instrument.startsWith(indices[indices_MIDCPNIFTY])) {
-                lot = Math.abs(pos.quantity / MIDCAP_LOT_SIZE);
-            }
-
-            instance.setContent(`${lot} lots`);
-        },
-    });
-    // t[0].show();
-}
-
-function showTippyToast(target, msg) {
-    var t = tippy(target, {
-        content: msg,
-        allowHTML: true,
-        showOnCreate: true,
-        interactive: true,
-        duration: [0, 5000],
-        hideOnClick: true,
-        trigger: "manual",
-        plugins: [hideOnEsc],
-        onHidden(instance) {
-            debug('onHide');
-            instance.destroy();
-        },
-    });
-    // t[0].show();
-}
-
-function addStyle() {
-    var style = document.createElement("style");
-    style.textContent = `
-randomClassToHelpHide {outline: 1px dotted green;}
-tagSelectorStyle {
-margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;
-border-right: 1px solid #e0e0e0;border-right-width: 1px;border-right-style: solid;border-right-color: rgb(224, 224, 224);
-}
-`;
-    //only for debuggin- document.body.appendChild(style);
-}
 
 function initHoldings() {
     //Note: if script name as & then write it as &amp;
@@ -718,32 +697,6 @@ function initHoldings() {
     }
 
     return holdings;
-}
-
-function getSensibullZerodhaTradingSymbol(original) {
-    //BANKNIFTY JUN 30000 PE NFO
-    //BHARTIARTL JUN FUT NFO
-    debug(`getSensibullZerodhaTradingSymbol ${original}`)
-    var ts = original.split(" ");
-    debug(`count ${ts.length}`)
-
-    if (ts.length == 1) return original;
-
-    if (ts[2] == 'FUT') {
-        debug('FUT');
-        return `${ts[0]} ${getLastThursday(ts[1])} ${ts[2]}`;
-    } else if (ts[2] == "w") {
-        debug('weekly');
-        return `${ts[0]} ${ts[1].match(/\d+/)[0].padStart(2, 0)}${ts[3]} ${ts[4]} ${ts[5]}`;
-    } else {
-        debug('monthly');
-        if (ts[1].match(/^\d/)) {
-            return `${ts[0]} ${ts[1]} ${ts[2]} ${ts[3]}`;
-        } else {
-            return `${ts[0]} ${getLastThursday(ts[1])} ${ts[2]} ${ts[3]}`;
-        }
-    }
-    return;
 }
 
 function initPositions() {
@@ -790,13 +743,13 @@ function initPositions() {
         if (strategyName == null) return;
         strategyName = strategyName.toUpperCase();
 
+        var confirmAdd;
         if (keys.includes(strategyName)) {
-            var confirmAdd = confirm("This message is to confirm that there was no typo in strategy name.\n\nYou are adding to an **EXISTING** strategy.");
-            if (confirmAdd == false) return;
+            confirmAdd = confirm("This message is to confirm that there was no typo in strategy name.\n\nYou are adding to an **EXISTING** strategy.");
         } else {
-            var confirmAdd = confirm("This message is to confirm that there was no typo in strategy name.\n\nYou are adding to a **NEW** strategy.");
-            if (confirmAdd == false) return;
+            confirmAdd = confirm("This message is to confirm that there was no typo in strategy name.\n\nYou are adding to a **NEW** strategy.");
         }
+        if (confirmAdd == false) return;
 
         var positionArray = [];
         selectedPositions.each(function (rowIndex) {
@@ -879,8 +832,130 @@ function initReferenceTrades() {
     return referenceTrades;
 }
 
+// Toast and tippy wrappers: the P&L-on-hover and quantity-in-lots tooltips, and the
+// betterKite notification toast.
+
+function getToast(message) {
+    return Toastify({
+        text: "<span>betterKte</br>" + message + "</span>",
+        duration: 5000,
+        close: true,
+        offset: "60px",
+        style: { top: "60px", display: "grid", "grid-template-columns": "15fr 1fr" },
+        escapeMarkup: false
+    });
+}
+
+const hideOnEsc = {
+    name: 'hideOnEsc',
+    defaultValue: true,
+    fn({ hide }) {
+        function onKeyDown(event) {
+            if (event.keyCode === 27) {
+                hide();
+            }
+        }
+
+        return {
+            onShow() {
+                document.addEventListener('keydown', onKeyDown);
+            },
+            onHide() {
+                document.removeEventListener('keydown', onKeyDown);
+            },
+        };
+    },
+};
+
+function showTippy(target, msg) {
+    tippy(target, {
+        content: msg,
+        allowHTML: true,
+        hideOnClick: true,
+        trigger: "click",
+        plugins: [hideOnEsc],
+        showOnCreate: true,
+        onHidden(instance) {
+            debug('onHide');
+            instance.destroy();
+        },
+    });
+    // t[0].show();
+}
+
+let pnlTippyInstances = [];
+
+const pnlGlobalStore = {
+    fn(instance) {
+        return {
+            onCreate() {
+                pnlTippyInstances.push(instance);
+            },
+            onDestroy() {
+                pnlTippyInstances = pnlTippyInstances.filter((i) => i !== instance);
+            },
+        };
+    },
+};
+
+function showPnlTippy(target, msg) {
+    tippy(target, {
+        content: msg,
+        offset: [0, -8],
+        allowHTML: true,
+        plugins: [pnlGlobalStore],
+        onShow(instance) {
+            var pnlTd = instance.reference;
+            var row = jQ(pnlTd).closest("tr");
+            var pos = getPositionRowObject(row);
+            if (pos.instrument == "") return;
+            // instance.setProps({content : "amit"});
+            instance.setContent(formatter.format(-(pos.quantity * (pos.avgPrice - pos.ltp))));
+        },
+    });
+    // t[0].show();
+}
+
+let lotsTippyInstances = [];
+
+const lotsGlobalStore = {
+    fn(instance) {
+        return {
+            onCreate() {
+                lotsTippyInstances.push(instance);
+            },
+            onDestroy() {
+                lotsTippyInstances = lotsTippyInstances.filter((i) => i !== instance);
+            },
+        };
+    },
+};
+function showLotsTippy(target, msg) {
+    tippy(target, {
+        content: msg,
+        allowHTML: true,
+        offset: [0, -8],
+        plugins: [lotsGlobalStore],
+        onShow(instance) {
+            var qtyTd = instance.reference;
+            var row = jQ(qtyTd).closest("tr");
+            var pos = getPositionRowObject(row);
+            if (pos.instrument == "") return;
+
+            const limits = indexLimitsFor(pos.instrument);
+            const lot = limits ? Math.abs(pos.quantity / limits.lotSize) : 0;
+
+            instance.setContent(`${lot} lots`);
+        },
+    });
+    // t[0].show();
+}
+
+// Holdings page: category tags on each row, the category dropdown, and the watchlist
+// filtering that follows from a category selection.
+
 function assignHoldingTags() {
-    debug(getFunctionName());
+    debug('assignHoldingTags');
     jQ(allDOMPaths.rowsFromHoldingsTable).hover(
         function () {
             if (jQ(this).find("span[random-att='tagAddBtn']").length < 1) {
@@ -937,21 +1012,6 @@ function assignHoldingTags() {
 
 
     } else { debug('tags found'); }
-}
-
-function removeExtraCharsFromStockName(dataUidInTR) {
-    if (dataUidInTR.includes("-BE")) {
-        dataUidInTR = dataUidInTR.split("-BE")[0];
-    } else if (dataUidInTR.includes("NSE")) {
-        dataUidInTR = dataUidInTR.split("NSE")[0];
-    } else if (dataUidInTR.includes("BSE")) {
-        dataUidInTR = dataUidInTR.split("BSE")[0];
-    }
-    if (dataUidInTR.includes("*")) {
-        dataUidInTR = dataUidInTR.split("*")[0];
-    }
-
-    return dataUidInTR;
 }
 
 function filterWatchlist(stocksToFilter, selectedCat) {
@@ -1074,12 +1134,12 @@ function createHoldingsDropdown() {
                 //don't do anything
             } else {
                 //logic to hide the rows in Holdings table not in our list
-                var countHoldingsStocks = 0;
+                let countHoldingsStocks = 0;
                 allHoldingrows.addClass("allHiddenRows");
 
-                var pnl = 0;
-                var totalCost = 0;
-                var totalCurrentValue = 0;
+                let pnl = 0;
+                let totalCost = 0;
+                let totalCurrentValue = 0;
                 allHoldingrows.each(function (rowIndex) {
                     //var dataUidInTR = removeExtraCharsFromStockName(this.getAttribute(allDOMPaths.attrNameForInstrumentTR));
                     var holdingRow = getHoldingRowObject(this);
@@ -1103,10 +1163,10 @@ function createHoldingsDropdown() {
 
                 jQ("#stocksInTagCount").text("(" + countHoldingsStocks + ") " + formatter.format(pnl));
                 jQ("div.stats.row").find(".randomClassToHelpHide").remove();
-                var divs = jQ("div.stats.row > div");
+                let divs = jQ("div.stats.row > div");
                 jQ(divs[0]).append(`<h4 id="totalCostIdH4" class="randomClassToHelpHide value"> (${formatter.format(totalCost)})</h4>`);
                 jQ(divs[1]).append(`<h4 id="totalCurrentValueIdH4" class="randomClassToHelpHide value"> (${formatter.format(totalCurrentValue)})</h4>`);
-                var cls = 'text-green';
+                let cls = 'text-green';
                 if (pnl < 0) {
                     cls = 'text-red';
                 }
@@ -1135,13 +1195,18 @@ function createHoldingsDropdown() {
         selectBox.add(option);
     };
 
-    var option = document.createElement("option");
+    option = document.createElement("option");
     option.text = "Watchlist";
     option.value = "Watchlist";
     selectBox.add(option);
 
     return selectBox;
 }
+
+// Positions page: strategy grouping (manual, by scrip, by expiry), the sub-filter row,
+// per-strategy P&L and margin, and the observers that keep them current.
+//
+// The largest feature module -- a good candidate for splitting further.
 
 function assignPositionTags() {
     jQ(allDOMPaths.PathForPositions).hover(
@@ -1309,13 +1374,7 @@ function createPositionsDropdown() {
                     // }
                     if (matchFound) {
                         if (!stocksInList.includes(ts)) {
-                            if (ts == indices[indices_BANKNIFTY]) {
-                                stocksInList.push('NIFTY BANK');
-                            } else if (ts == indices[indices_NIFTY]) {
-                                stocksInList.push('NIFTY 50');
-                            } else {
-                                stocksInList.push(ts);
-                            }
+                            stocksInList.push(WATCHLIST_NAME_BY_SCRIP[ts] || ts);
                         }
                     }
                 } else if (selectedGroup === "All") {
@@ -1447,7 +1506,7 @@ function createPositionsDropdown() {
                     if (selectedType == 'scrip') {
 
                         //creating auto generated expiry wise grouping
-                        var expiry = getExpiryText(p);
+                        const expiry = getExpiryText(p);
                         if (!uniqueExpiryArray.includes(expiry)) {
                             var option2 = document.createElement("option");
                             option2.text = expiry;
@@ -1708,8 +1767,8 @@ function createSubFilter() {
     jQ(s).append(dropDown);
 
     //Select all
-    t = jQ("<span id='spanselectAllId' class='text-label red randomClassToHelpHide'>|</span>");
-    i = document.createElement("Button");
+    var t = jQ("<span id='spanselectAllId' class='text-label red randomClassToHelpHide'>|</span>");
+    var i = document.createElement("Button");
     i.style = 'margin: 2px; padding: 2px;';
     i.type = 'button';
     i.id = "selectAllId";
@@ -1750,7 +1809,6 @@ function createSubFilter() {
     jQ(s).append(i);
 
 
-
     i = document.createElement("INPUT");
     i.style = 'margin: 2px';
     i.type = 'button';
@@ -1758,7 +1816,6 @@ function createSubFilter() {
     i.name = 'resetRowsId';
     i.value = 'Reset';
     jQ(s).append(i);
-
 
 
     t = jQ("<span id='spanBuyCountId' class='text-label randomClassToHelpHide' data-balloon-length='large' data-balloon-pos='right' data-balloon='Select a Scrip from the strategy filter dropdown.'></span></span>");
@@ -1928,7 +1985,6 @@ function showPositionDropdown(retry = true) {
 
         debug("**********" + jQ(target).text());
         g_positionsPnlObserver = new MutationObserver(function (mutations) {
-            var st = null;
             mutations.forEach(function (mutation) {
                 if (mutation.type == "characterData") {
                     debug("pnl changed");
@@ -1948,30 +2004,8 @@ function showPositionDropdown(retry = true) {
     }
 }
 
-function getScripText(fullText) {
-    debug('getScripText ' + fullText);
-    var expiry = fullText.split(' ');
-    var t = expiry[0];
-
-    return t;
-}
-
-function getScripExpiryText(fullText) {
-    debug('getgetScripExpiryTextExpiryText ' + fullText);
-    var expiry = fullText.split(' ');
-    var t = expiry[0] + ' ' + expiry[1];
-
-    return t;
-}
-
-function getExpiryText(fullText) {
-    //debug('getExpiryText ' + fullText);
-    var expiry = fullText.split(' ');
-    if (expiry.length == 1) return "";
-    var t = expiry[1];
-
-    return t;
-}
+// Decides which dropdown belongs on the current route and swaps between them as Kite
+// navigates, since it is a single-page app and the script is only injected once.
 
 function showHoldingDropdown() {
     g_dropdownDisplay = DD_HOLDINGS;
@@ -2103,86 +2137,9 @@ function simulateSelectBoxEvent() {
     */
 }
 
-function filterOrders() { //notused
-    debug('filter orders');
-    //there are 3 sections
-    //Open or pending orders
 
-    var tagSelectorH = document.querySelector("#tagSelectorH");
-    var tagSelectorP = document.querySelector("#tagSelectorP");
-
-    var selectedCat = "All";
-
-    if (tagSelectorH) {
-        selectedCat = tagSelectorH.value;
-    } else if (tagSelectorP) {
-        selectedCat = tagSelectorP.value;
-    } else {
-        //do nothing
-        return;
-    }
-
-    return;
-
-    //START work on order AREA
-    var allPendingOrderRows = jQ(allDOMPaths.domPathPendingOrdersTR);
-
-    var allExecutedOrderRows = jQ(allDOMPaths.domPathExecutedOrdersTR);
-    allPendingOrderRows.show();
-    allExecutedOrderRows.show();
-
-    info("pending orders: " + allPendingOrderRows.length);
-
-    if (selectedCat === "All") {
-        //don't do anything
-    } else {
-        var countPendingOrdersStocks = 0;
-        allPendingOrderRows.addClass("allHiddenRows");
-        allPendingOrderRows.each(function (rowIndex) {
-            var workingRow = this;
-            var stockInRow = jQ(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
-            debug("found pending order: " + stockInRow);
-            if (stockInRow.includes("-BE")) {
-                stockInRow = stockInRow.split("-BE")[0];
-            }
-            var matchFound = false;
-            matchFound = selectedStocks.includes(stockInRow);
-
-            if (matchFound) {
-                //do nothing
-                countPendingOrdersStocks++;
-            } else {
-                jQ(workingRow).hide();
-            }
-        });
-
-        jQ("#stocksInTagCount").text("(" + countPendingOrdersStocks + ") ");
-
-        allExecutedOrderRows.addClass("allHiddenRows");
-        allExecutedOrderRows.each(function (rowIndex) {
-            var workingRow = this;
-            var stockInRow = jQ(workingRow).find(allDOMPaths.domPathTradingSymbolInsideOrdersTR).html();
-            debug("found executed order: " + stockInRow);
-            if (stockInRow.includes("-BE")) {
-                stockInRow = stockInRow.split("-BE")[0];
-            }
-            var matchFound = false;
-            matchFound = selectedStocks.includes(stockInRow);
-
-            if (matchFound) {
-                //do nothing
-            } else {
-                jQ(workingRow).hide();
-            }
-        });
-
-    }
-    //END work on order AREA
-
-    //Executed orders
-    //Trades
-}
-
+// Margin lookups, either through Kite's own basket endpoint (default) or the public SPAN
+// calculator (needs a CORS extension), plus the payload builder both share.
 
 const calculateMargin = async (selection) => {
     if (MARGIN_METHOD == MM_BASKET) {
@@ -2322,6 +2279,8 @@ const getMarginCalculationData = (instrument, exchange , product, q, price) => {
     return data;
 }
 
+// Watchlist toolbar: the text filter, the option-chain builder and the clear button.
+
 var filterText = "";
 function addWatchlistFilter() {
     var coc = document.createElement("a");
@@ -2350,6 +2309,8 @@ function addWatchlistFilter() {
     wFilter.setAttribute("role", "tab");
     jQ(allDOMPaths.watchlistSettingDiv).before(wFilter);
 }
+
+// P&L totals: for the rows currently visible, and for the rows the user has ticked.
 
 function updatePnl(forPositions = true) {
     var allVisibleRows;
@@ -2464,11 +2425,6 @@ function onSuCheckboxSelection() {
     if (selectedRows.length > 0) {
         calculateMargin(selection).then(margin => {
             if (selectedRows.length > 0) {
-                if (ceQ > peQ) {
-
-                } else if (peQ > ceQ) {
-
-                }
                 var t = ceQ + "CE & " + peQ + "PE";
 
                 var printText = `<section class="table-wrapper" id="betterKiteSectionId" random-att='betterKite'>
@@ -2529,6 +2485,11 @@ function createPnlText(pnl, maxPnl, margin) {
     return pnlText;
 }
 
+// Turns a holdings/orders/positions table row into a plain object.
+//
+// The only place column indices live. Anything reading `find("td")[n]` elsewhere is a bug
+// waiting for Kite to add a column.
+
 function getHoldingRowObject(row) {
     var holding = {};
 
@@ -2539,11 +2500,11 @@ function getHoldingRowObject(row) {
     var spans = jQ(tds[1]).find("span");
     if (spans.length > 0 ) {
         //data-balloon=T1, Pledged
-        q = 0
+        let q = 0;
         holding.pledged = 0;
         if (Array.isArray(spans)) {
             spans.forEach(sp => {
-                spTxt = jQ(sp).text().trim().split(':');
+                const spTxt = jQ(sp).text().trim().split(':');
                 if (spTxt[0] == "T1") {
                     q = parseInt(spTxt[1]);
                 } else if (spTxt[0] == "P") {
@@ -2551,7 +2512,7 @@ function getHoldingRowObject(row) {
                 }
             });
         } else {
-            spTxt = jQ(spans).text().trim().split(':');
+            const spTxt = jQ(spans).text().trim().split(':');
             holding.pledged = parseInt(spTxt[1]);
         }
         holding.quantity = parseInt(jQ(tds[1]).clone()    // Create a clone of the element
@@ -2638,6 +2599,9 @@ function getPositionRowObject(row) {
     return position;
 }
 
+// Works out how much margin a set of short positions would free up if hedged, by pricing
+// the basket again with the hedge legs added.
+
 function checkMarginSaving() {
     tEv("kite", "checkMarginSaving", "click", "");
     debug('checkMarginSaving');
@@ -2689,14 +2653,8 @@ function checkMarginSaving() {
         calculateMargin(data).then(margin1 => {
             debug(symbol + ' now ' + formatter.format(margin1));
 
-            var increment = 0;
-            if (symbol == 'NIFTY') {
-                increment = gmc.get('nf_hedge');
-            } else if (symbol == 'BANKNIFTY') {
-                increment = gmc.get('bnf_hedge');
-            } else {
-                increment = gmc.get('stock_hedge');
-            }
+            // Plain stocks have no INDEX_CONFIG row and fall back to the stock offset.
+            var increment = gmc.get(INDEX_CONFIG[symbol]?.hedgeSetting ?? 'stock_hedge');
             var minStrike = Math.min(...marginData[symbol + '_strikes']) - parseInt(increment);
             var maxStrike = Math.max(...marginData[symbol + '_strikes']) + parseInt(increment);
 
@@ -2766,25 +2724,10 @@ function resetSubFilter() {
     g_subFilterData = false;
 }
 
-function isLastDay(weekDay) { //1 monday
-    var tdy = new Date();
-    var dt = new Date()
-    // console.log("isLastDay " + tdy);
-    dt.setDate(1)
-    dt.setMonth(dt.getMonth() + 1)
-    dt.setDate(dt.getDate() - 1);
-    // console.log("start Date " + dt);
-
-    while (dt.getDay() !== weekDay) {
-        dt.setDate(dt.getDate() - 1);
-        // console.log(dt.toDateString())
-        // console.log( dt.toDateString() == tdy.toDateString())
-    }
-
-    return (dt.toDateString() === tdy.toDateString());
-}
-
 // all behavior related actions go here.
+
+// The stylesheet betterKite injects: full-width layout, sticky headers, and the classes
+// used to mark elements it adds so they can be cleaned up again.
 
 function fullWidth() {
     var cssStr = `<style>
@@ -2861,6 +2804,21 @@ function fullWidth() {
     </style>`;
     jQ("head").append(cssStr);
 }
+
+/**
+ * Shared body of the TRAIL and Save Profit buttons on trigger-pending orders. Both read
+ * the same `data` attribute, adjust prices, and PUT the order back; only the price
+ * arithmetic differs.
+ *
+ * @param e            the click event
+ * @param button       the clicked element, carrying `data="uid|orderId|price|triggerPrice|txnType"`
+ * @param adjustPrices (order, direction) => void, where direction is +1 for a SELL leg
+ *                     and -1 for a BUY leg
+ * @returns false, to stop Kite's own row handler from firing
+ */
+// Wires up every event handler and menu command. Called once, after settings finish
+// loading. Feature logic lives in the feature modules; this file connects it to the DOM.
+
 function main() {
     if (gmc.get('full_width')) {
         fullWidth();
@@ -3019,118 +2977,22 @@ function main() {
 
     jQ(document).on('click', "#trailButtonId", function (e) {
         tEv("kite", "trail", "click", "");
-
-        e.stopImmediatePropagation();
-
-        var data = this.getAttribute("data");
-        debug(data);
-        var spl = data.split("|");
-        var order = {};
-        order.order_id = spl[1];
-
-        order.price = spl[2];
-        order.trigger_price = spl[3];
-        var transaction_type = spl[4];
-
-        if (transaction_type == "SELL") {
-            order.price = parseFloat(order.price) + parseFloat(gmc.get('auto_trail_points'));
-            order.trigger_price = parseFloat(order.trigger_price) + parseFloat(gmc.get('auto_trail_points'));
-        } else if (transaction_type == "BUY") {
-            order.price = parseFloat(order.price) - parseFloat(gmc.get('auto_trail_points'));
-            order.trigger_price = parseFloat(order.trigger_price) - parseFloat(gmc.get('auto_trail_points'));
-        }
-
-        debug(order);
-
-        jQ.ajaxSetup({
-            headers: {
-                'Authorization': `enctoken ${getCookie('enctoken')}`
-            }
+        return modifyPendingOrderFromButton(e, this, function (order, direction) {
+            const points = direction * parseFloat(gmc.get('auto_trail_points'));
+            order.price = parseFloat(order.price) + points;
+            order.trigger_price = parseFloat(order.trigger_price) + points;
         });
-        jQ.ajax({
-            url: BASE_URL + `/oms/orders/regular/${order.order_id}`,
-            type: 'PUT',
-            data: order,
-            async: false,
-            cache: false,
-            error: function (xhr, status, error) {
-                debug(error);
-                debug(xhr.responseText);
-                getToast(`${status} :: ${error} :: ${xhr.responseText}`).showToast();
-
-                throw new Error("Not able to trail. " + error);
-            },
-            success: function (response, status) {
-                debug("22222");
-                debug("Data: " + JSON.stringify(response) + "\nStatus: " + status);
-                getToast(`Trail Successful. Reloading.`).showToast();
-                reloadPage();
-            },
-            complete: function () {
-                debug("33333");
-            }
-        });
-
-
-        return false;
     });
 
     jQ(document).on('click', "#saveProfitButtonId", function (e) {
         tEv("kite", "saveProfit", "click", "");
-
-        e.stopImmediatePropagation();
-
-        var data = this.getAttribute("data");
-        debug(data);
-        var spl = data.split("|");
-        var order = {};
-        order.order_id = spl[1];
-
-        order.price = spl[2];
-        order.trigger_price = spl[3];
-        var transaction_type = spl[4];
-
-        if (transaction_type == "SELL") {
-            order.price = parseFloat(order.price) + parseFloat(gmc.get('auto_save_profit_points')) + parseFloat(gmc.get('auto_sl_points'));
+        return modifyPendingOrderFromButton(e, this, function (order, direction) {
+            const points =
+                direction *
+                (parseFloat(gmc.get('auto_save_profit_points')) + parseFloat(gmc.get('auto_sl_points')));
+            order.price = parseFloat(order.price) + points;
             order.trigger_price = order.price;
-        } else if (transaction_type == "BUY") {
-            order.price = parseFloat(order.price) - parseFloat(gmc.get('auto_save_profit_points')) - parseFloat(gmc.get('auto_sl_points'));
-            order.trigger_price = order.price;
-        }
-
-        debug(order);
-
-        jQ.ajaxSetup({
-            headers: {
-                'Authorization': `enctoken ${getCookie('enctoken')}`
-            }
         });
-        jQ.ajax({
-            url: BASE_URL + `/oms/orders/regular/${order.order_id}`,
-            type: 'PUT',
-            data: order,
-            async: false,
-            cache: false,
-            error: function (xhr, status, error) {
-                debug(error);
-                debug(xhr.responseText);
-                getToast(`${status} :: ${error} :: ${xhr.responseText}`).showToast();
-
-                throw new Error("Not able to trail. " + error);
-            },
-            success: function (response, status) {
-                debug("22222");
-                debug("Data: " + JSON.stringify(response) + "\nStatus: " + status);
-                getToast(`Trail Successful. Reloading.`).showToast();
-                reloadPage();
-            },
-            complete: function () {
-                debug("33333");
-            }
-        });
-
-
-        return false;
     });
 
     jQ(document).on('click', "td.quantity.right", function () {
@@ -3150,15 +3012,13 @@ function main() {
         tEv("kite", "showRealisedPnL", "click", "");
 
         debug('clicked');
-        var t = tippy("section.open-positions.table-wrapper > div > div > div > table > tfoot > tr > td:nth-child(4)", {
+        tippy("section.open-positions.table-wrapper > div > div > div > table > tfoot > tr > td:nth-child(4)", {
             content: "",
             allowHTML: true,
             offset: [0, -8],
             showOnCreate: true,
             // plugins: [lotsGlobalStore],
             onShow(instance) {
-                var pnlTd = instance.reference;
-
                 var allClosed = jQ(allDOMPaths.PathForPositions).filter(':has("td.closed")');
                 var pnl = 0;
                 allClosed.each(function (rowIndex) {
@@ -3238,8 +3098,6 @@ function main() {
         if (gmc.get('enable_nifty_monthly_weekly_range') == true) {
             tEv("kite", "showVixRangeMonthly", "click", "");
 
-            var attr = jQ(this).attr('data-balloon');
-
             var symbol = jQ(this).closest("div").find("span.tradingsymbol.link-chart").text().trim();
 
             if (symbol == "NIFTY 50") {
@@ -3293,8 +3151,7 @@ function main() {
 
     jQ(document).on('click', "#hideRestId", function () {
         tEv("kite", "hideRestFilter", "click", "");
-        //var allVisibleRows = jQ(allDOMPaths.PathForPositions + ":not(.selected)").hide();
-        var allVisibleRows = jQ(allDOMPaths.PathForPositions + ".selected").hide();
+        jQ(allDOMPaths.PathForPositions + ".selected").hide();
         jQ(jQ(allDOMPaths.PathForPositions + ".selected")).find('input.su-checkbox').click();
         setTimeout(onSuCheckboxSelection, 10);
     });
@@ -3373,31 +3230,11 @@ function main() {
         let da = new Intl.DateTimeFormat('en', { year: '2-digit' }).format(dt);
         let mo = new Intl.DateTimeFormat('en', { month: 'short' }).format(dt);
 
-        var todayExpirySymbol = "";
-        debug("dat " + dt.getDay());
         var d = dt.getDay();
+        debug("dat " + d);
+        // Whichever index expires today pre-fills the prompt, e.g. BANKEX24JUN58400PE.
+        var todayExpirySymbol = indexExpiringOnWeekday(d);
         var isLstD = isLastDay(d);
-        switch (d) {
-            case 1:
-                todayExpirySymbol = indices[indices_BANKEX]
-                //BANKEX24JUN58400PE
-                break;
-            case 2:
-                todayExpirySymbol = indices[indices_FINNIFTY]
-                break;
-            case 3:
-                todayExpirySymbol = indices[indices_BANKNIFTY]
-                break;
-            case 4:
-                todayExpirySymbol = indices[indices_NIFTY]
-                break;
-            case 5:
-                todayExpirySymbol = indices[indices_SENSEX]
-                break;
-            default:
-                debug('default')
-                break;
-        }
 
         debug('last day ' + isLstD);
         if (isLstD) {
@@ -3410,28 +3247,14 @@ function main() {
         }
         var sym = h.match("^[a-zA-Z]*")[0]
         var iSym = "";
-        if (sym.startsWith("FINN")) {
-            sym = "NSE:NIFTY FIN SERVICE";
-            iSym = "NIFTY FIN SERVICE";
-        } else if (sym.startsWith(indices[indices_BANKEX])) {
-            sym = "BSE:BANKEX";
-            iSym = indices[indices_BANKEX];
-        } else if (sym.startsWith("NIFT")) {
-            sym = "NSE:NIFTY 50";
-            iSym = "NIFTY 50";
-        } else if (sym.startsWith("BANK")) {
-            sym = "NSE:NIFTY BANK";
-            iSym = "NIFTY BANK";
-        } else if (sym.startsWith("MID")) {
-            sym = "NSE:NIFTY MID SELECT";
-            iSym = "NIFTY MID SELECT";
-        } else if (sym.startsWith(indices[indices_SENSEX])) {
-            sym = "BSE:SENSEX";
-            iSym = indices[indices_SENSEX];
+        const indexMatch = OPTION_CHAIN_INDEX_PREFIXES.find(([prefix]) => sym.startsWith(prefix));
+        if (indexMatch) {
+            sym = indexMatch[1];
+            iSym = indexMatch[2];
         }
-        var s = 0;
+        var spotPrice = 0;
         myAjaxSetup();
-        myUrl = BASE_URL + `/oms/quote?i=${sym}`;
+        var myUrl = BASE_URL + `/oms/quote?i=${sym}`;
         if (gmc.get('use_api')) {
             myUrl = `https://api.kite.trade/quote?i=${sym}`;
         }
@@ -3453,7 +3276,7 @@ function main() {
                 debug("22222");
                 debug("Data: " + JSON.stringify(response) + "\nStatus: " + status);
 
-                s = response.data[sym].last_price;
+                spotPrice = response.data[sym].last_price;
 
                 // if (order.transaction_type === 'BUY') {
                 //     newPrice = newPrice + 0.05;
@@ -3465,51 +3288,29 @@ function main() {
                 debug("33333");
             }
         });
-        var n = gmc.get('marketlist_number_of_strikes');
+        var strikeCount = gmc.get('marketlist_number_of_strikes');
+        var strikeStep = INDEX_CONFIG[indexSymbolFor(h)]?.strikeStep ?? 50;
+        debug(spotPrice);
+        var atm = closestStrike(spotPrice, strikeStep);
+        var weight = 3;
+        var data;
 
-        var i = 50;
-
-        if (h.startsWith(indices[indices_BANKEX]) || h.startsWith(indices[indices_SENSEX])) {
-            i = 100;
-        }
-        console.log(s)
-        var atm = closestStrike(s, i);
-        cp = "PE";
-        var wt = 3;
-        for (ll = n; ll >= 0; ll--) {
-            var symbol = h + (atm - (ll * i)) + cp;
-            console.log(symbol)
-
-
-            data = {};
-            data.tradingsymbol = symbol
-            wt++;
-            data.weight = wt
-            data.segment = "NFO-OPT"
-            if (data.tradingsymbol.startsWith(indices[indices_BANKEX]) || data.tradingsymbol.startsWith(indices[indices_SENSEX])) {
-                data.segment = "BFO-OPT";
-            }
+        // Strikes below ATM as puts, the index itself, then strikes above ATM as calls,
+        // so the watchlist ends up ordered like an option chain.
+        for (let offset = strikeCount; offset >= 0; offset--) {
+            data = buildWatchlistEntry(h + (atm - offset * strikeStep) + 'PE', ++weight);
             addToWatchListCall(data);
         }
+
         data = {};
         data.tradingsymbol = iSym;
-        wt++;
-        data.weight = wt
+        weight++;
+        data.weight = weight
         data.segment = "INDICES"
         addToWatchListCall(data);
 
-        cp = "CE";
-        for (ll = 0; ll <= n; ll++) {
-            var symbol = h + (atm + (ll * i)) + cp;
-            console.log(symbol)
-            data = {};
-            data.tradingsymbol = symbol
-            wt++;
-            data.weight = wt
-            data.segment = "NFO-OPT"
-            if (data.tradingsymbol.startsWith(indices[indices_BANKEX]) || data.tradingsymbol.startsWith(indices[indices_SENSEX])) {
-                data.segment = "BFO-OPT";
-            }
+        for (let offset = 0; offset <= strikeCount; offset++) {
+            data = buildWatchlistEntry(h + (atm + offset * strikeStep) + 'CE', ++weight);
             addToWatchListCall(data);
         }
 
@@ -3520,10 +3321,19 @@ function main() {
         // 
     });
 
+    // Key order matters: it becomes the form-encoded field order of the POST below.
+    function buildWatchlistEntry(tradingsymbol, weight) {
+        return {
+            tradingsymbol: tradingsymbol,
+            weight: weight,
+            segment: INDEX_CONFIG[indexSymbolFor(tradingsymbol)]?.optionSegment ?? 'NFO-OPT',
+        };
+    }
+
     function addToWatchListCall(data) {
         //segment=INDICES&tradingsymbol=NIFTY%2050&watch_id=4&weight=14
 
-        mitem = jQ(allDOMPaths.domPathTabToChangeWatchlist + ".selected").text().trim();
+        var mitem = jQ(allDOMPaths.domPathTabToChangeWatchlist + ".selected").text().trim();
         data.watch_id = mitem
 
         jQ.post(BASE_URL + `/api/marketwatch/${mitem}/items`,
@@ -3712,8 +3522,6 @@ function main() {
         var watchlistStock = jQ(this).find(allDOMPaths.domPathStockNameInWatchlistRow).html();
         debug("clicked on : " + watchlistStock);
 
-        var holdingTRs = jQ(allDOMPaths.rowsFromHoldingsTable);
-
         jQ.expr[':'].regex = function (elem, index, match) {
             var matchParams = match[3].split(','),
                 validLabels = /^(data|css):/,
@@ -3747,6 +3555,8 @@ function main() {
     waitForKeyElements("div.value.final-margins-value", showBasketRoiNudge);
 
 }
+
+// Adds a betterKite entry to Kite's row context menu.
 
 var _currentContextMenuRow;
 waitForKeyElements(allDOMPaths.domContextMenuButton, saveContextMenuRow);
@@ -3787,30 +3597,84 @@ function saveContextMenuRow() {
 
 }
 
-// const menuDom = "ul.context-menu-list.list-flat.layer-2";
-// waitForKeyElements(menuDom, menuShown);
 
-// function menuShown() {
-//     var currentUrl = window.location.pathname;
-//     if (currentUrl.includes('orders')) {
-//         debug('clicked on context menu in order screen');
-//         tEv("kite", "orders", "context-menu", "");
-//     }
-//     var insert = `
-//     <li class="addon-menu separator">
-//         <ul class="list-flat">
-//         <li ><a id="bumpOrderButtonId" href="javascript:void(0);"><span class="icon icon-swap_vert"></span> Bump Order</a></li>
-//         </ul>
-//     </li>
-//     `;
-//     debug('menuShown');
-//     jQ(menuDom).append(insert);
-//     jQ("#bumpOrderButtonId").click(function (evt) {
-//         debug('bumpOrderButtonId clicked');
-//         debug(getPositionRowObject(_currentContextMenuRow));
-//         evt.stopPropagation();
-//     });
-// }
+/** Runs `onChange` whenever the text inside `target` changes -- Kite rewrites these
+ *  margin figures in place rather than replacing the element. */
+// Shows premium received and ROI in the order window and the basket window, recalculating
+// whenever Kite rewrites the margin figures.
+
+function onTextChange(target, onChange) {
+    const observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+            if (mutation.type == "characterData") {
+                onChange();
+            }
+        });
+    });
+    observer.observe(target, { characterData: true, subtree: true });
+    return observer;
+}
+
+function showRoiNudge() {
+    if (jQ("div.instrument > span.transaction-type").text().trim() == 'Sell') {
+        updateRoiNudge();
+        onTextChange(jQ("span.value")[0], updateRoiNudge);
+
+        jQ(document).on('change', 'input[label="Price"]', function () {
+            updateRoiNudge();
+        });
+    }
+}
+
+function updateRoiNudge() {
+    var lastPrice = 0;
+    var margin = jQ("span.value").text().trim().split('₹').join("").split(",").join("");
+    var qty = jQ('input[label="Qty."]').val();
+
+    if (jQ('input[value="MARKET"]').prop('checked') == true) {
+        lastPrice = parseFloat(jQ('div > span.last-price').text().trim().split('₹').pop().split(",").join(""));
+    }
+    if (jQ('input[value="LIMIT"]').prop('checked') == true) {
+        debug();
+        lastPrice = parseFloat(jQ('input[label="Price"]').val());
+    }
+    debug(lastPrice);
+    debug(qty);
+    debug(qty * lastPrice);
+    debug(margin);
+
+    jQ('#nudgepremiumid').remove();
+    jQ('footer.footer > div > div:nth-child(1)').append(`<div id="nudgepremiumid" class="row margins"><span class="label">Premium Recvd: </span> <span >${formatter.format(qty * lastPrice)} (ROI: ${(((qty * lastPrice) / margin) * 100).toFixed(2)}%)</span></div>`);
+
+}
+
+function showBasketRoiNudge() {
+    updateBasketRoiNudge();
+    onTextChange(jQ("div.value.final-margins-value")[0], updateBasketRoiNudge);
+
+    jQ(document).on('change', 'div.value.dim', function () {
+        updateBasketRoiNudge();
+    });
+}
+
+function updateBasketRoiNudge() {
+    var finalMargin = jQ("div.value.final-margins-value").text().trim().split('₹').join("").split(",").join("");
+    var requiredMargin = jQ("div.value.dim").text().trim().split('₹').join("").split(",").join("");
+    var basketPositions = jQ(allDOMPaths.PathForBasketPositions);
+    var premium = 0;
+    basketPositions.each(function (rowIndex) {
+        var transactionType = jQ(jQ(this).find("td")[0]).text().trim();
+        var qty = parseFloat(jQ(jQ(this).find("td")[4]).text().split(',').join(''));
+        var price = parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
+        premium += qty * price * (transactionType == 'SELL' ? 1 : -1);
+    });
+    debug(finalMargin);
+    jQ('#basketnudgepremiumid').remove();
+    jQ('div.eight.columns.margins-summary > div > div:nth-child(1)').append(`<div id="basketnudgepremiumid" class="su-checkbox-group consider-positions"><span class="su-checkbox-value">Premium Recvd: </span> <span >${formatter.format(premium)} (Max ROI: ${((premium / requiredMargin) * 100).toFixed(2)}%)</span></div>`);
+
+}
+
+// Re-prices selected pending orders in bulk, to LTP or by a fixed delta.
 
 function showBumpButton() {
     debug('showBumpButton');
@@ -3875,6 +3739,7 @@ function showBumpButton() {
     // $("#app > div.container.wrapper > div.container-right > div.page-content.orders > div > section.pending-orders-wrap.table-wrapper > div > div > table > tfoot > tr > td:nth-child(1) > button").after(i);
     jQ("button:contains('Cancel')").after(i);
 }
+
 function bumpOrders(orders) {
     debug('bump order');
 
@@ -3916,410 +3781,13 @@ function bumpOrders(orders) {
         };
 }
 
-function showRoiNudge() {
-    if (jQ("div.instrument > span.transaction-type").text().trim() == 'Sell') {
-        updateRoiNudge();
-        var target = jQ("span.value")[0];
-        var obs = new MutationObserver(function (mutations) {
-            mutations.forEach(function (mutation) {
-                if (mutation.type == "characterData") {
-                    updateRoiNudge();
-                }
-            });
-        });
-
-        // Configuration of the observer:
-        config = {
-            characterData: true,
-            subtree: true
-        };
-
-        // Pass in the target node, as well as the observer options
-        obs.observe(target, config);
-
-        jQ(document).on('change', 'input[label="Price"]', function () {
-            updateRoiNudge();
-        });
-    }
-}
-
-function updateRoiNudge() {
-    var lastPrice = 0;
-    var margin = jQ("span.value").text().trim().split('₹').join("").split(",").join("");
-    var qty = jQ('input[label="Qty."]').val();
-
-    if (jQ('input[value="MARKET"]').prop('checked') == true) {
-        lastPrice = parseFloat(jQ('div > span.last-price').text().trim().split('₹').pop().split(",").join(""));
-    }
-    if (jQ('input[value="LIMIT"]').prop('checked') == true) {
-        debug();
-        lastPrice = parseFloat(jQ('input[label="Price"]').val());
-    }
-    debug(lastPrice);
-    debug(qty);
-    debug(qty * lastPrice);
-    debug(margin);
-
-    jQ('#nudgepremiumid').remove();
-    jQ('footer.footer > div > div:nth-child(1)').append(`<div id="nudgepremiumid" class="row margins"><span class="label">Premium Recvd: </span> <span >${formatter.format(qty * lastPrice)} (ROI: ${(((qty * lastPrice) / margin) * 100).toFixed(2)}%)</span></div>`);
-
-}
-
-function showBasketRoiNudge() {
-    updateBasketRoiNudge();
-    var target = jQ("div.value.final-margins-value")[0];
-    var obs = new MutationObserver(function (mutations) {
-        mutations.forEach(function (mutation) {
-            if (mutation.type == "characterData") {
-                updateBasketRoiNudge();
-            }
-        });
-    });
-
-    // Configuration of the observer:
-    config = {
-        characterData: true,
-        subtree: true
-    };
-
-    // Pass in the target node, as well as the observer options
-    obs.observe(target, config);
-
-    jQ(document).on('change', 'div.value.dim', function () {
-        updateBasketRoiNudge();
-    });
-
-}
-
-function updateBasketRoiNudge() {
-    var finalMargin = jQ("div.value.final-margins-value").text().trim().split('₹').join("").split(",").join("");
-    var requiredMargin = jQ("div.value.dim").text().trim().split('₹').join("").split(",").join("");
-    var basketPositions = jQ(allDOMPaths.PathForBasketPositions);
-    var premium = 0;
-    basketPositions.each(function (rowIndex) {
-        var transactionType = jQ(jQ(this).find("td")[0]).text().trim();
-        var qty = parseFloat(jQ(jQ(this).find("td")[4]).text().split(',').join(''));
-        var price = parseFloat(jQ(jQ(this).find("td")[5]).text().split(",").join(""));
-        premium += qty * price * (transactionType == 'SELL' ? 1 : -1);
-    });
-    debug(finalMargin);
-    jQ('#basketnudgepremiumid').remove();
-    jQ('div.eight.columns.margins-summary > div > div:nth-child(1)').append(`<div id="basketnudgepremiumid" class="su-checkbox-group consider-positions"><span class="su-checkbox-value">Premium Recvd: </span> <span >${formatter.format(premium)} (Max ROI: ${((premium / requiredMargin) * 100).toFixed(2)}%)</span></div>`);
-
-}
-
-function showFundsHelp() {
-    debug('showFundsHelp');
-
-    var helpText = ["You can use this amount to place new trades. The available margin includes the benefit of pledging collateral, the premium received from shorting options, funds added during the day, the effect of realised profits & losses, and unrealised losses.",
-        "You have used this amount towards trades during the day. The used margin can be negative if you have generated some funds by selling your holdings, closing F&O positions, or making intraday gains.",
-        "This is the current cash balance in your account. If your available cash balance is negative, you will be charged interest.",
-        "This is the cash available in your trading account at the beginning of the day.",
-        "The funds you add to your trading account during the day reflect as the payin balance.",
-        "This is a part of the amount blocked for your F&O trades. You can also check SPAN on our margin calculator. ",
-        "This is the margin blocked when you sell securities (20% of the value of stocks sold) from your demat or T1 holdings. As per the peak margin norms, only 80% of credit from selling your holdings will be available for new trades. The funds blocked under this field will be available from the next trading day. The delivery margin also includes additional margin blocked if you have any F&O positions due for physical delivery. ",
-        "This is a part of the amount blocked for your F&O trades. You can also check the exposure margin here.",
-        "The total amount you have paid to purchase options. This value will be negative if you have received funds for shorting/writing options.",
-        "This amount is made available for trading against Liquidbees ETFs or liquid mutual funds you have pledged.",
-        "This amount is made available for trading against stocks/ETFs you have pledged.",
-        "This is the sum total of liquid funds and equity collateral."];
-
-    var allRows = jQ("#app > div.container.wrapper > div.container-right > div > div.margins > div.row > div:nth-child(1) > div > table > tbody > tr");
-    debug(allRows.length);
-    allRows.each(function (rowIndex) {
-        var stock = jQ(this).attr('title', helpText[rowIndex]);
-        debug(jQ(this));
-        debug(stock);
-        debug(helpText[rowIndex]);
-    });
-
-}
-
-function waitForKeyElements(
-    selectorTxt,    /* Required: The jQuery selector string that
-                        specifies the desired element(s).
-                    */
-    actionFunction, /* Required: The code to run when elements are
-                        found. It is passed a jNode to the matched
-                        element.
-                    */
-    bWaitOnce,      /* Optional: If false, will continue to scan for
-                        new elements even after the first match is
-                        found.
-                    */
-    iframeSelector  /* Optional: If set, identifies the iframe to
-                        search.
-                    */
-) {
-    var targetNodes, btargetsFound;
-
-    if (typeof iframeSelector == "undefined")
-        targetNodes = jQ(selectorTxt);
-    else
-        targetNodes = jQ(iframeSelector).contents()
-            .find(selectorTxt);
-
-    if (targetNodes && targetNodes.length > 0) {
-        btargetsFound = true;
-        /*--- Found target node(s).  Go through each and act if they
-            are new.
-        */
-        targetNodes.each(function () {
-            var jThis = jQ(this);
-            var alreadyFound = jThis.data('alreadyFound') || false;
-
-            if (!alreadyFound) {
-                //--- Call the payload function.
-                var cancelFound = actionFunction(jThis);
-                if (cancelFound)
-                    btargetsFound = false;
-                else
-                    jThis.data('alreadyFound', true);
-            }
-        });
-    }
-    else {
-        btargetsFound = false;
-    }
-
-    //--- Get the timer-control variable for this selector.
-    var controlObj = waitForKeyElements.controlObj || {};
-    var controlKey = selectorTxt.replace(/[^\w]/g, "_");
-    var timeControl = controlObj[controlKey];
-
-    //--- Now set or clear the timer as appropriate.
-    if (btargetsFound && bWaitOnce && timeControl) {
-        //--- The only condition where we need to clear the timer.
-        clearInterval(timeControl);
-        delete controlObj[controlKey]
-    }
-    else {
-        //--- Set a timer, if needed.
-        if (!timeControl) {
-            timeControl = setInterval(function () {
-                waitForKeyElements(selectorTxt,
-                    actionFunction,
-                    bWaitOnce,
-                    iframeSelector
-                );
-            },
-                300
-            );
-            controlObj[controlKey] = timeControl;
-        }
-    }
-    waitForKeyElements.controlObj = controlObj;
-}
-
-function orderInfo() {
-    debug('orderInfo');
-
-    var ts = jQ(BASE_ORDERINFO_DOM + " > div > div > div > h3.tradingsymbol").text().trim().split(' ');
-    var tradingsymbol = ts[0];
-
-    var i = document.createElement("INPUT");
-    i.type = 'button';
-    i.name = 'copyOrder';
-    i.value = 'Copy Order (' + g_tradingBasket.length + ')'
-    i.id = 'copyOrder';
-    i.classList.add('button');
-    i.classList.add('button-outline');
-
-    if (JSON.stringify(g_tradingBasket).includes("\"" + tradingsymbol + "\"")) {
-        i.value = 'Already Copied. Close';
-        i.onclick = function () {
-            var buttons = jQ("#app > div.container.wrapper > div.container-right > div > div > div > div > div > div.modal-footer > div > button");
-            buttons[buttons.length - 1].click();
-        };
-    } else {
-        i.onclick = function () {
-            var ts = jQ(BASE_ORDERINFO_DOM + " > div > div > div > h3.tradingsymbol").text().trim().split(' ');
-            var tradingsymbol = ts[0];
-            debug(tradingsymbol);
-            var exchange = ts[1];
-            debug(exchange);
-
-            var transactionType = jQ(BASE_ORDERINFO_DOM + " > div.modal-header > div > div.eight.columns.tradingsymbol-wrapper > span").text().trim();
-            debug(transactionType);
-
-            var orderType = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(5) > div.six.columns.text-right > div.order-type").text().trim();
-            debug(orderType);
-
-            var product = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(6) > div.six.columns.text-right > div.product").text().trim();
-            debug(product);
-
-            var quantity = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(1) > div.six.columns.text-right > div").text().trim().split('/')[0];
-
-            var price = jQ(BASE_ORDERINFO_DOM + " > div.modal-body > div > div > div.four.columns.left.mobile-modal > div:nth-child(3) > div.six.columns.text-right > div").text().trim();
-            debug(price);
-
-            if (!JSON.stringify(g_tradingBasket).includes("\"" + tradingsymbol + "\"")) {
-                g_tradingBasket.push({ "product": product, "variety": "regular", "tradingsymbol": tradingsymbol, "exchange": exchange, "transaction_type": transactionType, "order_type": orderType, "price": parseFloat(price), "quantity": parseInt(quantity), "readonly": false });
-
-                navigator.clipboard.writeText(JSON.stringify(g_tradingBasket));
-
-
-                updateOrderButtons();
-                tEv("kite", "order", "copyOrder", "");
-            } else {
-                debug('not adding order to basket');
-                debug(JSON.stringify(g_tradingBasket));
-            }
-
-            var buttons = jQ("#app > div.container.wrapper > div.container-right > div > div > div > div > div > div.modal-footer > div > button");
-            buttons[buttons.length - 1].click();
-        };
-    }
-
-    //#app > div.container.wrapper > div.container-right > div.page-content.orders > div > div > div > div > div.modal-footer > div > button.button.button-orange.button-outline
-
-    jQ(BASE_ORDERINFO_DOM + " > div > div > button")[0].before(i);
-}
-
 jQ(document).on('change', "input.su-checkbox", function () {
     showBumpButton();
 });
-//copy orders (not used)
-jQ(document).on('click', 'section.completed-orders-wrap.table-wrapper > div > div > table > tbody > tr', function () {
 
-    //[{"variety": "regular","tradingsymbol": "INFY","exchange": "NSE","transaction_type": "BUY","order_type": "MARKET","quantity": 1,"readonly": false}]
 
-    var variety = jQ(this).find("td.product").html().trim();
-    debug(variety);
-    var tradingsymbol = jQ(this).find("td.instrument > span.tradingsymbol").text().trim();
-    debug(tradingsymbol);
-    var exchange = jQ(this).find("td.instrument > span.exchange").html().trim();
-    debug(exchange);
-    var transactionType = jQ(this).find("td.transaction-type").text().trim();
-    debug(transactionType);
-    var quantity = jQ(this).find("td.quantity.right").html().trim().split('/')[0];
-    var price = jQ(this).find("td.average-price.right").text().trim();
-    debug(price);
-
-});
-
-function showSendOrderButton() {
-    var div = document.createElement("DIV");
-    div.style = 'float:right';
-    div.id = 'bkSendOrderDiv';
-
-    var form = document.createElement("FORM");
-    form.method = 'post';
-    form.id = 'bo_basket-form';
-    form.action = "https://kite.zerodha.com/connect/basket";
-    form.classList.add("randomClassToHelpHide");
-
-    var i = document.createElement("INPUT");
-    i.type = 'hidden';
-    i.name = 'api_key';
-    i.value = '4s0c0wfr478wne1s';
-    i.classList.add("randomClassToHelpHide");
-
-    jQ(form).append(i);
-
-    i = document.createElement("INPUT");
-    i.type = 'hidden';
-    i.name = 'data';
-    i.id = 'bobasket';
-    i.classList.add("randomClassToHelpHide");
-
-    jQ(form).append(i);
-
-    i = document.createElement("INPUT");
-    i.type = 'button';
-    i.name = 'sendOrder';
-    i.value = 'Send Order';
-    i.classList.add("randomClassToHelpHide");
-    i.classList.add('button');
-    i.classList.add('button-outline');
-    i.id = 'sendOrder';
-
-    jQ(form).append(i);
-
-    i = document.createElement("INPUT");
-    i.type = 'button';
-    i.name = 'resetOrder';
-    i.value = 'Reset Order';
-    i.classList.add("randomClassToHelpHide");
-    i.classList.add('button');
-    i.classList.add('button-outline');
-    i.id = 'resetOrder';
-
-    jQ(form).append(i);
-
-    jQ(div).append(form);
-
-    jQ(document).on('click', "#sendOrder", async function () {
-        debug('submiting send ordre');
-        const t = await navigator.clipboard.readText();
-        jQ('#bobasket').val(t);
-
-        //g_tradingBasket.splice(0, g_tradingBasket.length);
-        //navigator.clipboard.writeText("");
-        jQ("#bo_basket-form").submit();
-        tEv("kite", "order", "sendOrderClick", "");
-    });
-
-    jQ(document).on('mouseenter', "#sendOrder", async function () {
-        debug('refreshing mouse enter');
-
-        updateOrderButtons();
-
-        tEv("kite", "order", "sendOrderMouseOver", "");
-    });
-
-    jQ(document).on('click', "#resetOrder", async function () {
-        debug('reset order');
-        navigator.clipboard.writeText("");
-        updateOrderButtons();
-        tEv("kite", "order", "resetOrder", "");
-    });
-    jQ('#bkSendOrderDiv').remove();
-    jQ(".page-nav").append(div);
-    if (jQ("div.container.wrapper > div.container-right > div.page-nav").length < 1) {
-        debug('sleeping as couldnt find order div');
-
-        //setTimeout(function(){ jQ("div.container.wrapper > div.container-right > div.page-nav").append(div); }, 1100);
-        return;
-    }
-
-}
-
-async function updateOrderButtons() {
-    const t = await navigator.clipboard.readText();
-
-    try {
-        g_tradingBasket = JSON.parse(t);
-    } catch (err) {
-        g_tradingBasket.splice(0, g_tradingBasket.length);
-        debug("There was error in parsing order");
-    }
-    jQ("#sendOrder").val('Send Order (' + g_tradingBasket.length + ')');
-}
-
-//click on order header
-// var orderHeader = 'section.completed-orders-wrap.table-wrapper > header';
-// jQ(document).on('click', orderHeader, function () {
-//     tEv("kite","order","toggle","");
-
-//     if (jQ('#sendOrder').is(":visible")) {
-//         //do nothing
-
-//         //g_tradingBasket = new Array();
-//         g_tradingBasket.splice(0, g_tradingBasket.length);
-//         navigator.clipboard.writeText("");
-//         //jQ(".randomClassToHelpHide").remove();
-//         jQ("#bo_basket-form").remove();
-//     } else {
-//         showSendOrderButton();
-
-//     }
-
-// });
-
-//div holding ready-made strategies.
-//div.modal-mask.positios-info-container.positions-info-modal > div.modal-wrapper > div.modal-container.layer-2
-// waitForKeyElements(BASE_ORDERINFO_DOM, orderInfo);
+// console.zerodha.com: a shortcut to the current month's F&O P&L, and a P&L link in the
+// nav dropdown.
 
 function changePnLFilter() {
     debug('changePnLFilter');
@@ -4381,173 +3849,54 @@ function addPnlMenu() {
 waitForKeyElements(".dropdown-nav.layer-2", addPnlMenu);
 
 
-//sensibull inside kite
-//watching for 'do more with strategy builder' link
-//changed to span:Try it Now
-// waitForKeyElements("a:contains('Do more with Strategy Builder')", sensibull);
-// waitForKeyElements("span:contains('Try it Now')", sensibull);
+// TRAIL and Save Profit buttons on trigger-pending orders. Both adjust the stop and PUT
+// the order back; only the price arithmetic differs.
 
-var previousArray = [];
-// function sensibull(firstTry = true) {
-//     debug('sensibull');
-//     tEv("kite", "positions", "sensibull", "");
+function modifyPendingOrderFromButton(e, button, adjustPrices) {
+    e.stopImmediatePropagation();
 
-//     var rows = jQ(allDOMPaths.sensibullRows);
-//     //debug(d);
-//     debug(rows.length);
-//     if (firstTry && rows.length < 1) {
-//         setTimeout(function () { sensibull(false); }, 1000);
-//         return;
-//     }
+    var data = button.getAttribute("data");
+    debug(data);
+    var spl = data.split("|");
+    var order = {};
+    order.order_id = spl[1];
+    order.price = spl[2];
+    order.trigger_price = spl[3];
+    var transaction_type = spl[4];
 
-//     var selectBox = document.createElement("SELECT");
-//     selectBox.id = "toggleSelectboxID";
-//     selectBox.classList.add("randomClassToHelpHide");
-//     //selectBox.style="margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;background-color: var(--color-bg-default)"
+    // Anything other than a plain BUY/SELL is sent through untouched, as before.
+    if (transaction_type == "SELL" || transaction_type == "BUY") {
+        adjustPrices(order, transaction_type == "SELL" ? 1 : -1);
+    }
 
-//     var option = document.createElement("option");
-//     option.text = "Toggle";
-//     option.value = "All";
-//     selectBox.add(option);
+    debug(order);
 
-//     var expiryArray = [];
-//     rows.each(function (rowIndex) {
-//         var exp = jQ(this).find('th > div > div:nth-child(3)').text().split(" ")[2];
+    jQ.ajaxSetup({
+        headers: {
+            'Authorization': `enctoken ${getCookie('enctoken')}`
+        }
+    });
+    jQ.ajax({
+        url: BASE_URL + `/oms/orders/regular/${order.order_id}`,
+        type: 'PUT',
+        data: order,
+        async: false,
+        cache: false,
+        error: function (xhr, status, error) {
+            debug(error);
+            debug(xhr.responseText);
+            getToast(`${status} :: ${error} :: ${xhr.responseText}`).showToast();
 
-//         if (!expiryArray.includes(exp)) {
-//             expiryArray.push(exp);
+            throw new Error("Not able to trail. " + error);
+        },
+        success: function (response, status) {
+            debug("Data: " + JSON.stringify(response) + "\nStatus: " + status);
+            getToast(`Trail Successful. Reloading.`).showToast();
+            reloadPage();
+        }
+    });
 
-//             var option = document.createElement("option");
-//             option.text = exp;
-//             option.value = exp;
-//             selectBox.add(option);
-//         }
-//     });
-
-//     if (arrayEquals(previousArray, expiryArray)) {
-//         debug('ignore array set');
-//         return;
-//     } else {
-//         previousArray = expiryArray;
-//     }
-//     jQ('#toggleSelectboxID').remove();
-//     //document.querySelector("")
-//     jQ("span:contains('F&O Instruments')").after(selectBox);
-
-//     selectBox.addEventListener("change", function () {
-//         tEv("kite", "positions", "sensibull", "expiry-filter");
-//         var selectedItem = this.value;
-//         debug(selectedItem);
-
-//         var rows = jQ(allDOMPaths.sensibullRows);
-//         rows.each(function (rowIndex) {
-//             var t = jQ(this).find('th > div > div:nth-child(3)').text().split(" ")[2];
-
-//             debug('toggle for ' + t);
-//             if (selectedItem == 'All' || t.toUpperCase() == selectedItem.toUpperCase()) {
-//                 debug('toggle : success');
-//                 var c = jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].click();
-//             }
-//         });
-//     });
-
-//     var strategySelectBox = document.createElement("SELECT");
-//     strategySelectBox.id = "userStrategiesId";
-//     strategySelectBox.classList.add("randomClassToHelpHide");
-//     strategySelectBox.style = "margin: 15px 0;margin-top: 15px;margin-right: 0px;margin-bottom: 15px;margin-left: 0px;font-size: 12px;background-color: var(--color-bg-default)"
-
-//     //add options to the positions select drop down
-//     for (var key in positions) {
-//         option = document.createElement("option");
-//         option.text = key;
-//         option.value = key;
-//         strategySelectBox.add(option);
-//     };
-
-//     jQ('#userStrategiesId').remove();
-//     jQ(".style__StyledBrandLogo-t0trse-8").before(strategySelectBox);
-
-
-//     strategySelectBox.addEventListener("change", function () {
-//         tEv("kite", "positions", "sensibull", "strategy-filter");
-//         var selectedItem = this.value;
-//         info(selectedItem);
-
-//         var script = jQ(jQ(allDOMPaths.sensibullScriptSelected)[0]).text().split(' ')[0];
-
-//         var selectedPositions = positions[selectedItem].map(value => value.toUpperCase());
-//         debug(selectedPositions);
-
-//         var rows = jQ(allDOMPaths.sensibullRows);
-//         //rest all.
-//         rows.each(function (rowIndex) {
-//             debug(jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].checked);
-//             if (jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].checked == false) {
-//                 var c = jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].click();
-//             }
-//         });
-//         rows.each(function (rowIndex) {
-//             var t = `${script} ${jQ(this).find('th > div > div:nth-child(3)').text().split(" ").slice(2).join(" ")}`;
-
-//             debug('comparing sesibull position ' + t);
-//             if (!selectedPositions.includes(t.toUpperCase())) {
-//                 var c = jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].click();
-//             }
-//             // if (t.toUpperCase() == selectedItem.toUpperCase()) {
-//             //     debug('toggle : success');
-//             //     var c = jQ(this).find(allDOMPaths.sensibullRowCheckbox)[0].click();
-//             // }
-//         });
-//     });
-// }
-
-function arrayEquals(a, b) {
-    return Array.isArray(a) &&
-        Array.isArray(b) &&
-        a.length === b.length &&
-        a.every((val, index) => val === b[index]);
-}
-
-//div.InstrumentPickerSymbolWrapper
-// waitForKeyElements('div[role=combobox]', listenToSymbolChange);
-// function listenToSymbolChange() {
-//     debug('listenToSymbolChange');
-//     jQ(document).off('click', "div[role=combobox]", handleSymbolClick);
-//     jQ(document).on('click', "div[role=combobox]", handleSymbolClick);
-// }
-
-// function handleSymbolClick(event) {
-//     debug('listenToSymbolChange click');
-//     //stopImmediatePropagation
-//     event.stopPropagation();
-//     tEv("kite", "positions", "sensibull", "symbol-change");
-
-//     setTimeout(() => sensibull1(), 3000);
-// }
-
-// function sensibull1() {
-//     debug('sensbulll1');
-//     sensibull(false);
-// }
-
-//debug(getLastThursday('Jan'));
-
-function getLastThursday(m, year) {
-
-    debug(MONTHS.indexOf(m.toUpperCase()));
-    var month = MONTHS.indexOf(m.toUpperCase()) + 1;
-
-    var d = new Date();
-    if (year) { d.setFullYear(year); }
-    d.setDate(1); // Roll to the first day of ...
-    d.setMonth(month || d.getMonth() + 1); // ... the next month.
-    do { // Roll the days backwards until Monday.
-        d.setDate(d.getDate() - 1);
-    } while (d.getDay() !== 4);
-
-    let da = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(d);
-    let mo = new Intl.DateTimeFormat('en', { month: 'short' }).format(d);
-    return da + mo;
+    return false;
 }
 
 //code for SL trail
@@ -4592,95 +3941,67 @@ function trailOrderButton() {
 
 }
 
+// Captured before the patching at the bottom of this file, so the replacements can
+// still delegate to the originals.
+// Order window additions -- auto stop-loss, quantity-freeze override, smart limit -- and
+// the XMLHttpRequest interception that lets betterKite take over an order submission.
+//
+// This is the code path that places real trades. Change it carefully.
+
 var open = window.XMLHttpRequest.prototype.open,
-    send = window.XMLHttpRequest.prototype.send,
-    oldReadyStateChange;
+    send = window.XMLHttpRequest.prototype.send;
 const BASE_URL = "https://kite.zerodha.com";
-//var _orderModified,
 var _newOrder;
 var _overrideQtyFreeze = false, _smartLimit = false, _auto_sl_order = false;
 var orderDom = "form.order-window";
 // var _interceptedReq;
 waitForKeyElements(orderDom, addOverrideOption);
 
+/** True when the open order window is a buy/sell on one of the indices in INDEX_CONFIG. */
+function isIndexOrderWindow() {
+    const action = jQ("button.submit > span").text();
+    if (action !== "Buy" && action !== "Sell") return false;
+    return indexSymbolFor(jQ("span.tradingsymbol > span.name").text()) !== undefined;
+}
+
+/** Checkbox + label pair appended next to the order window's Cancel button. */
+function addOrderWindowCheckbox(id, labelId, labelText, onclick) {
+    const div = document.createElement("div");
+
+    const input = document.createElement("INPUT");
+    input.type = 'checkbox';
+    input.name = id;
+    input.value = 'true';
+    input.id = id;
+    input.style = 'width: 18px; height: 18px; margin-top: 2px; vertical-align : middle';
+    input.onclick = onclick;
+
+    const label = document.createElement("LABEL");
+    label.id = labelId;
+    label.for = id;
+    label.innerHTML = labelText;
+    label.classList.add('text-label');
+    label.classList.add('text-label-outline');
+    label.style = 'margin-top: 2px;';
+
+    div.appendChild(input);
+    div.appendChild(label);
+    jQ("button.button-outline.cancel").after(div);
+}
+
 function addOverrideOption() {
     debug('addOverrideOption');
 
-    if (gmc.get('auto_sl_order') === true &&
-        (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
-        (
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_NIFTY]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_BANKNIFTY]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_FINNIFTY]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_BANKEX]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_MIDCPNIFTY]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_SENSEX])
-        )
-    ) {
-        var div = document.createElement("div");
-
-        var i = document.createElement("INPUT");
-        i.type = 'checkbox';
-        i.name = 'autoSlOrderCb';
-        i.value = 'true';
-        i.id = 'autoSlOrderCb';
-        i.style = 'width: 18px; height: 18px; margin-top: 2px; vertical-align : middle';
-        //i.classList.add('button');
-        //i.classList.add('button-outline');
-
-        i.onclick = function () {
+    if (gmc.get('auto_sl_order') === true && isIndexOrderWindow()) {
+        addOrderWindowCheckbox('autoSlOrderCb', 'autoSlOrderLbl', 'Create SL Order', function () {
             _auto_sl_order = jQ("#autoSlOrderCb").is(':checked');
             tEv("kite", "place-order", "auto-sl-order", "");
-        };
+        });
         _auto_sl_order = false;
-
-        var label = 'Create SL Order';
-        var l = document.createElement("LABEL");
-        l.id = 'autoSlOrderLbl';
-        l.for = 'autoSlOrderCb';
-        l.innerHTML = label;
-        l.classList.add('text-label');
-        l.classList.add('text-label-outline');
-        l.style = 'margin-top: 2px;';
-
-        div.appendChild(i);
-        div.appendChild(l);
-        jQ("button.button-outline.cancel").after(div);
     }
 
-    if (gmc.get('overide_qty_freeze_check_to_enable') === true &&
-        (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
-        (
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_NIFTY]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_BANKNIFTY]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_FINNIFTY]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_BANKEX]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_MIDCPNIFTY]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_SENSEX])
-        )
-    ) {
-        var div = document.createElement("div");
-
-        var i = document.createElement("INPUT");
-        i.type = 'checkbox';
-        i.name = 'overQtyFreezeCb';
-        i.value = 'true';
-        i.id = 'overQtyFreezeCb';
-        i.style = 'width: 18px; height: 18px; margin-top: 2px; vertical-align : middle';
-        //i.classList.add('button');
-        //i.classList.add('button-outline');
-
-        var label = 'Override Quantity Freeze';
-        var l = document.createElement("LABEL");
-        l.id = 'overrideLbl';
-        l.for = 'overQtyFreezeCb';
-        l.innerHTML = label;
-        l.classList.add('text-label');
-        l.classList.add('text-label-outline');
-        l.style = 'margin-top: 2px;';
-
-
-        i.onclick = function () {
+    if (gmc.get('overide_qty_freeze_check_to_enable') === true && isIndexOrderWindow()) {
+        addOrderWindowCheckbox('overQtyFreezeCb', 'overrideLbl', 'Override Quantity Freeze', function () {
             debug(jQ("#overQtyFreezeCb").is(':checked'));
 
             var con = true;
@@ -4696,26 +4017,11 @@ function addOverrideOption() {
                     jQ("#overQtyFreezeCb").prop('checked', false);
                 }, 0);
             }
-
-        };
-
+        });
         _overrideQtyFreeze = false;
-        div.appendChild(i);
-        div.appendChild(l);
-        jQ("button.button-outline.cancel").after(div);
     }
 
-    if (gmc.get('smart_limit_check_to_enable') === true &&
-        (jQ("button.submit > span").text() === "Buy" || jQ("button.submit > span").text() === "Sell") &&
-        (
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_NIFTY]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_FINNIFTY]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_BANKEX]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_SENSEX]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_MIDCPNIFTY]) ||
-            jQ("span.tradingsymbol > span.name").text().startsWith(indices[indices_BANKNIFTY])
-        )
-    ) {
+    if (gmc.get('smart_limit_check_to_enable') === true && isIndexOrderWindow()) {
         var insert = `
     <div class="su-radio-wrap" tooltip-pos="down" data-balloon-pos="down" data-balloon="Sell/buy at a 05p betrer than first offer/bid price">
         <input type="radio" name="orderType" label="Smart Limit" class="su-radio" id="smartLimit" value="SMARTLIMIT"
@@ -4777,35 +4083,28 @@ window.addEventListener('load', function() {
     }
 }, false);
 
+/**
+ * Whether this order needs splitting because it exceeds the exchange's freeze quantity
+ * for its index. Stocks have no configured freeze quantity and are never split.
+ */
+function exceedsQtyFreeze(order) {
+    const limits = indexLimitsFor(order.tradingsymbol);
+    return limits !== undefined && order.quantity > limits.freezeQty;
+}
+
 function sendReplacement(data) {
     debug("sendReplacement");
-    
+
     if (_newOrder === true) {
         var order = queryStringToJSON(data);
         debug(order);
-        //     _interceptedReq = order;
-        // } else {
-        //     _interceptedReq = "";
-        // }
-        debug(`smartLiit ${jQ("#smartLimit").is(":checked")}`);
+        debug(`smartLimit ${jQ("#smartLimit").is(":checked")}`);
         debug(`overQtyFreezeCb ${jQ("#overQtyFreezeCb").is(':checked')}`);
-        debug(order.tradingsymbol.startsWith(indices[indices_BANKNIFTY]));
-        debug(`${order.quantity} > ${BANKNIFTY_QTY_FREEZE} ${order.quantity > BANKNIFTY_QTY_FREEZE}`);
-        debug(
-            (order.tradingsymbol.startsWith(indices[indices_BANKNIFTY]) && order.quantity > BANKNIFTY_QTY_FREEZE
-            ));
+        debug(`${order.tradingsymbol} qty ${order.quantity} exceeds freeze: ${exceedsQtyFreeze(order)}`);
 
-        if (jQ("#autoSlOrderCb").is(":checked") || jQ("#smartLimit").is(":checked") ||
-            (jQ("#overQtyFreezeCb").is(':checked') &&
-                (
-                    (order.tradingsymbol.startsWith(indices[indices_BANKNIFTY]) && order.quantity > BANKNIFTY_QTY_FREEZE) ||
-                    (order.tradingsymbol.startsWith(indices[indices_NIFTY]) && order.quantity > NIFTY_QTY_FREEZE) ||
-                    (order.tradingsymbol.startsWith(indices[indices_FINNIFTY]) && order.quantity > FINNIFTY_QTY_FREEZE) ||
-                    (order.tradingsymbol.startsWith(indices[indices_MIDCPNIFTY]) && order.quantity > MIDCAP_QTY_FREEZE) ||
-                    (order.tradingsymbol.startsWith(indices[indices_BANKEX]) && order.quantity > BANKEX_QTY_FREEZE) ||
-                    (order.tradingsymbol.startsWith(indices[indices_SENSEX]) && order.quantity > SENSEX_QTY_FREEZE)
-                )
-            )) {
+        const splitForQtyFreeze = jQ("#overQtyFreezeCb").is(':checked') && exceedsQtyFreeze(order);
+
+        if (jQ("#autoSlOrderCb").is(":checked") || jQ("#smartLimit").is(":checked") || splitForQtyFreeze) {
             setTimeout(() => {
                 var button = jQ("button:contains('Cancel')");
                 button.click();
@@ -4824,21 +4123,9 @@ function sendReplacement(data) {
                 _smartLimit = false;
             }
 
-            if (jQ("#overQtyFreezeCb").is(':checked') &&
-                (
-                    (order.tradingsymbol.startsWith(indices[indices_BANKNIFTY]) && order.quantity > BANKNIFTY_QTY_FREEZE) ||
-                    (order.tradingsymbol.startsWith(indices[indices_NIFTY]) && order.quantity > NIFTY_QTY_FREEZE) ||
-                    (order.tradingsymbol.startsWith(indices[indices_FINNIFTY]) && order.quantity > FINNIFTY_QTY_FREEZE) ||
-                    (order.tradingsymbol.startsWith(indices[indices_MIDCPNIFTY]) && order.quantity > MIDCAP_QTY_FREEZE) ||
-                    (order.tradingsymbol.startsWith(indices[indices_BANKEX]) && order.quantity > BANKEX_QTY_FREEZE) ||
-                    (order.tradingsymbol.startsWith(indices[indices_SENSEX]) && order.quantity > SENSEX_QTY_FREEZE)
-                )
-            ) {
+            if (splitForQtyFreeze) {
                 _overrideQtyFreeze = true;
                 jQ("#overQtyFreezeCb").prop('checked', false);
-
-
-                // throw new Error("Quantity is greater than allowed quantity, zerodha won't execute this order. Check betterKite message");
             } else {
                 debug('setting qty freeze to false');
                 _overrideQtyFreeze = false;
@@ -4868,30 +4155,11 @@ function sendReplacement(data) {
 window.XMLHttpRequest.prototype.open = openReplacement;
 window.XMLHttpRequest.prototype.send = sendReplacement;
 
-function queryStringToJSON(qs) {
-    var pairs = qs.split('&');
-    var result = {};
-    pairs.forEach(function (p) {
-        var pair = p.split('=');
-        var key = pair[0];
-        var value = decodeURIComponent(pair[1] || '');
-
-        if (result[key]) {
-            if (Object.prototype.toString.call(result[key]) === '[object Array]') {
-                result[key].push(value);
-            } else {
-                result[key] = [result[key], value];
-            }
-        } else {
-            result[key] = value;
-        }
-    });
-
-    return JSON.parse(JSON.stringify(result));
-};
+// Sends orders betterKite has taken over: looks up the best bid/offer for smart limit,
+// splits anything above the freeze quantity, and optionally places the paired SL order.
 
 function myAjaxSetup() {
-    myAuth = `enctoken ${getCookie('enctoken')}`;
+    let myAuth = `enctoken ${getCookie('enctoken')}`;
     if (gmc.get('use_api')) {
         myAuth = `token ${gmc.get('api_key')}:${gmc.get('api_access_token')}`;
     }
@@ -4905,8 +4173,10 @@ function myAjaxSetup() {
 function sendPlaceNewOrderRequest(order) {
     debug('sendPlaceNewOrderRequest');
 
+    // Function-scoped because the nested success callback below reads it.
+    var myUrl;
+
     myAjaxSetup();
-    debug("11111");
     if (_smartLimit === true) {
         order.order_type = "LIMIT";
 
@@ -4959,25 +4229,10 @@ function sendPlaceNewOrderRequest(order) {
     var qty = order.quantity;
     var remainigQty = qty;
 
-    var limit = qty; //we don't slice anything else other than nifty and banknifty
-
-    if (_overrideQtyFreeze === true) {
-        if (order.tradingsymbol.startsWith(indices[indices_BANKNIFTY])) {
-            limit = BANKNIFTY_QTY_FREEZE; //old 2500
-        } else if (order.tradingsymbol.startsWith(indices[indices_NIFTY])) {
-            limit = NIFTY_QTY_FREEZE;
-        } else if (order.tradingsymbol.startsWith(indices[indices_FINNIFTY])) {
-            limit = FINNIFTY_QTY_FREEZE;
-        } else if (order.tradingsymbol.startsWith(indices[indices_SENSEX])) {
-            limit = SENSEX_QTY_FREEZE;
-        } else if (order.tradingsymbol.startsWith(indices[indices_MIDCPNIFTY])) {
-            limit = MIDCAP_QTY_FREEZE;
-        } else if (order.tradingsymbol.startsWith(indices[indices_BANKEX])) {
-            limit = BANKEX_QTY_FREEZE;
-        }
-    } else {
-        limit = qty;
-    }
+    // Orders bigger than the exchange freeze quantity go out as several smaller ones.
+    // Anything without a configured freeze quantity (stocks) is sent in one piece.
+    var freezeLimits = _overrideQtyFreeze === true ? indexLimitsFor(order.tradingsymbol) : undefined;
+    var limit = freezeLimits ? freezeLimits.freezeQty : qty;
 
     for (let index = 0; index < (qty / limit); index++) {
 
@@ -4987,7 +4242,7 @@ function sendPlaceNewOrderRequest(order) {
         }
         order.quantity = q;
 
-        console.log(`placing order for ${q}`);
+        debug(`placing order for ${q}`);
 
         myAjaxSetup();
         myUrl = BASE_URL + "/oms/orders/regular";
@@ -5055,8 +4310,10 @@ function sendPlaceNewOrderRequest(order) {
     }
 
     debug("99999");
-};
+}
 
+
+// Small jQuery helper plus the one-off "script loaded" analytics event.
 
 jQ.fn.exists = function () {
     return this.length !== 0;
@@ -5088,6 +4345,8 @@ tEv("kite", "visit", "main", VERSION);
 
 // All the features are for education and learning purpose only👍
 
+
+// Waits for GM_config to finish loading, then hands over to main().
 
 let isInit = () => setTimeout(() => 
     gmc.isInit ? main() : isInit(), 0);

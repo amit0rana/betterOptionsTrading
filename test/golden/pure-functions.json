@@ -1,0 +1,390 @@
+{
+  "capturedFrom": "betterKite.ORIGINAL.js",
+  "cases": [
+    {
+      "fn": "closestStrike",
+      "args": [
+        23412
+      ],
+      "result": 23400
+    },
+    {
+      "fn": "closestStrike",
+      "args": [
+        23425
+      ],
+      "result": 23400
+    },
+    {
+      "fn": "closestStrike",
+      "args": [
+        23437
+      ],
+      "result": 23450
+    },
+    {
+      "fn": "closestStrike",
+      "args": [
+        58340,
+        100
+      ],
+      "result": 58300
+    },
+    {
+      "fn": "closestStrike",
+      "args": [
+        0,
+        50
+      ],
+      "result": 0
+    },
+    {
+      "fn": "getExpiryText",
+      "args": [
+        "NIFTY 26Jun 23000 CE"
+      ],
+      "result": "26Jun"
+    },
+    {
+      "fn": "getExpiryText",
+      "args": [
+        "INFY"
+      ],
+      "result": ""
+    },
+    {
+      "fn": "getExpiryText",
+      "args": [
+        "BANKNIFTY 26Jun FUT"
+      ],
+      "result": "26Jun"
+    },
+    {
+      "fn": "getLastThursday",
+      "args": [
+        "JAN",
+        2025
+      ],
+      "result": "30Jan"
+    },
+    {
+      "fn": "getLastThursday",
+      "args": [
+        "Jun",
+        2025
+      ],
+      "result": "26Jun"
+    },
+    {
+      "fn": "getLastThursday",
+      "args": [
+        "DEC",
+        2024
+      ],
+      "result": "26Dec"
+    },
+    {
+      "fn": "getLastThursday",
+      "args": [
+        "FEB",
+        2024
+      ],
+      "result": "29Feb"
+    },
+    {
+      "fn": "getLastThursday",
+      "args": [
+        "JUN"
+      ],
+      "result": "26Jun"
+    },
+    {
+      "fn": "getSensibullZerodhaTradingSymbol",
+      "args": [
+        "NIFTY"
+      ],
+      "result": "NIFTY"
+    },
+    {
+      "fn": "getSensibullZerodhaTradingSymbol",
+      "args": [
+        "BHARTIARTL JUN FUT NFO"
+      ],
+      "result": "BHARTIARTL 26Jun FUT"
+    },
+    {
+      "fn": "getSensibullZerodhaTradingSymbol",
+      "args": [
+        "NIFTY 8th w APR 14200 CE NFO"
+      ],
+      "result": "NIFTY 08APR 14200 CE"
+    },
+    {
+      "fn": "getSensibullZerodhaTradingSymbol",
+      "args": [
+        "BANKNIFTY JUN 30000 PE NFO"
+      ],
+      "result": "BANKNIFTY 26Jun 30000 PE"
+    },
+    {
+      "fn": "getSensibullZerodhaTradingSymbol",
+      "args": [
+        "NIFTY 24JUN 23000 CE NFO"
+      ],
+      "result": "NIFTY 24JUN 23000 CE"
+    },
+    {
+      "fn": "getMarginCalculationData",
+      "args": [
+        "",
+        "NFO",
+        "NRML",
+        1,
+        1
+      ],
+      "result": null
+    },
+    {
+      "fn": "getMarginCalculationData",
+      "args": [
+        "INFY",
+        "NSE",
+        "CNC",
+        10,
+        1500
+      ],
+      "result": null
+    },
+    {
+      "fn": "getMarginCalculationData",
+      "args": [
+        "SBIN",
+        "BSE",
+        "CNC",
+        10,
+        800
+      ],
+      "result": null
+    },
+    {
+      "fn": "getMarginCalculationData",
+      "args": [
+        "NIFTY JUN FUT NFO",
+        "NFO",
+        "NRML",
+        75,
+        23000
+      ],
+      "result": {
+        "exchange": "NFO",
+        "symbol": "NIFTY",
+        "product": "NRML",
+        "tradingsymbol": "NIFTY25JUNFUT",
+        "pece": "PE",
+        "strike": "",
+        "optfut": "FUT",
+        "scrip": "NIFTY25JUN",
+        "quantity": 75,
+        "price": 23000,
+        "transaction_type": "BUY"
+      }
+    },
+    {
+      "fn": "getMarginCalculationData",
+      "args": [
+        "NIFTY 8th w APR 14200 CE NFO LABELS",
+        "NFO",
+        "NRML",
+        -75,
+        120
+      ],
+      "result": {
+        "exchange": "NFO",
+        "symbol": "NIFTY",
+        "product": "NRML",
+        "optfut": "OPT",
+        "tradingsymbol": "NIFTY2540814200CE",
+        "pece": "CE",
+        "strike": "14200",
+        "scrip": "NIFTY2548",
+        "quantity": 75,
+        "price": 120,
+        "transaction_type": "SELL"
+      }
+    },
+    {
+      "fn": "getMarginCalculationData",
+      "args": [
+        "BANKNIFTY JUN 30000 PE NFO",
+        "NFO",
+        "NRML",
+        -15,
+        200
+      ],
+      "result": {
+        "exchange": "NFO",
+        "symbol": "BANKNIFTY",
+        "product": "NRML",
+        "optfut": "OPT",
+        "tradingsymbol": "BANKNIFTY25JUN30000PE",
+        "pece": "PE",
+        "strike": "30000",
+        "scrip": "BANKNIFTY25JUN",
+        "quantity": 15,
+        "price": 200,
+        "transaction_type": "SELL"
+      }
+    },
+    {
+      "fn": "getMarginCalculationData",
+      "args": [
+        "NIFTY 24JUN 23000 CE NFO",
+        "NFO",
+        "NRML",
+        75,
+        12
+      ],
+      "result": {
+        "exchange": "NFO",
+        "symbol": "NIFTY",
+        "product": "NRML",
+        "optfut": "OPT",
+        "tradingsymbol": "NIFTY24JUN23000CE",
+        "pece": "CE",
+        "strike": "23000",
+        "scrip": "NIFTY2524JUN",
+        "quantity": 75,
+        "price": 12,
+        "transaction_type": "BUY"
+      }
+    },
+    {
+      "fn": "getMarginCalculationData",
+      "args": [
+        "SENSEX 24JUN 80000 PE BFO",
+        "BFO",
+        "NRML",
+        -10,
+        90
+      ],
+      "result": {
+        "exchange": "BFO",
+        "symbol": "SENSEX",
+        "product": "NRML",
+        "optfut": "OPT",
+        "tradingsymbol": "SENSEX24JUN80000PE",
+        "pece": "PE",
+        "strike": "80000",
+        "scrip": "SENSEX2524JUN",
+        "quantity": 10,
+        "price": 90,
+        "transaction_type": "SELL"
+      }
+    },
+    {
+      "fn": "getMarginCalculationData",
+      "args": [
+        "NIFTY  JUN  23000  CE  NFO",
+        "NFO",
+        " NRML ",
+        75,
+        12
+      ],
+      "result": {
+        "exchange": "NFO",
+        "symbol": "NIFTY",
+        "product": "NRML",
+        "optfut": "OPT",
+        "tradingsymbol": "NIFTY25JUN23000CE",
+        "pece": "CE",
+        "strike": "23000",
+        "scrip": "NIFTY25JUN",
+        "quantity": 75,
+        "price": 12,
+        "transaction_type": "BUY"
+      }
+    },
+    {
+      "fn": "queryStringToJSON",
+      "args": [
+        "tradingsymbol=NIFTY25JUN23000CE&quantity=75&price=0"
+      ],
+      "result": {
+        "tradingsymbol": "NIFTY25JUN23000CE",
+        "quantity": "75",
+        "price": "0"
+      }
+    },
+    {
+      "fn": "queryStringToJSON",
+      "args": [
+        "a=1&a=2&a=3"
+      ],
+      "result": {
+        "a": [
+          "1",
+          "2",
+          "3"
+        ]
+      }
+    },
+    {
+      "fn": "queryStringToJSON",
+      "args": [
+        "name=NIFTY%20BANK&empty="
+      ],
+      "result": {
+        "name": "NIFTY BANK",
+        "empty": ""
+      }
+    },
+    {
+      "fn": "isLastDay",
+      "args": [
+        4
+      ],
+      "result": true
+    },
+    {
+      "fn": "isLastDay",
+      "args": [
+        1
+      ],
+      "result": false
+    },
+    {
+      "fn": "isLastDay",
+      "args": [
+        3
+      ],
+      "result": false
+    },
+    {
+      "fn": "createPnlText",
+      "args": [
+        1500,
+        -5000,
+        100000
+      ],
+      "result": "<span random-att='temppnl' class='text-green open pnl randomClassToHelpHide'>P&L: INR 1500.00<br><span class='text-label randomClassToHelpHide'>Prem Taken: INR -5000.00 / -5.00%</span><br><span class='text-label randomClassToHelpHide'>Current Prem: INR -6500.00 </span><br><span class='text-label randomClassToHelpHide'>Margin: INR 100000.00</span><br><span class='text-label randomClassToHelpHide'>Current ROI: 1.50% </span></span>"
+    },
+    {
+      "fn": "createPnlText",
+      "args": [
+        -1500,
+        -5000,
+        100000
+      ],
+      "result": "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: INR -1500.00<br><span class='text-label randomClassToHelpHide'>Prem Taken: INR -5000.00 / -5.00%</span><br><span class='text-label randomClassToHelpHide'>Current Prem: INR -3500.00 </span><br><span class='text-label randomClassToHelpHide'>Margin: INR 100000.00</span><br><span class='text-label randomClassToHelpHide'>Current ROI: -1.50% </span></span>"
+    },
+    {
+      "fn": "createPnlText",
+      "args": [
+        0,
+        0,
+        -1
+      ],
+      "result": "<span random-att='temppnl' class='text-red open pnl randomClassToHelpHide'>P&L: INR 0.00<br><span class='text-label randomClassToHelpHide'>Prem Taken: INR 0.00 / 0.00%</span><br><span class='text-label randomClassToHelpHide'>Current Prem: INR 0.00 </span></span>"
+    }
+  ]
+}

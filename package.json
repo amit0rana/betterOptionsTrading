@@ -1,0 +1,21 @@
+{
+  "name": "better-options-trading",
+  "version": "5.08",
+  "description": "Userscripts that add features to online trading platforms. betterKite is the main one.",
+  "private": true,
+  "license": "Unlicense",
+  "scripts": {
+    "build": "node build/build.js",
+    "check": "node build/build.js --check",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.js\" \"build/**/*.js\" \"test/**/*.js\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"build/**/*.js\" \"test/**/*.js\"",
+    "test": "node --test test/",
+    "verify": "npm run check && npm run lint && npm test"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "prettier": "^3.3.3"
+  }
+}

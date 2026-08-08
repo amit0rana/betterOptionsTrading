@@ -23,6 +23,18 @@
 
 // For more information, please refer to <https://unlicense.org>
 
+// Shared helpers @require'd by the betterX userscripts. Tampermonkey concatenates
+// @require'd files into the same scope as the script that requires them, so these
+// declarations are visible to the consumer -- and, in the other direction, debug()
+// and info() below read a D_LEVEL that the *consumer* declares. Changing that
+// contract means updating every script in the list below.
+//
+// Consumers: betterKite, betterSensibull, betterSharekhan, betterTradingeconomics,
+// betterUpstox. All load this file from GitHub master, so edits here only take
+// effect once pushed.
+
+/* exported D_LEVEL_INFO, D_LEVEL_DEBUG, D_LEVEL_NONE, debug, info, formatter, reloadPage, getCookie */
+
 const D_LEVEL_INFO = 2;
 const D_LEVEL_DEBUG = 1;
 const D_LEVEL_NONE = 100;
@@ -61,11 +73,4 @@ const getCookie = function (name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(';').shift();
-}
-
-const getFunctionName = function () {
-    // var me = arguments.callee.toString();
-    // me = me.substr('function '.length);     
-    // me = me.substr(0, me.indexOf('('));
-    return getFunctionName.caller.name;
 }

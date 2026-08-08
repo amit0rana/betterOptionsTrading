@@ -57,13 +57,13 @@
 
 // KIND ATTENTION TO ALL USERS
 
-// Disclaimer from Developers as per SEBI norms: Equity Investment are subject to 100% 
+// Disclaimer from Developers as per SEBI norms: Equity Investment are subject to 100%
 // market risks. Refer your financial consultant advice before Investing. This code is
-//  only for Educational and Learning, Knowledge Purposes. Developers have no 
-// responsibility for your intended decision & financial losses. Keep calculated & always 
+//  only for Educational and Learning, Knowledge Purposes. Developers have no
+// responsibility for your intended decision & financial losses. Keep calculated & always
 // analyzed your cash osition and risk bearing capacity before following any advise.
-//  Stock market investments and using this script are VERY RISKY and using ths code, you 
-// agree that you understand the Market risks involved. Profits and Losses are part of Share market. 
+//  Stock market investments and using this script are VERY RISKY and using ths code, you
+// agree that you understand the Market risks involved. Profits and Losses are part of Share market.
 //  Kindly understand and act wisely.
 
 // Disclaimer/ disclosure
@@ -75,3 +75,4 @@
 // 👉Disclaimer/disclosure/terms and conditions applicable to all users of this script
 
 // All the features are for education and learning purpose only👍
+
